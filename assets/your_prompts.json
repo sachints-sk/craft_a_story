@@ -1,0 +1,23 @@
+[
+  {
+    "Theme": "cartoon",
+    "prompt": "A young boy, around 12 years old, with messy brown hair and wide, curious eyes, wearing a bright red t-shirt and blue jeans, stands in a cluttered workshop. He looks excited and a little nervous.",
+    "characters description": [
+      {
+        "name": "Nigel",
+        "age": 12,
+        "dress": "bright red t-shirt, blue jeans",
+        "color": "brown hair, blue eyes",
+        "face shape": "round",
+        "hair": "messy",
+        "expression": "excited, nervous"
+      }
+    ]
+  },
+  {
+    "Theme": "cartoon",
+    "prompt": "The workshop is full of tools and unfinished projects, including a partly assembled machine with wires and gears. Light streams in from a window, illuminating dust motes dancing in the air.",
+    "characters description": []
+  }
+
+]

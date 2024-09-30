@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "adept-ethos-432515-v9",
+  "private_key_id": "1fa3e34d0b3ebb63677d344bcd2983be2c66b9eb",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDPFAkLZbaNSnsj\nPTozIGFLXQ60oPIuecp1ofvW7Sk08PfSx47INbgSdnzbb4AdWb88ysGSh5caBWsy\n1e/v0L4zBsasdDJYF+ubhi2gg0fZ9tiTX8OM4NZ/bPj/w3AR/AYGKvuDR/Na13OF\nSvxRvVTkSlysv339xhIivKTyoWiaZTAciONKDsBEP8FoQDDXwIUqzBLQwwzWcoDN\nCnOqvPvCqJ294mJW0ZXKDiiqQQCuG2+SrBOKkEMRMT+kvON41SX4wdlBiqC3GnAT\njmTWifTAIBtjtVEQmDIAFmR9XGh2eZnYm4CpgiUdeZJJ9gliNaQIjn2KcUr4k+0o\nEcMJZ0utAgMBAAECggEADUTr5XKRlZExvcrVGWSYR3OBlzp++lJskkgccqPE0bMl\nNjj6YcLrdidojckhzP+svPEDIWgV2yGAwoOp+dSG848aGP/jH/j8bH1XHCN9ba6f\nJyZqSfM4W3b4p6721fgvzKJhdoKcSfRnXyG0dGps76oCMUGeCa5xCA/NhAyqvsXi\nnuMWvTscszi9/QPkYhFZOJlvpbKjuqtbk+Z4m52jkRiBOWxEMwg6oUGEIjVPSDxv\nTqVpXqrs9udQdeYPtF1Yu0dEDtnGmZAGQkArZak/XcO6BWjZvksqWwNVpDg7JDXe\niesBrYhDaiYtRKOmoKzsyGkYA40CLdJY/yH+ObV0YQKBgQDt28rmwBqaG2e/7Vwr\ny7MpqGTDPVx1WQAG4hLghtBis/6t+LyfYWgEh+C5D4PA5XqQMNeAGc9isezbByki\nFNoKBrGlrFijGBJXHj8TkZW2oYAPPG5pjK1madKZqCINDC5jRrbCWK4IHBpycQLl\n6Qxz8WhHvBiDu0xB3epUg84MPQKBgQDe30FBX5C6ZJ5DotOY6Dlp5ieIMvnAtdwq\nSfBxJmiUIr7jIBmP6s9MlqDPDbZsGTv7U8QODlDqgHkho22O1DwlsQT+sXXPsq78\nQozRFODqshS08T57jAfFwSNpz/Z03pLbJLZJTSTjV8a6+HC6ySMAw+qYpK30kr5m\nKaH4ID4EMQKBgQDoCI265JQO2cUwGaDcqG4yqS8Ctw1G/HdmP4wis+D9KJG9rPR0\nllUedl7mqRfiSPpzRvIy6PrCUMe6MxYRRT4eocES2TnugEED82Gc+VyPOKTwOAeN\nt8pAKeNkOfxdthBakFUg6dl7186E7XHiTqHzSQBtWjSf7UrKxm0d3SZYEQKBgFkW\nmwobvkmTsOPOcZC8uz6GnqTF46nRyEkrNy6zsLgOT4mQqkcqEGVIDM3XaGU7jQuA\nx2zq8hNa+ZCluESQt95FLX71xucYQPRbUdi95M5MExTlHhnatryo4JQKajT7R27L\n9QXGDYnG64yPhNhVUGWc6ujLYzHResRxvenmUYPxAoGBAI0vXdvz7vDiOjzv6GKH\nNku4Z2TKVdGOfmowQJthtx680SDFHod8+g8d5SnHlAtJ1nvFIaMpoVjadbK0D5td\ntw41dTAIczIXQMcWM5O3TCSMWQS42/cglGY3UhKua42YpbIL7ulCCVerEVQQ2YHH\nQzTTVTz3hEfKnF1UPmMnJrxT\n-----END PRIVATE KEY-----\n",
+  "client_email": "text-to-speech-service@adept-ethos-432515-v9.iam.gserviceaccount.com",
+  "client_id": "102144021022946949828",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/text-to-speech-service%40adept-ethos-432515-v9.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}
