@@ -1,13 +1,30 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
 
 import 'testfolder/createimage.dart';
 import 'testfolder/texttospeech.dart';
 import 'testfolder/jsonimagegen.dart';
+import 'testfolder/combineaudiovideo.dart';
+import 'testfolder/createstory.dart';
+import 'testfolder/readstory.dart';
+import 'testfolder/homeScreen.dart';
+import 'signinpage.dart';
+import 'homepage.dart';
 
-void main() {
-  runApp(const CraftAStoryApp());
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized(); // Important!
+
+  // Initialize Firebase
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  runApp(const CraftAStoryApp()); // Start your app
 }
+
 
 class CraftAStoryApp extends StatelessWidget {
   const CraftAStoryApp({Key? key}) : super(key: key);
@@ -43,6 +60,17 @@ class HomeScreen extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
+                    builder: (context) => const SignInPage(),
+                  ),
+                );
+              },
+              child: const Text("signup"),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
                     builder: (context) => const ImageGenerationPage(),
                   ),
                 );
@@ -72,6 +100,54 @@ class HomeScreen extends StatelessWidget {
                 );
               },
               child: const Text("json img gen"),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const CombineAudioVideo(),
+                  ),
+                );
+              },
+              child: const Text("combine audiovid"),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const StoryCreationPage(),
+                  ),
+                );
+              },
+              child: const Text("create"),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const SavedStoryPage(),
+                  ),
+                );
+              },
+              child: const Text("read"),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const CraftAStoryAppHome(),
+                  ),
+                );
+              },
+              child: const Text("home"),
             ),
           ],
         ),

@@ -9,7 +9,7 @@ class ImageGenerationPage extends StatefulWidget {
   State<ImageGenerationPage> createState() => _ImageGenerationPageState();
 }
 class _ImageGenerationPageState extends State<ImageGenerationPage> {
-  final fal = FalClient.withCredentials("bacd28f5-5a70-43d8-a518-bec50127ffc4:3bef61636d12c9b5d1ad0d032c925317"); // Replace with your key
+  final fal = FalClient.withCredentials("6aa78a3f-c213-4e62-885d-6cc0a6a17d2e:ea116f46d65044e7b5e4c6dad6a921d7"); // Replace with your key
   String? _generatedImageUrl;
   String? _requestId;
   String _statusText = "Ready to generate!";
@@ -23,12 +23,11 @@ class _ImageGenerationPageState extends State<ImageGenerationPage> {
 
     try {
       final output = await fal.subscribe("fal-ai/flux/schnell", input: {
-        "prompt":
-        "Close-up on Nigel's face, 10 years old, focused, tightening a bolt on a fantastical machine with wires, tubes, a lawnmower engine visible. Sparks fly!",
-        "image_size": "square",
+        "prompt": "beach", // Use the prompt directly from the JSON
+        "image_size": "portrait_16_9",
         "num_inference_steps": 4,
         "num_images": 1,
-        "enable_safety_checker": true
+        "enable_safety_checker": false
       }, logs: true, webhookUrl: "https://optional.webhook.url/for/results",
           onQueueUpdate: (update) {
             print(update);
@@ -64,8 +63,8 @@ class _ImageGenerationPageState extends State<ImageGenerationPage> {
             if (_generatedImageUrl != null) ...[
               Image.network(
                 _generatedImageUrl!,
-                height: 300,
-                width: 300,
+
+
                 fit: BoxFit.cover,
               ),
               const SizedBox(height: 20),

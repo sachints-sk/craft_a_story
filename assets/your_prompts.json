@@ -1,23 +1,9 @@
 [
   {
-    "Theme": "cartoon",
-    "prompt": "A young boy, around 12 years old, with messy brown hair and wide, curious eyes, wearing a bright red t-shirt and blue jeans, stands in a cluttered workshop. He looks excited and a little nervous.",
-    "characters description": [
-      {
-        "name": "Nigel",
-        "age": 12,
-        "dress": "bright red t-shirt, blue jeans",
-        "color": "brown hair, blue eyes",
-        "face shape": "round",
-        "hair": "messy",
-        "expression": "excited, nervous"
-      }
-    ]
+    "prompt": "Cartoon illustration of a ten-year-old boy named Nigel, with unruly brown hair and a worried expression, standing at the edge of a blue swimming pool. He's wearing a red swimsuit and has a nervous look on his face. He's looking towards a girl, his older sister Amelia, who's effortlessly swimming in the pool. Amelia has long blonde hair tied in a ponytail, is wearing a blue swimsuit, and has a confident smile on her face. Nigel's dad, a burly man with a warm smile and a mustache, is standing beside him, encouraging him with a thumbs up. The background is a sunny poolside scene with blue skies, green grass, and white umbrellas."
   },
   {
-    "Theme": "cartoon",
-    "prompt": "The workshop is full of tools and unfinished projects, including a partly assembled machine with wires and gears. Light streams in from a window, illuminating dust motes dancing in the air.",
-    "characters description": []
+    "prompt": "Cartoon scene of a 10-year-old boy, Nigel, with unruly brown hair and a bright smile, wearing blue dolphin floaties on his arms, taking a deep breath and jumping into a blue swimming pool with a splash. His dad, a burly man with a warm smile, stands at the edge of the pool, encouraging him with a thumbs-up. The scene is vibrant and sunny, capturing the excitement of Nigel's first swim."
   }
 
 ]

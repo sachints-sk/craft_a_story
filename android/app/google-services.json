@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "838703040242",
+    "project_id": "craft-a-story",
+    "storage_bucket": "craft-a-story.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:838703040242:android:b4abc14a19392ac500326b",
+        "android_client_info": {
+          "package_name": "com.example.craftastory.craft_a_story"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD-V3PAgNee5OpnDND9SDK08D4075V-1Mk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
