@@ -53,6 +53,8 @@ dependencies:
   google_sign_in: ^6.2.1
   firebase_auth: ^5.3.1
   google_fonts: ^6.2.1
+  permission_handler: ^11.3.1
+  page_transition: ^2.1.0
 
 
 dev_dependencies:
@@ -107,9 +109,6 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
-  fonts:
-    - family: KaushanScript
-      fonts:
-        - asset: fonts/KaushanScript-Regular.ttf
+
   assets:
     - assets/

@@ -11,7 +11,7 @@ import 'testfolder/createstory.dart';
 import 'testfolder/readstory.dart';
 import 'testfolder/homeScreen.dart';
 import 'signinpage.dart';
-import 'homepage.dart';
+import 'home.dart';
 
 
 void main() async {
@@ -143,7 +143,7 @@ class HomeScreen extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const CraftAStoryAppHome(),
+                    builder: (context) => CraftAStoryApphome(),
                   ),
                 );
               },
