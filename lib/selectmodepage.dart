@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'createwithai.dart';
+import 'package:page_transition/page_transition.dart';
 
 class SelectModePage extends StatelessWidget {
   const SelectModePage({Key? key}) : super(key: key);
@@ -7,116 +8,138 @@ class SelectModePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white, // Set background color to white
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text("Choose mode",textAlign: TextAlign.center,style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold),),
-        backgroundColor: const Color(0xFF161825), // Set app bar color
+
+        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_rounded, color: Colors.white),
+          icon: const Icon(Icons.arrow_back_ios_rounded, color: Colors.black),
           onPressed: () {
-            Navigator.pop(context); // Handle back button press
+            Navigator.pop(context);
           },
         ),
-
-        elevation: 0, // Remove app bar shadow (optional)
+        title: const Text("Choose Your Path",
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // First Card (AI-Powered Story Creation)
-            _buildModeCard(
-              context,
-              icon: Icons.smart_toy_outlined, // Replace with AI-related icon
-              title: 'Create with AI',
-              description: 'Let your imagination run wild with our AI-powered story creator.',
-              buttonLabel: 'Start Now',
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) =>  CreateStoryWithAI(),
-                  ),
-                );
-              },
-              backgroundColor: const Color(0xFFF2D7ED), // Light pink
-            ),
-            const SizedBox(height: 20),
-            // Second Card (Write Your Own Story)
-            _buildModeCard(
-              context,
-              icon: Icons.edit,
-              title: 'Write your own Stories',
-              description: 'Create your own magical adventures and share them with friends.',
-              buttonLabel: 'Get Writing',
-              onPressed: () {
-                // Navigate to the write your own story page
-              },
-              backgroundColor: const Color(0xFF161825), // Dark blue
-              textColor: Colors.white, // White text for dark background
-            ),
-          ],
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 20),
+              Text(
+                "Choose mode for story creation.",
+                style: TextStyle(
+
+                  fontSize: 18,
+                ),
+              ),const SizedBox(height: 30),
+              _buildModeCard(
+                context,
+                imagePath: 'assets/aiwriting.png',
+                title: 'Create with AI',
+                description: 'Generate a story in seconds...',
+                buttonText: 'Get Started',
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    PageTransition(
+                      type: PageTransitionType.rightToLeft,
+                      child: const CreateStoryWithAI(),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 20),
+              _buildModeCard(
+                context,
+                imagePath: 'assets/personwriting.png',
+                title: 'Write Your Story',
+                description: 'Craft a story from scratch...',
+                buttonText: 'Start Writing',
+                onPressed: () {
+                  // Navigate to the write your own story page
+                },
+              ),
+
+
+
+            ],
+          ),
         ),
       ),
     );
   }
 
+  // Reusable widget for mode cards
   Widget _buildModeCard(
       BuildContext context, {
-        required IconData icon,
+        required String imagePath,
         required String title,
         required String description,
-        required String buttonLabel,
+        required String buttonText,
         required VoidCallback onPressed,
-        required Color backgroundColor,
-        Color textColor = Colors.black, // Default text color is black
       }) {
     return Card(
-      color: backgroundColor,
       elevation: 3,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(15),
+        borderRadius: BorderRadius.circular(10),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          children: [
-            CircleAvatar(
-              radius: 40,
-              backgroundColor: Colors.white,
-              child: Icon(icon, size: 40, color: textColor),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Image at the top
+          ClipRRect(
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(10),
+              topRight: Radius.circular(10),
             ),
-            const SizedBox(height: 20),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: textColor,
-              ),
+            child: Image.asset(
+              imagePath,
+              height: 150, // Adjust height as needed
+              fit: BoxFit.cover,
             ),
-            const SizedBox(height: 10),
-            Text(
-              description,
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 16, color: textColor),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: onPressed,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
-                textStyle: const TextStyle(fontSize: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween, // Arrange elements with space between
+              children: [
+                Column( // Wrap title and description in a Column for vertical arrangement
+                  crossAxisAlignment: CrossAxisAlignment.start, // Align text to the start (left)
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4), // Small vertical spacing
+                    Text(
+                      description,
+                      style: const TextStyle(fontSize: 14),
+                    ),
+                  ],
                 ),
-              ),
-              child: Text(buttonLabel, style: const TextStyle(color: Colors.white)),
+                ElevatedButton(
+                  onPressed: onPressed,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                    textStyle: const TextStyle(fontSize: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  ),
+                  child: Text(buttonText, style: const TextStyle(color: Colors.white)),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

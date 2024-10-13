@@ -16,11 +16,13 @@ subprojects {
     }
 }
 android {
-    namespace = "com.example.craftastory.craft_a_story" // Correct namespace usage
+    namespace = "com.craftastory.craft_a_story" // Correct namespace usage
     compileSdkVersion 34  // Correct placement and syntax
+    ndkVersion = "25.1.8937393"
 
     defaultConfig {
-        applicationId "com.example.craftastory.craft_a_story"
+        applicationId "com.craftastory.craft_a_story"
+
         minSdkVersion 24
         targetSdkVersion 34
         versionCode flutter.versionCode
@@ -36,9 +38,24 @@ android {
         jvmTarget = "1.8"
     }
 
+    dependencies {
+
+        implementation 'com.android.billingclient:billing:7.1.1'
+    }
+
+    signingConfigs {
+        release {
+            storeFile file("my-release-key.jks")
+            storePassword "thynathudan"
+            keyAlias "release-key"
+            keyPassword "thynathudan"
+        }
+    }
     buildTypes {
         release {
-            signingConfig signingConfigs.debug // Replace with release config if needed
+            signingConfig signingConfigs.release
+            minifyEnabled false // You can enable Proguard here if you want
+            shrinkResources false
         }
     }
 

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+
 import 'home_tab.dart'; // Import your tab pages
-import 'create_tab.dart';
+import 'mystories_tab.dart';
 import 'explore_tab.dart';
-import 'profile_tab.dart';
+import 'settings_tab.dart';
 
 void main() {
   runApp(const CraftAStoryApphome());
@@ -16,8 +18,11 @@ class CraftAStoryApphome extends StatelessWidget {
     return MaterialApp(
       title: 'Craft-a-Story',
       theme: ThemeData(
-        useMaterial3: true, // Use Material Design 3
-        primarySwatch: Colors.blue,
+        useMaterial3: true, // Enable Material Design 3
+        colorSchemeSeed: const Color(0xFF161825), // Define a custom color scheme
+        textTheme: GoogleFonts.poppinsTextTheme(
+          Theme.of(context).textTheme,
+        ),
       ),
       home: const MainScreen(),
     );
@@ -34,46 +39,54 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0; // Index of the currently selected tab
 
-  // List of pages to display for each tab
-  final List<Widget> _pages = [
-     CraftAStoryAppHome(),
-    const CreateTab(),
-    const ExploreTab(),
-    const ProfileTab(),
-  ];
+  // Callback function to change the selected tab index
+  void _onTabSelected(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    final List<Widget> _pages = [
+      CraftAStoryHome(onTabSelected: _onTabSelected),
+      const MyStoriesPage(),
+      const ExploreTab(),
+      const SettingsTab(),
+    ];
 
+    return Scaffold(
+      // Set your primary color
+      backgroundColor: Colors.white, // Set the background color
       body: _pages[_selectedIndex], // Display the selected tab's content
-      bottomNavigationBar: BottomNavigationBar(
-        selectedItemColor: const Color(0xFF161825),
-        unselectedItemColor: Colors.grey,
-        currentIndex: _selectedIndex,
-        onTap: (index) {
+
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _selectedIndex,
+        onDestinationSelected: (index) {
           setState(() {
             _selectedIndex = index;
           });
         },
-        items: const [
-          BottomNavigationBarItem(
+        destinations: const [
+          NavigationDestination(
             icon: Icon(Icons.home_rounded),
             label: 'Home',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.create),
-            label: 'Create',
+          NavigationDestination(
+            icon: Icon(Icons.book),
+            label: 'My Stories',
           ),
-          BottomNavigationBarItem(
+          NavigationDestination(
             icon: Icon(Icons.explore),
             label: 'Explore',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Profile',
+          NavigationDestination(
+            icon: Icon(Icons.settings),
+            label: 'Settings',
           ),
         ],
+        backgroundColor: Colors.white, // Material 3 background color
+        elevation: 3, // Optional: controls the elevation (shadow)
       ),
     );
   }

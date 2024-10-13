@@ -1,30 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // Import for FirebaseAuth
 
-
-import 'testfolder/createimage.dart';
-import 'testfolder/texttospeech.dart';
-import 'testfolder/jsonimagegen.dart';
-import 'testfolder/combineaudiovideo.dart';
-import 'testfolder/createstory.dart';
-import 'testfolder/readstory.dart';
-import 'testfolder/homeScreen.dart';
 import 'signinpage.dart';
 import 'home.dart';
 
-
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized(); // Important!
+  WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Firebase
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  runApp(const CraftAStoryApp()); // Start your app
+  runApp(const CraftAStoryApp());
 }
-
 
 class CraftAStoryApp extends StatelessWidget {
   const CraftAStoryApp({Key? key}) : super(key: key);
@@ -34,123 +24,20 @@ class CraftAStoryApp extends StatelessWidget {
     return MaterialApp(
       title: 'Craft-a-Story',
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        primaryColor: Colors.blue, // Set your primary color
+        scaffoldBackgroundColor: Colors.white, // Set the background color
       ),
-      home: const HomeScreen(), // This is now your home screen
-    );
-  }
-}
-
-// --- Home Screen ---
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Craft-a-Story"),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const SignInPage(),
-                  ),
-                );
-              },
-              child: const Text("signup"),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const ImageGenerationPage(),
-                  ),
-                );
-              },
-              child: const Text("Go to Image Generator"),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const MyApp(),
-                  ),
-                );
-              },
-              child: const Text("Go to Text to Speech"),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const JsonImageGenerator(),
-                  ),
-                );
-              },
-              child: const Text("json img gen"),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const CombineAudioVideo(),
-                  ),
-                );
-              },
-              child: const Text("combine audiovid"),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const StoryCreationPage(),
-                  ),
-                );
-              },
-              child: const Text("create"),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const SavedStoryPage(),
-                  ),
-                );
-              },
-              child: const Text("read"),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => CraftAStoryApphome(),
-                  ),
-                );
-              },
-              child: const Text("home"),
-            ),
-          ],
-        ),
+      // Use a StreamBuilder to listen for authentication state changes
+      home: StreamBuilder<User?>(
+        stream: FirebaseAuth.instance.authStateChanges(),
+        builder: (context, snapshot) {
+          // If the user is logged in
+          if (snapshot.hasData) {
+            return const CraftAStoryApphome(); // Navigate to your home page
+          } else {
+            return const SignInPage(); // Navigate to sign-in page
+          }
+        },
       ),
     );
   }
