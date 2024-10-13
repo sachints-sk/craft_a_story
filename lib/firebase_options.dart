@@ -54,9 +54,10 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyD-V3PAgNee5OpnDND9SDK08D4075V-1Mk',
-    appId: '1:838703040242:android:b4abc14a19392ac500326b',
+    appId: '1:838703040242:android:b22e2c946aae918d00326b',
     messagingSenderId: '838703040242',
     projectId: 'craft-a-story',
     storageBucket: 'craft-a-story.appspot.com',
   );
+
 }

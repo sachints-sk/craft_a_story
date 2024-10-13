@@ -1,8 +1,13 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'selectmodepage.dart';
 import 'package:page_transition/page_transition.dart';
 
-class CraftAStoryAppHome extends StatelessWidget {
+class CraftAStoryHome extends StatelessWidget {
+  final Function(int) onTabSelected; // Callback function
+
+  const CraftAStoryHome({Key? key, required this.onTabSelected}) : super(key: key);
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -169,11 +174,47 @@ class CraftAStoryAppHome extends StatelessWidget {
                 ),
               ),
               SizedBox(height: 20),
-              buildSectionHeader('Recommended Stories'),
-              buildHorizontalList(context),
+              buildSectionHeader('Recommended Stories',2),
+              buildHorizontalList(context, isMyStories: false, stories: []),
               SizedBox(height: 20),
-              buildSectionHeader('My Stories'),
-              buildHorizontalList(context),
+              buildSectionHeader('My Stories',1),
+              StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection('stories')
+                    .where('userId', isEqualTo: FirebaseAuth.instance.currentUser?.uid)
+                    .orderBy('createdAt', descending: true) // Order by creation date, newest first
+                    .limit(2) // Limit to the latest 2 stories
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  if (snapshot.hasError) {
+                    return Text('Error: ${snapshot.error}');
+                  }
+
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  // Extract story data from the snapshot
+                  List<StoryData> myStories = [];
+                  if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
+                    for (var doc in snapshot.data!.docs) {
+                      final data = doc.data() as Map<String, dynamic>;
+                      myStories.add(
+                        StoryData(
+                          coverImageUrl: data['coverImageUrl'] ?? 'assets/placeholderimage.png',
+                          title: data['title'] ?? '',
+                          storyId: doc.id,
+                          description: data['description'] ?? '',
+                          // Rating is not relevant here
+                        ),
+                      );
+                    }
+                  }
+
+                  // Pass the fetched stories to buildHorizontalList
+                  return buildHorizontalList(context, isMyStories: true, stories: myStories);
+                },
+              ),
             ],
           ),
         ),
@@ -182,7 +223,7 @@ class CraftAStoryAppHome extends StatelessWidget {
     );
   }
 
-  Widget buildSectionHeader(String title) {
+  Widget buildSectionHeader(String title, int page) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -190,43 +231,65 @@ class CraftAStoryAppHome extends StatelessWidget {
           title,
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
         ),
-        Text(
-          'View All',
-          style: TextStyle(color: const Color(0xFF161825)),
+        GestureDetector(
+          onTap: () {
+            // Call the callback function with the desired tab index
+            onTabSelected(page); // Navigate to the second tab (index 1)
+          },
+          child: const Text(
+            'View All',
+            style: TextStyle(color: Color(0xFF161825)),
+          ),
         ),
       ],
     );
   }
 
-  Widget buildHorizontalList(BuildContext context) {
+  Widget buildHorizontalList(BuildContext context, {required bool isMyStories, required List<StoryData> stories}) {
+    // Check if it's the "My Stories" section and there are no stories
+    if (isMyStories && stories.isEmpty) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.only(top: 8.0), // Add some padding
+          child: Text(
+            'No stories yet, start creating!',
+            style: TextStyle(color: Colors.grey),
+          ),
+        ),
+      );
+    }
+
     return Container(
       height: 180,
-      child: ListView(
+      child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        children: [
-          buildCardItem(
-            context,
-            'The Magical Unicorn',
-            '5km',
-            '\$150.00/hr',
-            'assets/testimage.png',
-            '4.4',
-          ),
-          buildCardItem(
-            context,
-            'Adventures in Space',
-            '2km',
-            '\$100.00/hr',
-            'assets/testimage.png',
-            '4.2',
-          ),
-        ],
+        itemCount: isMyStories ? stories.length : 2, // Show 2 items if not "My Stories"
+        itemBuilder: (context, index) {
+          if (isMyStories) {
+            // Use data from Firestore for "My Stories"
+            return buildCardItem(
+              context,
+              stories[index].title,
+              // Price not applicable for "My Stories"
+              stories[index].coverImageUrl, // Get image from Firestore
+               // Rating not applicable for "My Stories"
+            );
+          } else {
+            // Use your existing placeholder data for "Recommended Stories"
+            return buildCardItem(
+              context,
+              'The Magical Unicorn',
+              'assets/testimage.png',
+            );
+          }
+        },
       ),
     );
   }
 
-  Widget buildCardItem(BuildContext context, String title, String distance,
-      String price, String imagePath, String rating) {
+
+  Widget buildCardItem(BuildContext context, String title,
+       String imagePath, ) {
     return Container(
       width: 200,
       margin: EdgeInsets.only(right: 10),
@@ -239,10 +302,13 @@ class CraftAStoryAppHome extends StatelessWidget {
               aspectRatio: 16 / 9,  // Fixed aspect ratio for the image
               child: ClipRRect(
                 borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-                child: Image.asset(
+                child: Image.network(
                   imagePath,
+                  height: 140,
                   fit: BoxFit.cover,
-                  width: double.infinity,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Image.asset('assets/placeholderimage.png', height: 140, fit: BoxFit.cover); // Display a placeholder on error
+                  },
                 ),
               ),
             ),
@@ -261,4 +327,20 @@ class CraftAStoryAppHome extends StatelessWidget {
     );
   }
 
+}
+// story_data.dart
+class StoryData {
+  final String storyId;
+  final String title;
+  final String description;
+  final String coverImageUrl;
+
+
+  StoryData({
+    required this.storyId,
+    required this.title,
+    required this.description,
+    required this.coverImageUrl,
+
+  });
 }

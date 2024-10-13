@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'home.dart'; // Import your HomePage here
 
 class SignInPage extends StatelessWidget {
   const SignInPage({Key? key}) : super(key: key);
@@ -9,7 +11,6 @@ class SignInPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF121224),
-
       body: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Column(
@@ -17,7 +18,6 @@ class SignInPage extends StatelessWidget {
           children: [
             Image.asset(
               'assets/logo.png', // Replace with your image
-
               width: double.infinity,
               fit: BoxFit.cover,
             ),
@@ -40,14 +40,36 @@ class SignInPage extends StatelessWidget {
                 fontSize: 16,
               ),
             ),
-
             const SizedBox(height: 20),
             // Use _buildSignInButton with Google logo path
-            _buildSignInButton('assets/google_13170545.png', 'Sign up with Google'),
+            _buildSignInButton('assets/google_13170545.png', 'Sign up with Google', context),
           ],
         ),
       ),
     );
+  }
+
+  // Function to create user document in Firestore
+  Future<void> _createUserDocument(User user) async {
+    final firestore = FirebaseFirestore.instance;
+    final userDocRef = firestore.collection('users').doc(user.uid);
+
+    // Check if the user document already exists
+    final docSnapshot = await userDocRef.get();
+    if (!docSnapshot.exists) {
+      // Create the document if it doesn't exist
+      await userDocRef.set({
+        'userId': user.uid,
+        'displayName': user.displayName,
+        'email': user.email,
+        'createdAt': FieldValue.serverTimestamp(), // Use server timestamp
+        // ... add other user data as needed
+      });
+
+      print('User document created successfully!');
+    } else {
+      print('User document already exists!');
+    }
   }
 
   Future<UserCredential?> _signInWithGoogle() async {
@@ -73,19 +95,24 @@ class SignInPage extends StatelessWidget {
     }
   }
 
-
-  Widget _buildSignInButton(String imagePath, String label) {
+  Widget _buildSignInButton(String imagePath, String label, BuildContext context) {
     return ElevatedButton(
       onPressed: () async {
         UserCredential? userCredential = await _signInWithGoogle();
         if (userCredential != null) {
-          // Navigate to the next screen or perform other actions
+          // Create user document in Firestore
+          await _createUserDocument(userCredential.user!);
+          // Navigate to the Home page and remove all previous routes
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => const CraftAStoryApphome()), // Replace HomePage with your actual home screen widget
+                (Route<dynamic> route) => false,
+          );
           print("User signed in: ${userCredential.user!.uid}");
         }
-      }, // Add your sign-in logic here
+      },
       style: ElevatedButton.styleFrom(
         backgroundColor: Colors.white,
-
         padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
         textStyle: const TextStyle(fontSize: 18),
         shape: RoundedRectangleBorder(
@@ -97,7 +124,7 @@ class SignInPage extends StatelessWidget {
         children: [
           Image.asset(imagePath, height: 34, width: 34), // Google logo
           const SizedBox(width: 10),
-          Text(label, style: const TextStyle(color: Colors.black,fontWeight: FontWeight.w500 )),
+          Text(label, style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w500)),
         ],
       ),
     );

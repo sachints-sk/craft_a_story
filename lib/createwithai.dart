@@ -4,7 +4,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart'; // For storage permission
-import 'processingpage.dart';
+import 'processingpagetest.dart';
+import 'package:page_transition/page_transition.dart';
 
 class CreateStoryWithAI extends StatefulWidget {
   const CreateStoryWithAI({Key? key}) : super(key: key);
@@ -43,6 +44,7 @@ class _CreateStoryWithAIState extends State<CreateStoryWithAI> {
     if (_formKey.currentState!.validate()) {
       // Construct the prompt
       String prompt = "Write a kids' story with the following details:\n";
+      prompt += "Title: ${_storyTitleController.text}\n";
       prompt += "Kid's Name: ${_characterNameController.text}\n";
       prompt += "Gender: $_selectedGender\n"; // Add the selected gender to the prompt
       prompt += "Kid's Age: ${_characterAgeController.text}\n";
@@ -52,10 +54,12 @@ class _CreateStoryWithAIState extends State<CreateStoryWithAI> {
       }
 
       // Navigate to ProcessingPage and pass the prompt
+
       Navigator.push(
         context,
-        MaterialPageRoute(
-          builder: (context) => ProcessingPage(prompt: prompt),
+        PageTransition(
+          type: PageTransitionType.rightToLeft, // Slide transition from right to left
+          child: ProcessingPage(prompt: prompt,title:_storyTitleController.text ,),
         ),
       );
     }
@@ -97,6 +101,7 @@ class _CreateStoryWithAIState extends State<CreateStoryWithAI> {
   Widget _buildTextField(TextEditingController controller, String hintText) {
     return TextField(
       controller: controller,
+
       decoration: InputDecoration(
         hintText: hintText,
         filled: true,
@@ -115,6 +120,7 @@ class _CreateStoryWithAIState extends State<CreateStoryWithAI> {
     return DropdownButtonFormField<String>(
       value: _selectedStoryType,
       decoration: InputDecoration(
+        labelText: 'Story Type',
         filled: true,
         fillColor: Colors.grey[200],
         border: OutlineInputBorder(
@@ -179,13 +185,14 @@ class _CreateStoryWithAIState extends State<CreateStoryWithAI> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: const Color(0xFF161825),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(Icons.arrow_back_ios_new,color: Colors.white,),
           onPressed: () {
             Navigator.pop(context);
           },
         ),
-        title: const Text('Kids Story Creator'),
+        title: const Text('Imagine Your Story',style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold),),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -252,7 +259,7 @@ class _CreateStoryWithAIState extends State<CreateStoryWithAI> {
                 child: ElevatedButton(
                   onPressed: _navigateToProcessingPage,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.cyan,
+                    backgroundColor: const Color(0xFF2E314E),
                     padding:
                     const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
                     textStyle: const TextStyle(fontSize: 18),
@@ -260,7 +267,7 @@ class _CreateStoryWithAIState extends State<CreateStoryWithAI> {
                       borderRadius: BorderRadius.circular(25),
                     ),
                   ),
-                  child: const Text('Create Story',
+                  child: const Text('Craft Story',
                       style: TextStyle(color: Colors.white)),
                 ),
               ),

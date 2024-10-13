@@ -7,12 +7,17 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:838703040242:android:b4abc14a19392ac500326b",
+        "mobilesdk_app_id": "1:838703040242:android:b22e2c946aae918d00326b",
         "android_client_info": {
-          "package_name": "com.example.craftastory.craft_a_story"
+          "package_name": "com.craftastory.craft_a_story"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "838703040242-23kplok33bso32dinoria7i7o3mqehnj.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyD-V3PAgNee5OpnDND9SDK08D4075V-1Mk"
@@ -20,7 +25,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "838703040242-23kplok33bso32dinoria7i7o3mqehnj.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

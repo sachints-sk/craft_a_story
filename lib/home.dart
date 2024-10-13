@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'home_tab.dart'; // Import your tab pages
-import 'create_tab.dart';
+import 'mystories_tab.dart';
 import 'explore_tab.dart';
 import 'profile_tab.dart';
 
@@ -34,16 +34,26 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0; // Index of the currently selected tab
 
-  // List of pages to display for each tab
-  final List<Widget> _pages = [
-     CraftAStoryAppHome(),
-    const CreateTab(),
-    const ExploreTab(),
-    const ProfileTab(),
-  ];
+
+
+
+  // Callback function to change the selected tab index
+  void _onTabSelected(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+    final List<Widget> _pages = [
+      CraftAStoryHome(onTabSelected: _onTabSelected),
+      const MyStoriesPage(),
+      const ExploreTab(),
+      const ProfileTab(),
+    ];
+
+
     return Scaffold(
 
       body: _pages[_selectedIndex], // Display the selected tab's content
@@ -62,16 +72,16 @@ class _MainScreenState extends State<MainScreen> {
             label: 'Home',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.create),
-            label: 'Create',
+            icon: Icon(Icons.book),
+            label: 'My Stories',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.explore),
-            label: 'Explore',
+            label: 'Explore ',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Profile',
+            icon: Icon(Icons.settings),
+            label: 'Settings',
           ),
         ],
       ),

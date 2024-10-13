@@ -16,11 +16,14 @@ import 'package:image_gallery_saver/image_gallery_saver.dart';
 import 'package:chewie/chewie.dart';
 import 'dart:async'; // For Timer
 import 'package:lottie/lottie.dart';
+import 'package:page_transition/page_transition.dart';
+import 'newvideoplayer.dart';
 
 class ProcessingPage extends StatefulWidget {
   final String prompt; // Receive the prompt
+  final String title;
 
-  const ProcessingPage({Key? key, required this.prompt}) : super(key: key);
+  const ProcessingPage({Key? key, required this.prompt,required this.title}) : super(key: key);
 
   @override
   State<ProcessingPage> createState() => _ProcessingPageState();
@@ -41,6 +44,7 @@ class _ProcessingPageState extends State<ProcessingPage> {
   String _statusText2 = "audio not generated!";
   String? _accessToken;
   String videoPath = "";
+  String coverImageUrl="";
   int _scenelength = 0;
   Duration _audioDuration = Duration.zero;
   double _loadingProgress = 0.0; // Track loading progress (0.0 to 1.0)
@@ -50,7 +54,7 @@ class _ProcessingPageState extends State<ProcessingPage> {
   @override
   void initState() {
     super.initState();
-  //  _processStory(); // Start processing the story as soon as the page loads
+      _processStory(); // Start processing the story as soon as the page loads
   }
 
   @override
@@ -63,36 +67,77 @@ class _ProcessingPageState extends State<ProcessingPage> {
   // Main function to handle all the processing steps
   Future<void> _processStory() async {
     try {
+      // 1. Clear old images
       await _clearOldImages();
-      // 1. Generate the Story
-      String story = await _generateStoryText(widget.prompt);
+      _timer = await Timer.periodic(const Duration(milliseconds: 50), (timer) {
+        setState(() {
+          _loadingProgress += 0.01; // Increase progress by 1% every 50ms
+          if (_loadingProgress >= 0.02) {
+            _timer?.cancel(); // Stop the timer when progress reaches 100%
+            // You can navigate to the next screen or perform other actions here
+          }
+        });
+      });
 
-      // 2. Get Character Descriptions
+      // 2. Generate the Story
+      String story = await _generateStoryText(widget.prompt);
+      _timer =await Timer.periodic(const Duration(milliseconds: 50), (timer) {
+        setState(() {
+          _loadingProgress += 0.01; // Increase progress by 1% every 50ms
+          if (_loadingProgress >= 0.1) {
+            _timer?.cancel(); // Stop the timer when progress reaches 100%
+            // You can navigate to the next screen or perform other actions here
+          }
+        });
+      });
+      // 3. Get Character Descriptions
       final characterDescriptions = await _getCharacterDescriptions(
           story) as List<String>;
 
-      // 3. Generate Scenes (call the function here)
+      _timer =await  Timer.periodic(const Duration(milliseconds: 50), (timer) {
+        setState(() {
+          _loadingProgress += 0.01; // Increase progress by 1% every 50ms
+          if (_loadingProgress >= 0.2) {
+            _timer?.cancel(); // Stop the timer when progress reaches 100%
+            // You can navigate to the next screen or perform other actions here
+          }
+        });
+      });
+
+      // 4. Generate Scenes (call the function here)
       List<Map<String, dynamic>> scenes = await _generateScenes(story);
       print("Generated Scenes: $scenes");
 
 
-      // 4. Combine Scenes and Character Descriptions
-      scenes = _appendCharacterDescriptions(scenes, characterDescriptions);
-
-      _scenelength = scenes.length;
-      setState(() {
-        _statusText = "generating prompts";
+      // 5. Combine Scenes and Character Descriptions
+      scenes = await _appendCharacterDescriptions(scenes, characterDescriptions);
+      _timer =await Timer.periodic(const Duration(milliseconds: 50), (timer) {
+        setState(() {
+          _loadingProgress += 0.01; // Increase progress by 1% every 50ms
+          if (_loadingProgress >= 0.35) {
+            _timer?.cancel(); // Stop the timer when progress reaches 100%
+            // You can navigate to the next screen or perform other actions here
+          }
+        });
       });
+      _scenelength = scenes.length;
+
+      // 5. Generate Cover Image
+      coverImageUrl = await _generateCoverImage(scenes) ?? '';// Make coverImageUrl nullable
+      print("Cover image URL: $coverImageUrl");
+
 
 
       setState(() {
-        _statusText = "generating images)";
+        _statusText = "Designing visuals...";
       });
 
       // 6. Generate Images
       final imageUrls = await _generateImagesFromPrompts(scenes);
+
+
       setState(() {
-        _statusText = "generating audio)";
+        _statusText = "Crafting the soundtrack...";
       });
       await _speakText(story);
       if (audioContent == null) { // Check if audio generation was successful
@@ -101,31 +146,50 @@ class _ProcessingPageState extends State<ProcessingPage> {
         });
         return;
       }
+      _timer = Timer.periodic(const Duration(milliseconds: 50), (timer) {
+        setState(() {
+          _loadingProgress += 0.01; // Increase progress by 1% every 50ms
+          if (_loadingProgress >= 0.7) {
+            _timer?.cancel(); // Stop the timer when progress reaches 100%
+            // You can navigate to the next screen or perform other actions here
+          }
+        });
+      });
       setState(() {
-        _statusText = "Creating video...";
+        _statusText = "Bringing your video to life ...";
       });
 
-
+      //7. create video
       await _createVideoFromImages(imageUrls, audioContent!);
-      // 3. Generate Image Prompts (using characterDescriptions)
-      // final imagePrompts = _generateImagePrompts(story, characterDescriptions);
 
-      // 4. Generate Images (replace with your image generation API calls)
-      // final imageUrls = await _generateImages(imagePrompts);
+      _timer = Timer.periodic(const Duration(milliseconds: 50), (timer) {
+        setState(() {
+          _loadingProgress += 0.01; // Increase progress by 1% every 50ms
+          if (_loadingProgress >= 1) {
+            _timer?.cancel(); // Stop the timer when progress reaches 100%
+            // You can navigate to the next screen or perform other actions here
+          }
+        });
+      });
+        setState(() {
+          _statusText = "Story created! Ready to play";
+        });
 
-      // 5. Generate Audio (using your existing TTS code)
-      // final audioContent = await _generateAudio(story);
 
-      // 6. Create Video
-      // videoPath = await _createVideo(imageUrls, audioContent);
+      Navigator.push(
+        context,
+        PageTransition(
+          type: PageTransitionType.rightToLeft, // Slide transition from right to left
+          child: NewVideoPlayer(
+            videoPath: videoPath!,
+            title: widget.title,
+            description: story,
+            coverurl: coverImageUrl,
+          ),
+        ),
+      );
 
-      // 7. Initialize the video player
-      //  _videoPlayerController = VideoPlayerController.file(File(videoPath!));
-      //  await _videoPlayerController!.initialize();
 
-      //  setState(() {
-      //    _statusText = "Story created! Ready to play";
-      //  });
     } catch (e) {
       print('Error during processing: $e');
       setState(() {
@@ -155,6 +219,33 @@ class _ProcessingPageState extends State<ProcessingPage> {
     }
   }
 
+  Future<String?> _generateCoverImage(List<Map<String, dynamic>> scenes) async {
+    if (scenes.isEmpty) {
+      print("No scenes available to generate a cover image.");
+      return null;
+    }
+
+    String prompt = scenes[0]['scene']; // Use the first scene as the prompt
+
+    // Make the API call to generate the cover image
+    final output = await fal.subscribe("fal-ai/flux/schnell", input: {
+      "prompt": prompt,
+      "image_size": "landscape_16_9", // Set landscape aspect ratio
+      "num_inference_steps": 4,
+      "num_images": 1,
+      "enable_safety_checker": false
+    }, logs: true, webhookUrl: "https://optional.webhook.url/for/results",
+        onQueueUpdate: (update) {
+          print(update);
+        });
+
+    final images = output.data?["images"];
+    if (images != null && images.isNotEmpty && images is List) {
+      return images[0]["url"]; // Return the cover image URL
+    } else {
+      return null;
+    }
+  }
 
   Future<void> _createVideoFromImages(List<String> imageUrls,
       String audioData) async {
@@ -179,6 +270,10 @@ class _ProcessingPageState extends State<ProcessingPage> {
             final encodedImage = img.encodeJpg(decodedImage);
             await imageFile.writeAsBytes(encodedImage);
             imagePaths.add(imageFile.path);
+            setState(() {
+              _loadingProgress += (0.25/_scenelength); // Increase progress by 1% every 50ms
+
+            });
           }
         } else {
           print('Failed to download image: ${response.statusCode}');
@@ -191,7 +286,7 @@ class _ProcessingPageState extends State<ProcessingPage> {
       // 4. Create the video using ffmpeg
       videoPath = '${tempDir.path}/story_video.mp4';
       double framerate = 1 / (_audioDuration.inSeconds > 0 ? _audioDuration.inSeconds : _scenelength);
-      double imageDuration =1/(( _audioDuration.inSeconds / imageUrls.length)+1);
+      double imageDuration =1/(( _audioDuration.inSeconds / imageUrls.length)+1.5);
       print('Frame Rate $framerate');
       final arguments = [
         '-framerate',
@@ -238,15 +333,7 @@ class _ProcessingPageState extends State<ProcessingPage> {
       // _statusText = 'Video created successfully.';  (No need to update here)
 
       // Initialize the video player controller
-      if (videoPath != null) {
-        _videoPlayerController = VideoPlayerController.file(
-            File(videoPath)); // videoPath is not null here
-        await _videoPlayerController!.initialize();
-        // ... (Rest of the video player setup)
-      } else {
-        print("Error: videoPath is null, cannot initialize video player.");
-        // Handle the error (e.g., update _statusText to show an error message)
-      }
+
 
       // Initialize ChewieController
       _chewieController = ChewieController(
@@ -271,7 +358,7 @@ class _ProcessingPageState extends State<ProcessingPage> {
 
   Future<void> _speakText(String text) async {
     setState(() {
-      _statusText = "Generating audio...";
+      _statusText = "Crafting the soundtrack ...";
     });
 
     final url = Uri.parse(
@@ -327,11 +414,16 @@ class _ProcessingPageState extends State<ProcessingPage> {
       }, logs: true, webhookUrl: "https://optional.webhook.url/for/results",
           onQueueUpdate: (update) {
             print(update);
+
           });
 
       final images = output.data?["images"];
       if (images != null && images.isNotEmpty && images is List) {
         imageUrls.add(images[0]["url"]);
+        setState(() {
+          _loadingProgress += (0.25/_scenelength); // Increase progress by 1% every 50ms
+
+        });
       }
     }
     return imageUrls;
@@ -371,7 +463,7 @@ class _ProcessingPageState extends State<ProcessingPage> {
   // Function to generate the story text using Gemini
   Future<String> _generateStoryText(String prompt) async {
     setState(() {
-      _statusText = "Generating story...";
+      _statusText = "Crafting your tale ....";
     });
     try {
       final response = await http.post(
@@ -396,7 +488,7 @@ class _ProcessingPageState extends State<ProcessingPage> {
   // Function to generate scenes using your Cloud Function
   Future<List<Map<String, dynamic>>> _generateScenes(String prompt) async {
     setState(() {
-      _statusText = "Generating Scenes...";
+      _statusText = "Setting the stage ...";
     });
     try {
       final response = await http.post(
@@ -438,7 +530,7 @@ class _ProcessingPageState extends State<ProcessingPage> {
   // Function to get character descriptions from your Cloud Function
   Future<List<dynamic>> _getCharacterDescriptions(String story) async {
     setState(() {
-      _statusText = "Getting Character Descriptions...";
+      _statusText = "Shaping the heroes ...";
     });
 
     try {
@@ -497,46 +589,81 @@ class _ProcessingPageState extends State<ProcessingPage> {
   }
 
 
+  // Function to simulate a loading process
+  void _startLoadingSimulation() {
+    _timer = Timer.periodic(const Duration(milliseconds: 50), (timer) {
+      setState(() {
+        _loadingProgress += 0.01; // Increase progress by 1% every 50ms
+        if (_loadingProgress >= 1.0) {
+          _timer?.cancel(); // Stop the timer when progress reaches 100%
+          // You can navigate to the next screen or perform other actions here
+        }
+      });
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Processing..."),
-      ),
+      backgroundColor: Colors.white,
       body: Center(
-        child: SingleChildScrollView( // This allows the content to scroll if it overflows
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 20),
-              Text(_statusText),
-              if (_videoPlayerController != null &&
-                  _videoPlayerController!.value.isInitialized) ...[
-                SizedBox(height: 20),
-                AspectRatio(
-                  aspectRatio: _videoPlayerController!.value.aspectRatio,
-                  child: VideoPlayer(_videoPlayerController!),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    setState(() {
-                      _videoPlayerController!.value.isPlaying
-                          ? _videoPlayerController!.pause()
-                          : _videoPlayerController!.play();
-                    });
-                  },
-                  child: Icon(
-                    _videoPlayerController!.value.isPlaying
-                        ? Icons.pause
-                        : Icons.play_arrow,
+              // Blue circle with icons (replace with your actual icons)
+              Container(
+                width: 170,
+                height: 170,
+
+                child: Center( // Center the icon
+                  child:  Lottie.asset(
+                    'assets/aianimation.json',  // AI animation
+                    width: 170,
+                    height: 170,
                   ),
                 ),
-                ElevatedButton(
-                  onPressed: _saveVideoToGallery,
-                  child: const Text("Download Video"),
+              ),
+              const SizedBox(height: 10),
+              const Text(
+                'Generating Your Story',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.black,
                 ),
+              ),
+              const SizedBox(height: 10),
+              const Text(
+                'Please wait while we craft a perfect tale for you.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey,
+                ),
+              ),
+              const SizedBox(height: 30),
+              // Linear Progress Indicator
+              LinearProgressIndicator(
+                value: _loadingProgress, // Use the loading progress variable
+                backgroundColor: Colors.grey[300],
+                valueColor: const AlwaysStoppedAnimation<Color>(Colors.blueGrey), // Customize color
+                minHeight: 8, // Set the height of the progress bar
+              ),
+              const SizedBox(height: 20),
+
+              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [Text(
+                  _statusText,
+                style: const TextStyle(color: Colors.grey),
+              ),Text(
+        '${(_loadingProgress * 100).toInt()}%', // Display percentage
+        style: const TextStyle(color: Colors.grey,),
+      ),
               ],
+              )
+
             ],
           ),
         ),
