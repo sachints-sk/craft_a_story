@@ -100,11 +100,10 @@ class CraftAStoryHome extends StatelessWidget {
                 child: Row(
                   children: [
                     SizedBox(
-                      width: 140,
-                      height: 140,
-                      child: Image.asset(
-                        'assets/wizard1.png',
-                        fit: BoxFit.cover,
+                      width: 150,
+                      height: 150,
+                      child: Lottie.asset(
+                        'assets/book2.json',  // AI animation
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -295,7 +294,7 @@ class CraftAStoryHome extends StatelessWidget {
       context: context,
       builder: (BuildContext context) {
         return GiffyDialog.lottie( // Use GiffyDialog.lottie() constructor
-           Lottie.asset('assets/coins.json', width: 170,
+           Lottie.asset('assets/coinswallet.json', width: 170,
              height: 170,), // Your Lottie animation
           title: Text(
             'Your Creative Spark!',
@@ -307,6 +306,7 @@ class CraftAStoryHome extends StatelessWidget {
             ),
           ),
           content: Column( // Use a Column for the description
+            mainAxisSize: MainAxisSize.min,
             children: [
               Text(
                 'You have $credits credits to craft amazing stories.',

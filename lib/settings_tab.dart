@@ -3,6 +3,8 @@ import 'package:lottie/lottie.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'buycredits.dart';
 import 'package:page_transition/page_transition.dart';
+import 'Subscription.dart';
+import 'languagePage.dart';
 
 class SettingsTab extends StatefulWidget {
   const SettingsTab({Key? key}) : super(key: key);
@@ -177,7 +179,16 @@ centerTitle: true,
             context,
             PageTransition(
               type: PageTransitionType.rightToLeft,
-              child:  PurchaseCreditsPage(),
+              child:  LanguageAudioPage(),
+            ),
+          ); // Call logout function on tap
+        }
+        if (label == 'Subscriptions') {
+          Navigator.push(
+            context,
+            PageTransition(
+              type: PageTransitionType.rightToLeft,
+              child:  SubscriptionPage(),
             ),
           ); // Call logout function on tap
         }

@@ -24,6 +24,7 @@ class CraftAStoryApp extends StatelessWidget {
     return MaterialApp(
       title: 'Craft-a-Story',
       theme: ThemeData(
+        useMaterial3: true,
         primaryColor: Colors.blue, // Set your primary color
         scaffoldBackgroundColor: Colors.white, // Set the background color
       ),

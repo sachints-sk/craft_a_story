@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:lottie/lottie.dart';
 import 'viewsavedstorypage.dart';
 import 'story_data.dart';
 
@@ -17,32 +18,37 @@ class _MyStoriesPageState extends State<MyStoriesPage> {
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
-        title: const Text('My Stories',
-            style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+        title: const Text(
+          'My Stories',
+          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+        ),
       ),
-      body: Container(
-          padding: const EdgeInsets.only(left: 16, right: 16),
-          child: SingleChildScrollView(
-            child: Column(
-              children: [
-                TextField(
-                  decoration: InputDecoration(
-                    hintText: 'Search here',
-                    filled: true,
-                    fillColor: Colors.grey[200],
-                    prefixIcon: Icon(Icons.search),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 1),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(30)),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
-                ),
-                SizedBox(height: 10),
-                _buildStoryGrid(),
-              ],
-            ),
-          )),
+      body: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+        child: Column(
+          children: [
+            _buildSearchBar(),
+            const SizedBox(height: 10),
+            Expanded(child: _buildStoryGrid()),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSearchBar() {
+    return TextField(
+      decoration: InputDecoration(
+        hintText: 'Search here',
+        filled: true,
+        fillColor: Colors.grey[200],
+        prefixIcon: const Icon(Icons.search),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(30),
+          borderSide: BorderSide.none,
+        ),
+      ),
     );
   }
 
@@ -63,7 +69,9 @@ class _MyStoriesPageState extends State<MyStoriesPage> {
         }
 
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return Center(
+            child: Lottie.asset('assets/loadingplaceholder.json', width: 150, height: 150),
+          );
         }
 
         if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
@@ -79,18 +87,15 @@ class _MyStoriesPageState extends State<MyStoriesPage> {
           }).toList();
 
           return GridView.builder(
-            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-              maxCrossAxisExtent: 200,
-              mainAxisSpacing: 1.0,
-              crossAxisSpacing: 16.0,
-              childAspectRatio: 0.85,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 5,
+              mainAxisSpacing: 8,
+              childAspectRatio: 0.8,
             ),
             itemCount: stories.length,
-            shrinkWrap: true,
-            physics: const ScrollPhysics(),
             itemBuilder: (context, index) {
-              return _buildStoryCard(stories[index],
-                  snapshot.data!.docs[index].data() as Map<String, dynamic>);
+              return _buildStoryCard(stories[index]);
             },
           );
         } else {
@@ -100,39 +105,27 @@ class _MyStoriesPageState extends State<MyStoriesPage> {
     );
   }
 
-  Widget _buildStoryCard(StoryData story, Map<String, dynamic> data) {
+  Widget _buildStoryCard(StoryData story) {
     return GestureDetector(
       onTap: () {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => ViewSavedStoryPage(storyData: story), // Pass the StoryData
+            builder: (context) => ViewSavedStoryPage(storyData: story),
           ),
         );
       },
       child: Card(
-        clipBehavior: Clip.antiAlias,
-        color: Colors.white.withOpacity(0.8),
-        shadowColor: Colors.black,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: Colors.white.withOpacity(0.2)),
         ),
+        elevation: 3,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisSize: MainAxisSize.min,
           children: [
-            Stack(
-              children: [
-                data['coverImageUrl'] != null
-                    ? Image.network(data['coverImageUrl'],
-                        height: 140, fit: BoxFit.cover)
-                    : Image.asset('assets/placeholderimage.png',
-                        height: 140, fit: BoxFit.cover),
-              ],
-            ),
+            _buildCoverImage(story.coverImageUrl),
             Padding(
-              padding: const EdgeInsets.all(12.0),
+              padding: const EdgeInsets.all(8.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -143,7 +136,34 @@ class _MyStoriesPageState extends State<MyStoriesPage> {
                       fontSize: 14,
                       color: Colors.black,
                     ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
+                  const SizedBox(height: 6), // Add some space between title and language/voice
+                  // Display language and voice information separately
+                  Row(
+                    children: [
+                      const Icon(Icons.language, size: 16, color: Colors.grey),
+                      const SizedBox(width: 4),
+                      Text(
+                        "English (India)",
+                        style: const TextStyle(fontSize: 12, color: Colors.grey),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4), // Add some space between language and voice
+                  Row(
+                    children: [
+                      const Icon(Icons.graphic_eq, size: 16, color: Colors.grey),
+                      const SizedBox(width: 4),
+                      Text(
+                        "en-US-Standard-A",
+                        style: const TextStyle(fontSize: 12, color: Colors.grey),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  // ... (rest of your Column children) ...
                 ],
               ),
             ),
@@ -152,5 +172,43 @@ class _MyStoriesPageState extends State<MyStoriesPage> {
       ),
     );
   }
-}
 
+
+  Widget _buildCoverImage(String? imageUrl) {
+    if (imageUrl != null && imageUrl.isNotEmpty) {
+      return ClipRRect(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+        child: Image.network(
+          imageUrl,
+          height: 140,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return _buildPlaceholderImage();
+          },
+          loadingBuilder: (context, child, loadingProgress) {
+            if (loadingProgress == null) {
+              return child;
+            }
+            return SizedBox(
+              height: 140,
+              child: Lottie.asset('assets/loadingplaceholder.json', ),
+            );
+          },
+        ),
+      );
+    } else {
+      return _buildPlaceholderImage();
+    }
+  }
+
+  Widget _buildPlaceholderImage() {
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+      child: Image.asset(
+        'assets/placeholderimage.png',
+        height: 140,
+        fit: BoxFit.cover,
+      ),
+    );
+  }
+}
