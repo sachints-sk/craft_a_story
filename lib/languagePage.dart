@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:lottie/lottie.dart';
+import 'processingpagetest.dart';
+import 'package:page_transition/page_transition.dart';
 
 enum UserMembership { normal, litePremium, proPremium }
 
 
 class LanguageAudioPage extends StatefulWidget {
-  const LanguageAudioPage({Key? key}) : super(key: key);
+  final String prompt; // Receive the prompt
+  final String title;
+
+
+  const LanguageAudioPage({Key? key, required this.prompt,required this.title,}) : super(key: key);
 
   @override
   State<LanguageAudioPage> createState() => _LanguageAudioPageState();
@@ -244,7 +250,14 @@ class _LanguageAudioPageState extends State<LanguageAudioPage> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-          title: const Text('Language & Audio'),
+
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new,color: Colors.black,),
+            onPressed: () {
+              Navigator.pop(context);
+            },
+          ),
+          title: const Text('Select Audio & Language',style: TextStyle(color: Colors.black,fontWeight: FontWeight.bold),),
         ),
         body: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -253,22 +266,13 @@ class _LanguageAudioPageState extends State<LanguageAudioPage> {
             children: [
 
               SizedBox(
-                height: 200,
+                height: 250,
                 child: Lottie.asset('assets/language2.json'),
               ),
 
               const SizedBox(height: 20),
 
-              // Heading
-              const Text(
-                'Choose the Story Language and Voice',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 10),
+
 
               // Subheading
               const Text(
@@ -369,7 +373,7 @@ class _LanguageAudioPageState extends State<LanguageAudioPage> {
                 Padding(
                   padding: const EdgeInsets.only(top: 8.0),
                   child: Text(
-                    'Upgrade to Pro Premium to explore more voice selections.',
+                    'Upgrade to Pro Premium to explore premium voice selections.',
                     textAlign: TextAlign.center,
                     style: TextStyle(color: Colors.grey, fontSize: 14),
                   ),
@@ -381,10 +385,13 @@ class _LanguageAudioPageState extends State<LanguageAudioPage> {
                 onPressed: () {
                   if (_selectedLanguage != null && _selectedVoice != null) {
                     // Pass selected language and voice to next screen or function
-                    Navigator.pop(context, {
-                      'language': _selectedLanguage,
-                      'voice': _selectedVoice,
-                    });
+                    Navigator.push(
+                      context,
+                      PageTransition(
+                        type: PageTransitionType.rightToLeft,
+                        child: ProcessingPage(prompt: widget.prompt, title: widget.title,language :_selectedLanguage!,voice: _selectedVoice!),
+                      ),
+                    );
                   } else {
                     // Show a message asking the user to select both language and voice
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -393,7 +400,11 @@ class _LanguageAudioPageState extends State<LanguageAudioPage> {
                       ),
                     );
                   }
-                },
+                },style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                textStyle: const TextStyle(fontSize: 18),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+              ),
                 child: const Text('Continue'),
               ),
 

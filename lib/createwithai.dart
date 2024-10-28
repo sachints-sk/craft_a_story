@@ -6,6 +6,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart'; // For storage permission
 import 'processingpagetest.dart';
 import 'package:page_transition/page_transition.dart';
+import 'languagePage.dart';
 
 class CreateStoryWithAI extends StatefulWidget {
   const CreateStoryWithAI({Key? key}) : super(key: key);
@@ -24,175 +25,166 @@ class _CreateStoryWithAIState extends State<CreateStoryWithAI> {
   final TextEditingController _storySettingController = TextEditingController();
 
   String? _selectedStoryType;
-  String? _selectedGender; // Add variable to store selected gender
+  String _selectedGender='Boy';
+  bool _submitted = false; // Flag to track form submission attempt
 
   final List<String> _genders = ['Boy', 'Girl'];
-
-  // List of story types for the dropdown
   final List<String> _storyTypes = [
-    'Adventure',
-    'Fantasy',
-    'Sci-Fi',
-    'Mystery',
-    'Humorous',
+    'Adventure', 'Fantasy', 'Sci-Fi', 'Mystery', 'Humorous',
   ];
 
-  String _generatedStory = '';
   bool _isLoading = false;
 
   Future<void> _navigateToProcessingPage() async {
-    if (_formKey.currentState!.validate()) {
-      // Construct the prompt
+    setState(() {
+      _submitted = true; // Mark form as submitted when the button is clicked
+    });
+
+    if (_formKey.currentState!.validate() && _selectedStoryType != null && _selectedGender != null) {
       String prompt = "Write a kids' story with the following details:\n";
       prompt += "Title: ${_storyTitleController.text}\n";
       prompt += "Kid's Name: ${_characterNameController.text}\n";
-      prompt += "Gender: $_selectedGender\n"; // Add the selected gender to the prompt
+      prompt += "Gender: $_selectedGender\n";
       prompt += "Kid's Age: ${_characterAgeController.text}\n";
       prompt += "Story Mode: $_selectedStoryType\n";
       if (_storySettingController.text.isNotEmpty) {
-        prompt += "Starting Point: ${_storySettingController.text}\n";
+        prompt += "Story Setting: ${_storySettingController.text}\n";
       }
-
-      // Navigate to ProcessingPage and pass the prompt
 
       Navigator.push(
         context,
         PageTransition(
-          type: PageTransitionType.rightToLeft, // Slide transition from right to left
-          child: ProcessingPage(prompt: prompt,title:_storyTitleController.text ,),
+          type: PageTransitionType.rightToLeft,
+          child: LanguageAudioPage(prompt: prompt, title: _storyTitleController.text),
         ),
       );
     }
   }
-  // Function to save the story to a local file
-  Future<void> _saveStoryToLocalFile(String storyContent) async {
-    // Request storage permission (Android)
-    if (Platform.isAndroid) {
-      var status = await Permission.storage.status;
-      if (!status.isGranted) {
-        status = await Permission.storage.request();
-        if (!status.isGranted) {
-          // Handle permission denial
-          print('Storage permission denied.');
-          return;
-        }
-      }
-    }
 
-    try {
-      final directory = await getApplicationDocumentsDirectory();
-      final file = File('${directory.path}/generated_story.txt');
-      await file.writeAsString(storyContent);
-      print('Story saved to: ${file.path}');
-      // Optional: Show a success message
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Story saved!')),
-      );
-    } catch (e) {
-      print('Error saving story to file: $e');
-      // Optional: Show an error message
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to save story.')),
-      );
-    }
-  }
-
-  // Helper function to build text fields
-  Widget _buildTextField(TextEditingController controller, String hintText) {
-    return TextField(
+  // TextFormField helper with validation
+  Widget _buildTextFormField(TextEditingController controller, String hintText, String errorMessage) {
+    return TextFormField(
       controller: controller,
-
+      validator: (value) => value == null || value.isEmpty ? errorMessage : null,
       decoration: InputDecoration(
         hintText: hintText,
-        filled: true,
-        fillColor: Colors.grey[200],
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10.0),
-          borderSide: BorderSide.none,
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       ),
     );
   }
 
-  // Helper function to build the story type dropdown
-  Widget _buildDropdown() {
-    return DropdownButtonFormField<String>(
-      value: _selectedStoryType,
-      decoration: InputDecoration(
-        labelText: 'Story Type',
-        filled: true,
-        fillColor: Colors.grey[200],
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10.0),
-          borderSide: BorderSide.none,
+  Widget _buildStoryTypeChips() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.symmetric(vertical: 8.0),
+          child: Text(
+            'Story Type',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      ),
-      items: _storyTypes.map((String value) {
-        return DropdownMenuItem<String>(
-          value: value,
-          child: Text(value),
-        );
-      }).toList(),
-      onChanged: (String? newValue) {
-        setState(() {
-          _selectedStoryType = newValue;
-        });
-      },
-      validator: (value) {
-        if (value == null || value.isEmpty) {
-          return 'Please select a story type';
-        }
-        return null;
-      },
+        Wrap(
+          spacing: 8.0,
+          runSpacing: 4.0,
+          children: _storyTypes.map((String storyType) {
+            return ChoiceChip(
+              label: Text(storyType),
+              selected: _selectedStoryType == storyType,
+              onSelected: (bool selected) {
+                setState(() {
+                  _selectedStoryType = selected ? storyType : null;
+                });
+              },
+              selectedColor: Theme.of(context).colorScheme.primaryContainer,
+              labelStyle: TextStyle(
+                color: _selectedStoryType == storyType
+                    ? Theme.of(context).colorScheme.onPrimaryContainer
+                    : Theme.of(context).colorScheme.onSurface,
+              ),
+            );
+          }).toList(),
+        ),
+        if (_submitted && _selectedStoryType == null)
+          const Padding(
+            padding: EdgeInsets.only(top: 8.0),
+            child: Text(
+              'Please select a story type',
+              style: TextStyle(color: Colors.red),
+            ),
+          ),
+      ],
     );
   }
-  // Helper function to build the gender dropdown
-  Widget _buildGenderDropdown() {
-    return DropdownButtonFormField<String>(
-      value: _selectedGender,
-      decoration: InputDecoration(
-        labelText: 'Character Gender', // Label for the dropdown
-        filled: true,
-        fillColor: Colors.grey[200],
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10.0),
-          borderSide: BorderSide.none,
+
+  Widget _buildGenderSegmentedButton() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.symmetric(vertical: 8.0),
+          child: Text(
+            'Character Gender',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      ),
-      items: _genders.map((String value) {
-        return DropdownMenuItem<String>(
-          value: value,
-          child: Text(value),
-        );
-      }).toList(),
-      onChanged: (String? newValue) {
-        setState(() {
-          _selectedGender = newValue;
-        });
-      },
-      validator: (value) {
-        if (value == null || value.isEmpty) {
-          return 'Please select a gender';
-        }
-        return null;
-      },
+        SizedBox(
+          width: double.infinity,
+          child: SegmentedButton<String>(
+            segments: const <ButtonSegment<String>>[
+              ButtonSegment<String>(
+                value: 'Boy',
+                label: Text('Boy'),
+                icon: Icon(Icons.male),
+              ),
+              ButtonSegment<String>(
+                value: 'Girl',
+                label: Text('Girl'),
+                icon: Icon(Icons.female),
+              ),
+            ],
+            selected: {_selectedGender },
+            onSelectionChanged: (Set<String> newSelection) {
+              setState(() {
+                _selectedGender = newSelection.first;
+              });
+            },
+            style: ButtonStyle(
+              padding: MaterialStateProperty.all(
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              ),
+              shape: MaterialStateProperty.all(
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
+              ),
+            ),
+          ),
+        ),
+        if (_submitted && _selectedGender == null)
+          const Padding(
+            padding: EdgeInsets.only(top: 8.0),
+            child: Text(
+              'Please select a gender',
+              style: TextStyle(color: Colors.red),
+            ),
+          ),
+      ],
     );
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new,color: Colors.black,),
+          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black),
           onPressed: () {
             Navigator.pop(context);
           },
         ),
-        title: const Text('Imagine Your Story',style: TextStyle(color: Colors.black,fontWeight: FontWeight.bold),),
+        title: const Text('Imagine Your Story', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -201,77 +193,46 @@ class _CreateStoryWithAIState extends State<CreateStoryWithAI> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Story Title Input
-              const Text(
-                'Story Title',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
+              const Text('Story Title', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
-              _buildTextField(_storyTitleController, 'The Magic Forest'),
+              _buildTextFormField(_storyTitleController, 'The Magic Forest', 'Please enter a story title'),
 
-              // Main Character Name Input
               const SizedBox(height: 16),
-              const Text(
-                'Main Character Name',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
+              const Text('Main Character Name', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
-              _buildTextField(_characterNameController, 'Lily'),
+              _buildTextFormField(_characterNameController, 'Lily', 'Please enter the main character name'),
 
-              const SizedBox(height: 16), // Add some spacing
-
-              // Gender Dropdown
-              const Text(
-                'Character Gender',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              _buildGenderDropdown(),// Story Type Dropdown
               const SizedBox(height: 16),
-              const Text(
-                'Story Type',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              _buildDropdown(),
+              _buildGenderSegmentedButton(),
 
-              // Character Age Input
               const SizedBox(height: 16),
-              const Text(
-                'Character Age',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
+              const Text('Character Age', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
-              _buildTextField(_characterAgeController, '8'),
+              _buildTextFormField(_characterAgeController, 'Age', 'Please enter the character age'),
 
-              // Story Setting Input
               const SizedBox(height: 16),
-              const Text(
-                'Story Setting',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
+              _buildStoryTypeChips(),
+
+              const SizedBox(height: 16),
+              const Text('Story Setting', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
-              _buildTextField(_storySettingController, 'A magical forest'),
+              _buildTextFormField(_storySettingController, 'A magical forest', 'Please enter a story setting'),
 
               const SizedBox(height: 32),
-              // Create Story Button
               Center(
-                child: ElevatedButton(
-                  onPressed: _navigateToProcessingPage,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF2E314E),
-                    padding:
-                    const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
-                    textStyle: const TextStyle(fontSize: 18),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(25),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _navigateToProcessingPage,
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      textStyle: const TextStyle(fontSize: 18),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
                     ),
+                    child: const Text('Continue', style: TextStyle(color: Colors.black)),
                   ),
-                  child: const Text('Craft Story',
-                      style: TextStyle(color: Colors.white)),
                 ),
               ),
-              const SizedBox(height: 20),
               if (_isLoading) const CircularProgressIndicator(),
             ],
           ),
@@ -281,24 +242,3 @@ class _CreateStoryWithAIState extends State<CreateStoryWithAI> {
   }
 }
 
-// Separate page to display the generated story
-class StoryDisplayPage extends StatelessWidget {
-  final String story;
-
-  const StoryDisplayPage({Key? key, required this.story}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Generated Story"),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
-          child: Text(story),
-        ),
-      ),
-    );
-  }
-}

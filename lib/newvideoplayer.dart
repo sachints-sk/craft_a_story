@@ -200,6 +200,8 @@ class _NewVideoPlayerState extends State<NewVideoPlayer> {
             Navigator.pop(context);
             Navigator.pop(context);
             Navigator.pop(context);
+            Navigator.pop(context);
+            Navigator.pop(context);
           },
         ),
         title: const Text('Crafted Story',style: TextStyle(color: Colors.black,fontWeight: FontWeight.bold),),

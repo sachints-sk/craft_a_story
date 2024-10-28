@@ -18,12 +18,16 @@ import 'dart:async'; // For Timer
 import 'package:lottie/lottie.dart';
 import 'package:page_transition/page_transition.dart';
 import 'newvideoplayer.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:just_audio/just_audio.dart';
 
 class ProcessingPage extends StatefulWidget {
   final String prompt; // Receive the prompt
   final String title;
+  final String language;
+  final String voice;
 
-  const ProcessingPage({Key? key, required this.prompt,required this.title}) : super(key: key);
+  const ProcessingPage({Key? key, required this.prompt,required this.title,required this.language,required this.voice}) : super(key: key);
 
   @override
   State<ProcessingPage> createState() => _ProcessingPageState();
@@ -49,12 +53,20 @@ class _ProcessingPageState extends State<ProcessingPage> {
   Duration _audioDuration = Duration.zero;
   double _loadingProgress = 0.0; // Track loading progress (0.0 to 1.0)
   Timer? _timer;
+  String translatedStory ="";
+
+
+      bool _isLoading = false;
+  bool _isAudioReady = false;
+  bool _isStoredAudioAvailable = false;
+  String? _storedAudioPath;
+  final user = FirebaseAuth.instance.currentUser;
 
 
   @override
   void initState() {
     super.initState();
-      _processStory(); // Start processing the story as soon as the page loads
+    _processStory(); // Start processing the story as soon as the page loads
   }
 
   @override
@@ -64,8 +76,15 @@ class _ProcessingPageState extends State<ProcessingPage> {
     super.dispose();
   }
 
+
+
+
+
+
+
   // Main function to handle all the processing steps
   Future<void> _processStory() async {
+
     try {
       // 1. Clear old images
       await _clearOldImages();
@@ -139,28 +158,60 @@ class _ProcessingPageState extends State<ProcessingPage> {
       setState(() {
         _statusText = "Crafting the soundtrack...";
       });
-      await _speakText(story);
-      if (audioContent == null) { // Check if audio generation was successful
-        setState(() {
-          _statusText = "Error generating audio. Cannot create video.";
-        });
-        return;
-      }
-      _timer = Timer.periodic(const Duration(milliseconds: 50), (timer) {
-        setState(() {
-          _loadingProgress += 0.01; // Increase progress by 1% every 50ms
-          if (_loadingProgress >= 0.7) {
-            _timer?.cancel(); // Stop the timer when progress reaches 100%
-            // You can navigate to the next screen or perform other actions here
-          }
-        });
-      });
-      setState(() {
-        _statusText = "Bringing your video to life ...";
-      });
 
-      //7. create video
-      await _createVideoFromImages(imageUrls, audioContent!);
+      if(widget.language=="en-US") {
+
+
+        await _speakText(story);
+        if (audioContent == null) { // Check if audio generation was successful
+          setState(() {
+            _statusText = "Error generating audio. Cannot create video.";
+          });
+          return;
+        }
+        _timer = Timer.periodic(const Duration(milliseconds: 50), (timer) {
+          setState(() {
+            _loadingProgress += 0.01; // Increase progress by 1% every 50ms
+            if (_loadingProgress >= 0.7) {
+              _timer?.cancel(); // Stop the timer when progress reaches 100%
+              // You can navigate to the next screen or perform other actions here
+            }
+          });
+        });
+        setState(() {
+          _statusText = "Bringing your video to life ...";
+        });
+
+        //7. create video
+        await _createVideoFromImages(imageUrls, audioContent!);
+
+
+      }else
+        {
+          await _speakTextTranslated(story);
+
+          _timer = Timer.periodic(const Duration(milliseconds: 50), (timer) {
+            setState(() {
+              _loadingProgress += 0.01; // Increase progress by 1% every 50ms
+              if (_loadingProgress >= 0.7) {
+                _timer?.cancel(); // Stop the timer when progress reaches 100%
+                // You can navigate to the next screen or perform other actions here
+              }
+            });
+          });
+          setState(() {
+            _statusText = "Bringing your video to life ...";
+          });
+
+          await _createVideoFromImagesTranslated(imageUrls);
+
+
+        }
+
+
+
+
+
 
       _timer = Timer.periodic(const Duration(milliseconds: 50), (timer) {
         setState(() {
@@ -176,18 +227,39 @@ class _ProcessingPageState extends State<ProcessingPage> {
         });
 
 
-      Navigator.push(
-        context,
-        PageTransition(
-          type: PageTransitionType.rightToLeft, // Slide transition from right to left
-          child: NewVideoPlayer(
-            videoPath: videoPath!,
-            title: widget.title,
-            description: story,
-            coverurl: coverImageUrl,
-          ),
-        ),
-      );
+
+        if(widget.language=="en-US"){
+          Navigator.push(
+            context,
+            PageTransition(
+              type: PageTransitionType.rightToLeft, // Slide transition from right to left
+              child: NewVideoPlayer(
+                videoPath: videoPath!,
+                title: widget.title,
+
+                description: story,
+                coverurl: coverImageUrl,
+              ),
+            ),
+          );
+        }else{
+          Navigator.push(
+            context,
+            PageTransition(
+              type: PageTransitionType.rightToLeft, // Slide transition from right to left
+              child: NewVideoPlayer(
+                videoPath: videoPath!,
+                title: widget.title,
+
+                description: translatedStory,
+                coverurl: coverImageUrl,
+              ),
+            ),
+          );
+        }
+
+
+
 
 
     } catch (e) {
@@ -195,6 +267,108 @@ class _ProcessingPageState extends State<ProcessingPage> {
       setState(() {
         _statusText = "Error: ${e.toString()}";
       });
+    }
+  }
+
+
+
+  Future<void> _speakTextTranslated(String text) async {
+
+    setState(() {
+      _statusText = "Generating audio...";
+      _isLoading = true;
+      _isAudioReady = false;
+    });
+
+    final url = Uri.parse('https://us-central1-adept-ethos-432515-v9.cloudfunctions.net/long-audio');
+    try {
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+
+          "text": text,
+          'userId': user?.uid,
+          "languageCode": widget.language,
+          "voiceName": widget.voice
+        }),
+      );
+
+      if (response.statusCode == 200) {
+
+        if (user != null) {
+          final data = jsonDecode(response.body);
+          translatedStory = data['translatedText'];
+
+          final String userId = user!.uid; // Safe to use here
+          // await _playAudioFromUrl(userId);
+          final audioUrl = 'https://storage.googleapis.com/craftastoryvoices/${userId}.wav';
+          final audioBytes = await _downloadAudio(audioUrl);
+          if (audioBytes != null) {
+
+            // Save audio bytes as a temporary file
+            final tempDir = await getTemporaryDirectory();
+            final audioFile1 = File('${tempDir.path}/audio.wav');
+            await audioFile1.writeAsBytes(audioBytes);
+
+            // Set the audio source to the saved file
+            await _audioPlayer.setFilePath(audioFile1.path);
+            // Get the audio duration
+            _audioDuration = _audioPlayer.duration ?? Duration.zero;
+            print("Audio duration: $_audioDuration");
+
+
+
+
+            final audioFile = File('${(await getTemporaryDirectory()).path}/audio.mp3');
+            await audioFile.writeAsBytes(audioBytes);
+            print('Audio saved to: ${audioFile.path}');
+            _storedAudioPath = audioFile.path;
+
+          } else {
+            throw Exception("Failed to download audio");
+          }
+        } else {
+          // Handle the case when the user is not logged in
+          setState(() {
+            _statusText = "User not logged in.";
+          });
+        }
+
+
+        setState(() {
+          _statusText = "Audio ready!";
+          _isAudioReady = true;
+        });
+         // Check if the audio was saved successfully
+      } else {
+        setState(() {
+          _statusText = "Error: ${response.statusCode}";
+        });
+        print('Error: ${response.body}');
+      }
+    } catch (e) {
+      setState(() {
+        _statusText = "Failed to generate audio.";
+        print('Error: $e');
+      });
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+
+  Future<Uint8List?> _downloadAudio(String audioUrl) async {
+    final response = await http.get(Uri.parse(audioUrl));
+    if (response.statusCode == 200) {
+      return response.bodyBytes;
+    } else {
+      print('Failed to download audio: ${response.statusCode}');
+      return null; // Return null if the download fails
     }
   }
 
@@ -326,22 +500,6 @@ class _ProcessingPageState extends State<ProcessingPage> {
       print('Video created at: $videoPath');
       // _statusText = 'Video created successfully.';  (No need to update here)
 
-      // Initialize the video player controller
-
-
-      // Initialize ChewieController
-      _chewieController = ChewieController(
-        videoPlayerController: _videoPlayerController!,
-        aspectRatio: 9 / 16,
-        autoPlay: true,
-        looping: false,
-      );
-
-      await _videoPlayerController!.initialize();
-
-      setState(() {
-        _statusText = "Video is ready! Tap to play.";
-      });
     } catch (e) {
       print('Error creating video: $e');
       setState(() {
@@ -349,6 +507,95 @@ class _ProcessingPageState extends State<ProcessingPage> {
       });
     }
   }
+
+
+  Future<void> _createVideoFromImagesTranslated(List<String> imageUrls) async {
+    try {
+      final FlutterFFmpeg _flutterFFmpeg = FlutterFFmpeg();
+
+      // 1. Create a temporary directory to store downloaded images
+      final tempDir = await getTemporaryDirectory();
+      List<String> imagePaths = [];
+
+      // 2. Download images and save them to the temporary directory
+      for (int i = 0; i < imageUrls.length; i++) {
+        final response = await http.get(Uri.parse(imageUrls[i]));
+        if (response.statusCode == 200) {
+          final imageFile = File('${tempDir.path}/image_$i.jpg');
+
+          // Decode and encode as JPEG using the image package
+          final decodedImage = img.decodeImage(response.bodyBytes);
+          if (decodedImage != null) {
+            print('Image $i dimensions: ${decodedImage.width}x${decodedImage
+                .height}'); // Log dimensions
+            final encodedImage = img.encodeJpg(decodedImage);
+            await imageFile.writeAsBytes(encodedImage);
+            imagePaths.add(imageFile.path);
+            setState(() {
+              _loadingProgress += (0.25/_scenelength); // Increase progress by 1% every 50ms
+
+            });
+          }
+        } else {
+          print('Failed to download image: ${response.statusCode}');
+          return;
+        }
+      }
+
+      // 4. Create the video using ffmpeg
+      videoPath = '${tempDir.path}/story_video.mp4';
+      double framerate = 1 / (_audioDuration.inSeconds > 0 ? _audioDuration.inSeconds : _scenelength);
+      double imageDuration =1/(( _audioDuration.inSeconds / imageUrls.length)+1.5);
+      print('Frame Rate $framerate');
+      final arguments = [
+        '-framerate',
+        '$imageDuration',  // Frame rate per image
+        '-i',
+        '${tempDir.path}/image_%d.jpg',  // Input image pattern
+        '-i',
+        _storedAudioPath,  // Input audio file
+
+        '-map',
+        '0:v',  // Map video from images
+        '-map',
+        '1:a',  // Map audio
+        '-c:v',
+        'mpeg4',  // Video codec
+        '-pix_fmt',
+        'yuv420p',  // Pixel format
+// Video filter for scaling and padding to 512x512
+        '-vf',
+        'scale=512:512:force_original_aspect_ratio=decrease,pad=512:512:(ow-iw)/2:(oh-ih)/2',
+
+
+        '-y',  // Overwrite output file
+        videoPath,  // Output video path
+      ];
+
+
+      final int returnCode = await _flutterFFmpeg.executeWithArguments(
+          arguments);
+
+      if (returnCode != 0) {
+        print('FFmpeg execution failed with code $returnCode.');
+        // Handle error
+        return;
+      }
+
+      print('Video created at: $videoPath');
+      // _statusText = 'Video created successfully.';  (No need to update here)
+
+    } catch (e) {
+      print('Error creating video: $e');
+      setState(() {
+        _statusText = 'Error creating video.';
+      });
+    }
+  }
+
+
+
+
 
   Future<void> _speakText(String text) async {
     setState(() {
@@ -453,7 +700,30 @@ class _ProcessingPageState extends State<ProcessingPage> {
     return modifiedScenes;
   }
 
+// Function to generate the story text using Gemini
+  Future<String> _generateDub(String prompt) async {
+    setState(() {
+      _statusText = "converting story";
+    });
+    try {
+      final response = await http.post(
+        Uri.parse(
+            'https://us-central1-adept-ethos-432515-v9.cloudfunctions.net/Create-Story'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'prompt': prompt}),
+      );
 
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = jsonDecode(response.body);
+        return data['story'];
+      } else {
+        throw Exception('Failed to generate story: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error generating story: $e');
+      throw e; // Rethrow the exception
+    }
+  }
   // Function to generate the story text using Gemini
   Future<String> _generateStoryText(String prompt) async {
     setState(() {

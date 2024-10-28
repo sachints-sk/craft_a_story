@@ -4,9 +4,9 @@
     <uses-permission android:name="com.android.vending.BILLING" />
 
     <application
-        android:label="craft_a_story"
+        android:label="Craft-a-Story"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/launcher_icon">
         <activity
             android:name=".MainActivity"
             android:exported="true"
