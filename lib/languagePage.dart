@@ -10,9 +10,10 @@ enum UserMembership { normal, litePremium, proPremium }
 class LanguageAudioPage extends StatefulWidget {
   final String prompt; // Receive the prompt
   final String title;
+  final String mode;
 
 
-  const LanguageAudioPage({Key? key, required this.prompt,required this.title,}) : super(key: key);
+  const LanguageAudioPage({Key? key, required this.prompt,required this.title,required this.mode}) : super(key: key);
 
   @override
   State<LanguageAudioPage> createState() => _LanguageAudioPageState();
@@ -389,7 +390,7 @@ class _LanguageAudioPageState extends State<LanguageAudioPage> {
                       context,
                       PageTransition(
                         type: PageTransitionType.rightToLeft,
-                        child: ProcessingPage(prompt: widget.prompt, title: widget.title,language :_selectedLanguage!,voice: _selectedVoice!),
+                        child: ProcessingPage(prompt: widget.prompt, title: widget.title,language :_selectedLanguage!,voice: _selectedVoice!,mode:widget.mode),
                       ),
                     );
                   } else {

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_ffmpeg/flutter_ffmpeg.dart';
@@ -26,8 +27,9 @@ class ProcessingPage extends StatefulWidget {
   final String title;
   final String language;
   final String voice;
+  final String mode;
 
-  const ProcessingPage({Key? key, required this.prompt,required this.title,required this.language,required this.voice}) : super(key: key);
+  const ProcessingPage({Key? key, required this.prompt,required this.title,required this.language,required this.voice, required this.mode}) : super(key: key);
 
   @override
   State<ProcessingPage> createState() => _ProcessingPageState();
@@ -110,8 +112,7 @@ class _ProcessingPageState extends State<ProcessingPage> {
         });
       });
       // 3. Get Character Descriptions
-      final characterDescriptions = await _getCharacterDescriptions(
-          story) as List<String>;
+      final characterDescriptions = await _getCharacterDescriptions(story) as List<String>;
 
       _timer =await  Timer.periodic(const Duration(milliseconds: 50), (timer) {
         setState(() {
@@ -125,11 +126,11 @@ class _ProcessingPageState extends State<ProcessingPage> {
 
       // 4. Generate Scenes (call the function here)
       List<Map<String, dynamic>> scenes = await _generateScenes(story);
-      print("Generated Scenes: $scenes");
+     print("Generated Scenes: $scenes");
 
 
       // 5. Combine Scenes and Character Descriptions
-      scenes = await _appendCharacterDescriptions(scenes, characterDescriptions);
+      List<Map<String, dynamic>> Conscenes = await _appendCharacterDescriptions(scenes, characterDescriptions);
       _timer =await Timer.periodic(const Duration(milliseconds: 50), (timer) {
         setState(() {
           _loadingProgress += 0.01; // Increase progress by 1% every 50ms
@@ -140,9 +141,11 @@ class _ProcessingPageState extends State<ProcessingPage> {
         });
       });
       _scenelength = scenes.length;
+      print("concatinated scenes");
+      print(Conscenes);
 
       // 5. Generate Cover Image
-      coverImageUrl = await _generateCoverImage(scenes) ?? '';// Make coverImageUrl nullable
+      coverImageUrl = await _generateCoverImage(Conscenes) ?? '';// Make coverImageUrl nullable
       print("Cover image URL: $coverImageUrl");
 
 
@@ -152,7 +155,7 @@ class _ProcessingPageState extends State<ProcessingPage> {
       });
 
       // 6. Generate Images
-      final imageUrls = await _generateImagesFromPrompts(scenes);
+      final imageUrls = await _generateImagesFromPrompts(Conscenes);
 
 
       setState(() {
@@ -236,9 +239,10 @@ class _ProcessingPageState extends State<ProcessingPage> {
               child: NewVideoPlayer(
                 videoPath: videoPath!,
                 title: widget.title,
-
+                voice: widget.voice,
                 description: story,
                 coverurl: coverImageUrl,
+                mode:widget.mode,
               ),
             ),
           );
@@ -250,9 +254,10 @@ class _ProcessingPageState extends State<ProcessingPage> {
               child: NewVideoPlayer(
                 videoPath: videoPath!,
                 title: widget.title,
-
+                voice: widget.voice,
                 description: translatedStory,
                 coverurl: coverImageUrl,
+                mode:widget.mode,
               ),
             ),
           );
@@ -280,6 +285,8 @@ class _ProcessingPageState extends State<ProcessingPage> {
       _isAudioReady = false;
     });
 
+    print("translated");
+    print(widget.voice);
     final url = Uri.parse('https://us-central1-adept-ethos-432515-v9.cloudfunctions.net/long-audio');
     try {
       final response = await http.post(
@@ -460,7 +467,7 @@ class _ProcessingPageState extends State<ProcessingPage> {
       // 4. Create the video using ffmpeg
       videoPath = '${tempDir.path}/story_video.mp4';
       double framerate = 1 / (_audioDuration.inSeconds > 0 ? _audioDuration.inSeconds : _scenelength);
-      double imageDuration =1/(( _audioDuration.inSeconds / imageUrls.length)+1.5);
+      double imageDuration =1/(( _audioDuration.inSeconds / imageUrls.length)+1.2);
       print('Frame Rate $framerate');
       final arguments = [
         '-framerate',
@@ -545,7 +552,7 @@ class _ProcessingPageState extends State<ProcessingPage> {
       // 4. Create the video using ffmpeg
       videoPath = '${tempDir.path}/story_video.mp4';
       double framerate = 1 / (_audioDuration.inSeconds > 0 ? _audioDuration.inSeconds : _scenelength);
-      double imageDuration =1/(( _audioDuration.inSeconds / imageUrls.length)+1.5);
+      double imageDuration =1/(( _audioDuration.inSeconds / imageUrls.length)+1.2);
       print('Frame Rate $framerate');
       final arguments = [
         '-framerate',
@@ -601,7 +608,8 @@ class _ProcessingPageState extends State<ProcessingPage> {
     setState(() {
       _statusText = "Crafting the soundtrack ...";
     });
-
+print("normal method");
+print(widget.voice);
     final url = Uri.parse(
         'https://us-central1-adept-ethos-432515-v9.cloudfunctions.net/createspeech');
     try {
@@ -610,7 +618,10 @@ class _ProcessingPageState extends State<ProcessingPage> {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: jsonEncode({'text': text}),
+        body: jsonEncode({ "text": text,
+          "languageCode": widget.language,
+          "voiceName": widget.voice
+        }),
       );
 
       if (response.statusCode == 200) {
@@ -644,7 +655,7 @@ class _ProcessingPageState extends State<ProcessingPage> {
     for (var scene in scenes) {
       // Extract the scene description
       String prompt = scene['scene'];
-
+print(prompt);
       // Make the API call to generate images using the scene description
       final output = await fal.subscribe("fal-ai/flux/schnell", input: {
         "prompt": prompt,
@@ -681,7 +692,6 @@ class _ProcessingPageState extends State<ProcessingPage> {
     return imagePrompts;
   }
 
-  // Function to append character descriptions to each scene
   List<Map<String, dynamic>> _appendCharacterDescriptions(
       List<Map<String, dynamic>> scenes, List<String> characterDescriptions) {
     setState(() {
@@ -690,11 +700,13 @@ class _ProcessingPageState extends State<ProcessingPage> {
     // Create a copy of the scenes list to avoid modifying the original
     List<Map<String, dynamic>> modifiedScenes = List.from(scenes);
 
-    // Loop through the scenes and add character descriptions (if available)
-    // Add the full character descriptions to each scene
+    // Join all character descriptions into a single string with a space separator
+    String combinedCharacterDescriptions = characterDescriptions.join(' ');
+
+    // Loop through each scene and append the character descriptions to the "scene" key
     for (int i = 0; i < modifiedScenes.length; i++) {
-      modifiedScenes[i]['characterDescription'] =
-          characterDescriptions.join('\n'); // Join descriptions with newlines
+      modifiedScenes[i]['scene'] =
+      '${modifiedScenes[i]['scene']} $combinedCharacterDescriptions';
     }
 
     return modifiedScenes;

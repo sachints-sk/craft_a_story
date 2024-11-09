@@ -89,8 +89,8 @@ class _MyStoriesPageState extends State<MyStoriesPage> {
           return GridView.builder(
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
-              crossAxisSpacing: 5,
-              mainAxisSpacing: 8,
+              crossAxisSpacing: 0,
+              mainAxisSpacing: 3,
               childAspectRatio: 0.8,
             ),
             itemCount: stories.length,
@@ -117,61 +117,71 @@ class _MyStoriesPageState extends State<MyStoriesPage> {
       },
       child: Card(
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(12),
         ),
-        elevation: 3,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _buildCoverImage(story.coverImageUrl),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    story.title,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                      color: Colors.black,
+        elevation: 4,
+        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        child: Container(
+          width: 140,
+          padding: const EdgeInsets.all(8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Cover Image
+              Expanded(
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    image: DecorationImage(
+                      image: NetworkImage(story.coverImageUrl),
+                      fit: BoxFit.cover,
                     ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 6), // Add some space between title and language/voice
-                  // Display language and voice information separately
-                  Row(
-                    children: [
-                      const Icon(Icons.language, size: 16, color: Colors.grey),
-                      const SizedBox(width: 4),
-                      Text(
-                        "English (India)",
-                        style: const TextStyle(fontSize: 12, color: Colors.grey),
-                      ),
-                    ],
+                ),
+              ),
+              const SizedBox(height: 8),
+              // Title
+              Text(
+                story.title,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  color: Colors.black,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 4),
+              // Genre
+              Row(
+                children: [
+                  const Icon(Icons.category, size: 14, color: Colors.grey),
+                  const SizedBox(width: 4),
+                  Text(
+                    "story.genre", // Assuming `genre` is a field in StoryData
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
                   ),
-                  const SizedBox(height: 4), // Add some space between language and voice
-                  Row(
-                    children: [
-                      const Icon(Icons.graphic_eq, size: 16, color: Colors.grey),
-                      const SizedBox(width: 4),
-                      Text(
-                        "en-US-Standard-A",
-                        style: const TextStyle(fontSize: 12, color: Colors.grey),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  // ... (rest of your Column children) ...
                 ],
               ),
-            ),
-          ],
+              const SizedBox(height: 4),
+              // Voice
+              Row(
+                children: [
+                  const Icon(Icons.graphic_eq, size: 14, color: Colors.grey),
+                  const SizedBox(width: 4),
+                  Text(
+                    "story.voice", // Assuming `voice` is a field in StoryData
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
+
 
 
   Widget _buildCoverImage(String? imageUrl) {

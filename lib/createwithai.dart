@@ -55,7 +55,7 @@ class _CreateStoryWithAIState extends State<CreateStoryWithAI> {
         context,
         PageTransition(
           type: PageTransitionType.rightToLeft,
-          child: LanguageAudioPage(prompt: prompt, title: _storyTitleController.text),
+          child: LanguageAudioPage(prompt: prompt, title: _storyTitleController.text, mode:_selectedStoryType!),
         ),
       );
     }

@@ -15,6 +15,8 @@ class NewVideoPlayer extends StatefulWidget {
   final String title;
   final String description;
   final String coverurl;
+  final String mode;
+  final String voice;
 
   const NewVideoPlayer({
     Key? key,
@@ -22,6 +24,8 @@ class NewVideoPlayer extends StatefulWidget {
     required this.title,
     required this.description,
     required this.coverurl,
+    required this.mode,
+    required this.voice
   }) : super(key: key);
 
 
@@ -105,11 +109,13 @@ class _NewVideoPlayerState extends State<NewVideoPlayer> {
       // 5. Upload story data to Firestore (including coverImageUrl and videoUrl)
       await storyDocRef.set({ // Use storyDocRef with the generated ID
         'storyId': storyId,
+        'mode': widget.mode,
         'userId': user.uid,
         'title': widget.title,
         'description': widget.description,
         'coverImageUrl': coverImageUrl,
         'videoUrl': videoUrl,
+        'voice' : widget.voice,
         'createdAt': FieldValue.serverTimestamp(),
       });
 
@@ -134,6 +140,75 @@ class _NewVideoPlayerState extends State<NewVideoPlayer> {
       });
     }
   }
+
+  Future<void> _saveStoryToExplore() async {
+    setState(() {
+      _isUploading = true;
+      _saveText="Just a moment, we're saving your story.";
+    });
+
+    try {
+      final firestore = FirebaseFirestore.instance;
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        throw Exception('User not authenticated');
+      }
+
+      // 1. Generate the storyId first
+      final storyDocRef = firestore.collection('Explore_stories').doc();
+      final storyId = storyDocRef.id;
+
+
+// 2. Download the cover image
+      final coverImagePath = await _downloadCoverImage(widget.coverurl);
+
+      // 3. Upload cover image to Storage and get its URL
+      final coverImageUrl = await _uploadFileToStorage(
+        coverImagePath,
+        'images/story_$storyId\_cover.jpg', // Use storyId here
+      );
+
+      // 4. Upload video to Storage and get its URL
+      final videoUrl = await _uploadFileToStorage(
+        widget.videoPath,
+        'videos/story_$storyId.mp4',   // Use storyId here
+      );
+
+      // 5. Upload story data to Firestore (including coverImageUrl and videoUrl)
+      await storyDocRef.set({ // Use storyDocRef with the generated ID
+        'storyId': storyId,
+        'mode': widget.mode,
+        'userId': user.uid,
+        'title': widget.title,
+        'description': widget.description,
+        'coverImageUrl': coverImageUrl,
+        'videoUrl': videoUrl,
+        'voice' : widget.voice,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      // 6. Save cover image and video locally
+    //  await _saveFileLocally(coverImagePath, 'cover_$storyId.jpg');
+    //  await _saveFileLocally(widget.videoPath, 'video_$storyId.mp4');
+
+      setState(() {
+        _isUploading = false;
+        _saveText="Your story is saved! You can view it anytime later.";
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Story Saved!')),
+        );
+      });
+    } catch (e) {
+      print('Error saving story: $e');
+      setState(() {
+        _isUploading = false;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to save story.')),
+        );
+      });
+    }
+  }
+
 
   // Helper function to save a file to local storage
   Future<void> _saveFileLocally(String filePath, String fileName) async {
@@ -246,6 +321,25 @@ class _NewVideoPlayerState extends State<NewVideoPlayer> {
                       ),
                     ),
                   ),
+
+                  //temp save to explore button
+                  SizedBox(
+                    width: double.infinity, // Make the button full-width
+                    child: ElevatedButton.icon(
+
+                      onPressed: () {
+                        _saveStoryToExplore();
+                      },
+                      icon: const Icon(Icons.save, color: Colors.white,), // Save icon
+                      label: const Text('Save Story to Explore',style: TextStyle(color: Colors.white),), // Button label
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),backgroundColor:  const Color(
+                          0xFF282943),// Button padding
+                      ),
+                    ),
+                  ),
+
+
                   const SizedBox(height: 8), // Add space for description
                   Center( // Wrap in Center widget
                     child:  Text(

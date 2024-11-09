@@ -66,13 +66,13 @@ dependencies:
   flutter_native_splash: ^2.4.2
 
 flutter_native_splash:
-  image: assets/Splash9.png # Path to your splash image
+  image: assets/Splash10.png # Path to your splash image
   color: "#203249"               # Background color to match the image
   android: true
   ios: true
   branding: assets/launchlogo5.png
   android_12:
-    image: assets/Splash9.png # Path to your splash image
+    image: assets/Splash10.png # Path to your splash image
     color: "#203249"
     branding: assets/launchlogo5.png # Ensures the image fills the entire screen
 

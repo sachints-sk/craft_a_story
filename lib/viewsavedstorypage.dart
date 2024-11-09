@@ -6,11 +6,11 @@ import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'story_data.dart';
 
+
 class ViewSavedStoryPage extends StatefulWidget {
   final StoryData storyData;
 
-  const ViewSavedStoryPage({Key? key, required this.storyData})
-      : super(key: key);
+  const ViewSavedStoryPage({Key? key, required this.storyData}) : super(key: key);
 
   @override
   State<ViewSavedStoryPage> createState() => _ViewSavedStoryPageState();
@@ -20,7 +20,7 @@ class _ViewSavedStoryPageState extends State<ViewSavedStoryPage> {
   late VideoPlayerController _videoPlayerController;
   ChewieController? _chewieController;
   bool _isVideoInitialized = false;
-  bool _showVideoPlayer = false; // To control video loading
+  bool _showVideoPlayer = false;
   String _saveText = 'Save your story to access it later.';
 
   @override
@@ -38,15 +38,11 @@ class _ViewSavedStoryPageState extends State<ViewSavedStoryPage> {
   Future<void> _initializePlayer() async {
     final localVideoPath = await _getLocalFilePath('video_${widget.storyData.storyId}.mp4');
 
-    // Check if the video file exists locally
     if (await File(localVideoPath).exists()) {
       _videoPlayerController = VideoPlayerController.file(File(localVideoPath));
-      print("Playing from local storage: $localVideoPath");
     } else {
-      // If the video is not available locally, stream from Firebase Storage
       await _downloadAndSaveVideo(widget.storyData.videoUrl, localVideoPath);
       _videoPlayerController = VideoPlayerController.file(File(localVideoPath));
-      print("Streaming from Firebase Storage and saved to local: $localVideoPath");
     }
 
     await _videoPlayerController.initialize();
@@ -65,10 +61,8 @@ class _ViewSavedStoryPageState extends State<ViewSavedStoryPage> {
     final response = await http.get(Uri.parse(videoUrl));
 
     if (response.statusCode == 200) {
-      // Write the file to local storage
       final file = File(localPath);
       await file.writeAsBytes(response.bodyBytes);
-      print("Video downloaded and saved to local storage: $localPath");
     } else {
       throw Exception('Failed to download video');
     }
@@ -79,11 +73,10 @@ class _ViewSavedStoryPageState extends State<ViewSavedStoryPage> {
     return '${directory.path}/$filename';
   }
 
-  // Function to handle play button click and load video
   void _onPlayButtonPressed() {
     setState(() {
       _showVideoPlayer = true;
-      _initializePlayer(); // Load the video
+      _initializePlayer();
     });
   }
 
@@ -106,7 +99,7 @@ class _ViewSavedStoryPageState extends State<ViewSavedStoryPage> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Show cover image with play button if video is not loaded
+          // Video Player or Cover Image Section
           Stack(
             alignment: Alignment.center,
             children: [
@@ -135,36 +128,189 @@ class _ViewSavedStoryPageState extends State<ViewSavedStoryPage> {
                 ),
             ],
           ),
-          const SizedBox(height: 16),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 8),
-                Text(
-                  widget.storyData.title,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 10),
-              ],
-            ),
-          ),
-          // Expanded widget to let the description take remaining height
+
+          // Scrollable Story Details Section
           Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: const BoxDecoration(
+
+
+              ),
               child: SingleChildScrollView(
-                child: Text(widget.storyData.description),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildStoryHeader(widget.storyData),
+                    const SizedBox(height: 20),
+
+                  ],
+                ),
               ),
             ),
           ),
-          const SizedBox(height: 10),
         ],
       ),
     );
   }
+
+  Widget _buildStoryHeader(StoryData storyData) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Title and Like button
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            // Story Title
+            Expanded(
+              child: Text(
+                storyData.title,
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            // Like Button with Count
+            Row(
+              children: [
+                IconButton(
+                  onPressed: () {
+                    // Handle like action
+                  },
+                  icon: const Icon(
+                    Icons.thumb_up_alt_outlined,
+                    color: Colors.grey,
+                    size: 28,
+                  ),
+                ),
+                Text(
+                  '5', // Placeholder for like count
+                  style: const TextStyle(
+                    color: Colors.grey,
+                    fontSize: 16,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+
+        // Story Type as a Badge
+        Container(
+
+
+          child: Row(
+            children: [
+              const Icon(Icons.category, color: Colors.grey, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                'Genre: ', // Placeholder for genre
+                style: const TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey,
+                ),
+              ),
+              Text(
+                'Fantasy', // Placeholder for genre
+                style: const TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        // Story Voice and Publish Date
+        Row(
+          children: [
+            const Icon(Icons.record_voice_over, color: Colors.grey, size: 20),
+            const SizedBox(width: 8),
+            Text(
+              'Voice: Gentle Male Gentle Male', // Placeholder for voice type
+              style: const TextStyle(
+                fontSize: 16,
+                color: Colors.grey,
+              ),
+            ),
+          ],
+        ),
+        // Date Published
+        const SizedBox(height: 8),
+        Text(
+          'Published on: 20 Oct 2023', // Placeholder for date
+          style: const TextStyle(
+            fontSize: 14,
+            color: Colors.grey,
+          ),
+        ),
+        const SizedBox(height: 8),
+        const Divider(
+          color: Colors.grey,
+          thickness: 0.5,
+        ),
+
+        const SizedBox(height: 8),
+        Text(
+          storyData.description,
+          style: const TextStyle(
+            fontSize: 16,
+            color: Colors.black,
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        // Divider
+        const Divider(
+          color: Colors.grey,
+          thickness: 0.5,
+        ),
+        const SizedBox(height: 10),
+
+        // Additional Info
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            // Length of Story
+            Row(
+              children: [
+                const Icon(Icons.timer, color: Colors.grey, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  '10 min read', // Placeholder for story length
+                  style: const TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey,
+                  ),
+                ),
+              ],
+            ),
+            // Other info, like genre or reading age
+            Row(
+              children: [
+                const Icon(Icons.category, color: Colors.grey, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  'Genre: Fantasy', // Placeholder for genre
+                  style: const TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+      ],
+    );
+  }
+
 }
