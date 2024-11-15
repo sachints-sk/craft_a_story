@@ -174,6 +174,9 @@ centerTitle: true,
         if (label == 'Logout') {
           _logout(); // Call logout function on tap
         }
+        if (label == 'Terms of Use') {
+          throw Exception();// Call logout function on tap
+        }
         if (label == 'Buy Credits') {
           Navigator.push(
             context,

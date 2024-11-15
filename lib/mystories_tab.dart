@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:lottie/lottie.dart';
-import 'viewsavedstorypage.dart';
+import 'myStoriesViewer.dart';
 import 'story_data.dart';
+import 'package:intl/intl.dart';
 
 class MyStoriesPage extends StatefulWidget {
   const MyStoriesPage({Key? key}) : super(key: key);
@@ -27,8 +28,7 @@ class _MyStoriesPageState extends State<MyStoriesPage> {
         padding: const EdgeInsets.symmetric(horizontal: 16.0),
         child: Column(
           children: [
-            _buildSearchBar(),
-            const SizedBox(height: 10),
+
             Expanded(child: _buildStoryGrid()),
           ],
         ),
@@ -37,20 +37,45 @@ class _MyStoriesPageState extends State<MyStoriesPage> {
   }
 
   Widget _buildSearchBar() {
-    return TextField(
-      decoration: InputDecoration(
-        hintText: 'Search here',
-        filled: true,
-        fillColor: Colors.grey[200],
-        prefixIcon: const Icon(Icons.search),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(30),
-          borderSide: BorderSide.none,
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(30),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.3),
+            spreadRadius: 2,
+            blurRadius: 6,
+            offset: const Offset(0, 3), // Shadow position
+          ),
+        ],
+      ),
+      child: TextField(
+        decoration: InputDecoration(
+          hintText: 'Search here',
+          hintStyle: TextStyle(color: Colors.grey[500]),
+          filled: true,
+          fillColor: Colors.white,
+          prefixIcon: Icon(Icons.search, color: Colors.grey[700]),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(30),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(30),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(30),
+            borderSide: BorderSide.none,
+          ),
         ),
       ),
     );
   }
+
 
   Widget _buildStoryGrid() {
     final user = FirebaseAuth.instance.currentUser;
@@ -77,12 +102,18 @@ class _MyStoriesPageState extends State<MyStoriesPage> {
         if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
           final stories = snapshot.data!.docs.map((doc) {
             final data = doc.data() as Map<String, dynamic>;
+            DateTime createdAtDate = (data['createdAt'] as Timestamp).toDate();
+            String formattedDate = DateFormat('dd-MM-yyyy').format(createdAtDate);
+
             return StoryData(
               storyId: doc.id,
               title: data['title'] ?? '',
               description: data['description'] ?? '',
               coverImageUrl: data['coverImageUrl'],
               videoUrl: data['videoUrl'] ?? '',
+              createdAt:formattedDate ?? '',
+              mode:data['mode'] ?? '',
+              voice:data['voice'] ?? '',
             );
           }).toList();
 
@@ -111,7 +142,7 @@ class _MyStoriesPageState extends State<MyStoriesPage> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => ViewSavedStoryPage(storyData: story),
+            builder: (context) => Mystoriesviewer(storyData: story),
           ),
         );
       },
@@ -158,9 +189,10 @@ class _MyStoriesPageState extends State<MyStoriesPage> {
                   const Icon(Icons.category, size: 14, color: Colors.grey),
                   const SizedBox(width: 4),
                   Text(
-                    "story.genre", // Assuming `genre` is a field in StoryData
+                   story.mode, // Assuming `genre` is a field in StoryData
                     style: const TextStyle(fontSize: 12, color: Colors.grey),
                   ),
+
                 ],
               ),
               const SizedBox(height: 4),
@@ -170,7 +202,7 @@ class _MyStoriesPageState extends State<MyStoriesPage> {
                   const Icon(Icons.graphic_eq, size: 14, color: Colors.grey),
                   const SizedBox(width: 4),
                   Text(
-                    "story.voice", // Assuming `voice` is a field in StoryData
+                    story.voice, // Assuming `voice` is a field in StoryData
                     style: const TextStyle(fontSize: 12, color: Colors.grey),
                   ),
                 ],

@@ -1,107 +1,89 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:chewie/chewie.dart';
 import 'package:video_player/video_player.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'story_data.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
+class ViewStoryByIdPage extends StatefulWidget {
+  final String storyId;
 
-
-class ViewSavedStoryPage extends StatefulWidget {
-  final StoryData storyData;
-
-  const ViewSavedStoryPage({Key? key, required this.storyData}) : super(key: key);
+  const ViewStoryByIdPage({Key? key, required this.storyId}) : super(key: key);
 
   @override
-  State<ViewSavedStoryPage> createState() => _ViewSavedStoryPageState();
+  State<ViewStoryByIdPage> createState() => _ViewStoryByIdPageState();
 }
 
-class _ViewSavedStoryPageState extends State<ViewSavedStoryPage> {
-  VideoPlayerController? _videoPlayerController;
+class _ViewStoryByIdPageState extends State<ViewStoryByIdPage> {
+  late VideoPlayerController _videoPlayerController;
   ChewieController? _chewieController;
   bool _isVideoInitialized = false;
   bool _showVideoPlayer = false;
-
-  int likeCount = 0;
-  bool isLiked = false;
+  StoryData? _storyData;
+  bool _isLoading = true;
+  String _saveText = 'Save your story to access it later.';
 
   @override
   void initState() {
     super.initState();
-    _fetchLikeStatus();
+    _fetchStoryData();
+  }
+
+  Future<void> _fetchStoryData() async {
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('Explore_stories')
+          .doc(widget.storyId)
+          .get();
+
+      if (doc.exists) {
+        setState(() {
+          _storyData = StoryData.fromFirestore(doc.data()!);
+          _isLoading = false;
+        });
+      } else {
+        throw Exception("Story not found");
+      }
+    } catch (error) {
+      setState(() {
+        _isLoading = false;
+      });
+      // Handle or display error
+      print("Failed to fetch story: $error");
+    }
   }
 
   @override
   void dispose() {
-    _videoPlayerController?.dispose();
-
+    _videoPlayerController.dispose();
     _chewieController?.dispose();
     super.dispose();
   }
 
-  Future<void> _fetchLikeStatus() async {
-    final storyDoc = FirebaseFirestore.instance.collection('Explore_stories').doc(widget.storyData.storyId);
-    final docSnapshot = await storyDoc.get();
-
-    if (docSnapshot.exists) {
-      setState(() {
-        likeCount = (docSnapshot.data()?['likeCount'] ?? 0) as int;
-        List likedBy = (docSnapshot.data()?['likedBy'] ?? []);
-         isLiked = likedBy.contains(FirebaseAuth.instance.currentUser!.uid);
-      });
-    }
-  }
-
-  Future<void> _toggleLike() async {
-    final storyDoc = FirebaseFirestore.instance.collection('Explore_stories').doc(widget.storyData.storyId);
-    final userId = FirebaseAuth.instance.currentUser!.uid;
-
-    if (isLiked) {
-      // Unlike the story
-      await storyDoc.update({
-        'likeCount': FieldValue.increment(-1),
-        'likedBy': FieldValue.arrayRemove([userId]),
-      });
-      setState(() {
-        likeCount--;
-        isLiked = false;
-      });
-    } else {
-      // Like the story
-      await storyDoc.update({
-        'likeCount': FieldValue.increment(1),
-        'likedBy': FieldValue.arrayUnion([userId]),
-      });
-      setState(() {
-        likeCount++;
-        isLiked = true;
-      });
-    }
-  }
-
   Future<void> _initializePlayer() async {
-    final localVideoPath = await _getLocalFilePath('video_${widget.storyData.storyId}.mp4');
+    final localVideoPath = await _getLocalFilePath('video_${widget.storyId}.mp4');
 
-    if (await File(localVideoPath).exists()) {
-      _videoPlayerController = VideoPlayerController.file(File(localVideoPath));
-    } else {
-      await _downloadAndSaveVideo(widget.storyData.videoUrl, localVideoPath);
-      _videoPlayerController = VideoPlayerController.file(File(localVideoPath));
+    if (_storyData != null) {
+      if (await File(localVideoPath).exists()) {
+        _videoPlayerController = VideoPlayerController.file(File(localVideoPath));
+      } else {
+        await _downloadAndSaveVideo(_storyData!.videoUrl, localVideoPath);
+        _videoPlayerController = VideoPlayerController.file(File(localVideoPath));
+      }
+
+      await _videoPlayerController.initialize();
+      _chewieController = ChewieController(
+        videoPlayerController: _videoPlayerController,
+        aspectRatio: 1,
+        autoPlay: true,
+        looping: false,
+      );
+      setState(() {
+        _isVideoInitialized = true;
+      });
     }
-
-    await _videoPlayerController?.initialize();
-    _chewieController = ChewieController(
-      videoPlayerController: _videoPlayerController!,
-      aspectRatio: 1,
-      autoPlay: true,
-      looping: false,
-    );
-    setState(() {
-      _isVideoInitialized = true;
-    });
   }
 
   Future<void> _downloadAndSaveVideo(String videoUrl, String localPath) async {
@@ -139,11 +121,15 @@ class _ViewSavedStoryPageState extends State<ViewSavedStoryPage> {
           },
         ),
         title: const Text(
-          "Story Explorer",
+          "View Story",
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
       ),
-      body: Column(
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _storyData == null
+          ? const Center(child: Text("Story not found"))
+          : Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Video Player or Cover Image Section
@@ -151,13 +137,13 @@ class _ViewSavedStoryPageState extends State<ViewSavedStoryPage> {
             alignment: Alignment.center,
             children: [
               AspectRatio(
-                aspectRatio: 1, // Ensures consistent height
+                aspectRatio: 1,
                 child: _showVideoPlayer
                     ? (_isVideoInitialized
                     ? Chewie(controller: _chewieController!)
                     : const Center(child: CircularProgressIndicator()))
                     : Image.network(
-                  widget.storyData.coverImageUrl,
+                  _storyData!.coverImageUrl,
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) {
                     return Image.asset(
@@ -175,22 +161,15 @@ class _ViewSavedStoryPageState extends State<ViewSavedStoryPage> {
                 ),
             ],
           ),
-
-          // Scrollable Story Details Section
           Expanded(
             child: Container(
               padding: const EdgeInsets.all(16),
-              decoration: const BoxDecoration(
-
-
-              ),
               child: SingleChildScrollView(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildStoryHeader(widget.storyData),
+                    _buildStoryHeader(_storyData!),
                     const SizedBox(height: 20),
-
                   ],
                 ),
               ),
@@ -201,7 +180,10 @@ class _ViewSavedStoryPageState extends State<ViewSavedStoryPage> {
     );
   }
 
-  Widget _buildStoryHeader(StoryData storyData) {
+
+
+
+Widget _buildStoryHeader(StoryData storyData) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -224,23 +206,25 @@ class _ViewSavedStoryPageState extends State<ViewSavedStoryPage> {
             ),
             // Like Button with Count
             Row(
-            children: [
-            IconButton(
-            onPressed: _toggleLike,
-            icon: Icon(
-            isLiked ? Icons.thumb_up : Icons.thumb_up_alt_outlined,
-            color: isLiked ? Colors.blue : Colors.grey,
-            size: 28,
-            ),
-            ),
-            Text(
-            '$likeCount',
-            style: const TextStyle(
-            color: Colors.grey,
-            fontSize: 16,
-            ),
-            ),
-            ],
+              children: [
+                IconButton(
+                  onPressed: () {
+                    // Handle like action
+                  },
+                  icon: const Icon(
+                    Icons.thumb_up_alt_outlined,
+                    color: Colors.grey,
+                    size: 28,
+                  ),
+                ),
+                Text(
+                  '5', // Placeholder for like count
+                  style: const TextStyle(
+                    color: Colors.grey,
+                    fontSize: 16,
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -262,7 +246,7 @@ class _ViewSavedStoryPageState extends State<ViewSavedStoryPage> {
                 ),
               ),
               Text(
-                storyData.mode, // Placeholder for genre
+                'Fantasy', // Placeholder for genre
                 style: const TextStyle(
                   fontSize: 16,
                   color: Colors.grey,
@@ -279,14 +263,7 @@ class _ViewSavedStoryPageState extends State<ViewSavedStoryPage> {
             const Icon(Icons.record_voice_over, color: Colors.grey, size: 20),
             const SizedBox(width: 8),
             Text(
-              'Voice: ', // Placeholder for voice type
-              style: const TextStyle(
-                fontSize: 16,
-                color: Colors.grey,
-              ),
-            ),
-            Text(
-              storyData.voice, // Placeholder for voice type
+              'Voice: Gentle Male Gentle Male', // Placeholder for voice type
               style: const TextStyle(
                 fontSize: 16,
                 color: Colors.grey,
@@ -296,20 +273,13 @@ class _ViewSavedStoryPageState extends State<ViewSavedStoryPage> {
         ),
         // Date Published
         const SizedBox(height: 8),
-        Row(children: [Text(
-          'Published on: ', // Placeholder for date
+        Text(
+          'Published on: 20 Oct 2023', // Placeholder for date
           style: const TextStyle(
             fontSize: 14,
             color: Colors.grey,
           ),
         ),
-          Text(
-            storyData.createdAt, // Placeholder for date
-            style: const TextStyle(
-              fontSize: 14,
-              color: Colors.grey,
-            ),
-          ),],),
         const SizedBox(height: 8),
         const Divider(
           color: Colors.grey,
@@ -334,7 +304,39 @@ class _ViewSavedStoryPageState extends State<ViewSavedStoryPage> {
         const SizedBox(height: 10),
 
         // Additional Info
-
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            // Length of Story
+            Row(
+              children: [
+                const Icon(Icons.timer, color: Colors.grey, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  '10 min read', // Placeholder for story length
+                  style: const TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey,
+                  ),
+                ),
+              ],
+            ),
+            // Other info, like genre or reading age
+            Row(
+              children: [
+                const Icon(Icons.category, color: Colors.grey, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  'Genre: Fantasy', // Placeholder for genre
+                  style: const TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
         const SizedBox(height: 10),
       ],
     );

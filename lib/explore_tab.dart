@@ -6,6 +6,7 @@ import 'dart:async'; // Import the dart:async library
 import 'package:lottie/lottie.dart';
 import 'buycredits.dart';
 import 'viewsavedstorypage.dart';
+import 'package:intl/intl.dart';
 
 class ExploreTab extends StatelessWidget {
   const ExploreTab({Key? key}) : super(key: key);
@@ -25,6 +26,7 @@ class ExploreTab extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Hero Banner Section
+
             HeroBanner(),
             // Top Categories Section
             SectionTitle(title: 'Top Categories'),
@@ -51,7 +53,7 @@ class _HeroBannerState extends State<HeroBanner> {
   final PageController _pageController = PageController(initialPage: 0);
   final ValueNotifier<int> _currentPageNotifier = ValueNotifier<int>(0);
   Timer? _timer;
-  static Future<List<FeaturedStoryData>>? _featuredStoriesFuture;
+  static Future<List<StoryData>>? _featuredStoriesFuture;
 
 
   @override
@@ -85,7 +87,10 @@ class _HeroBannerState extends State<HeroBanner> {
     _currentPageNotifier.value = nextPage;
   }
 
-  Future<List<FeaturedStoryData>> _fetchFeaturedStories() async {
+
+
+
+  Future<List<StoryData>> _fetchFeaturedStories() async {
     final featuredStoriesDoc = await FirebaseFirestore.instance
         .collection('featured_stories')
         .doc('featured_stories')
@@ -101,35 +106,56 @@ class _HeroBannerState extends State<HeroBanner> {
           .collection('Explore_stories')
           .doc(storyOfTheWeekId)
           .get()
-          .then((doc) => FeaturedStoryData(
-        imagePath: doc.data()?['coverImageUrl'] ?? 'assets/placeholderimage.png',
-        title: 'Story of the Week',
-        description: doc.data()?['title'] ?? '',
+          .then((doc) => StoryData(
+        coverImageUrl: doc.data()?['coverImageUrl'] ?? 'assets/placeholderimage.png',
+        title: doc.data()?['title'] ?? '',
+        storyId: doc.id,
+        heading: "Story of the Week",
+        description: doc.data()?['description'] ?? '',
+        videoUrl: doc.data()?['videoUrl'] ?? '',
+        createdAt:(doc.data()?['createdAt'] as Timestamp).toDate().toString() ?? '',
+        mode:doc.data()?['mode'] ?? '',
+        voice:doc.data()?['voice'] ?? '',
       )),
       FirebaseFirestore.instance
           .collection('Explore_stories')
           .doc(seasonalSpecialId)
           .get()
-          .then((doc) => FeaturedStoryData(
-        imagePath: doc.data()?['coverImageUrl'] ?? 'assets/placeholderimage.png',
-        title: 'Seasonal Special',
-        description: doc.data()?['title'] ?? '',
+          .then((doc) => StoryData(
+        coverImageUrl: doc.data()?['coverImageUrl'] ?? 'assets/placeholderimage.png',
+        title: doc.data()?['title'] ?? '',
+        storyId: doc.id,
+        heading: "Seasonal Special",
+        description: doc.data()?['description'] ?? '',
+        videoUrl: doc.data()?['videoUrl'] ?? '',
+        createdAt:(doc.data()?['createdAt'] as Timestamp).toDate().toString() ?? '',
+        mode:doc.data()?['mode'] ?? '',
+        voice:doc.data()?['voice'] ?? '',
       )),
       FirebaseFirestore.instance
           .collection('Explore_stories')
           .doc(featuredAdventureId)
           .get()
-          .then((doc) => FeaturedStoryData(
-        imagePath: doc.data()?['coverImageUrl'] ?? 'assets/placeholderimage.png',
-        title: 'Featured Adventure',
-        description: doc.data()?['title'] ?? '',
+          .then((doc) => StoryData(
+        coverImageUrl: doc.data()?['coverImageUrl'] ?? 'assets/placeholderimage.png',
+        title: doc.data()?['title'] ?? '',
+        storyId: doc.id,
+        heading: "Featured Adventure",
+        description: doc.data()?['description'] ?? '',
+        videoUrl: doc.data()?['videoUrl'] ?? '',
+        createdAt:(doc.data()?['createdAt'] as Timestamp).toDate().toString() ?? '',
+        mode:doc.data()?['mode'] ?? '',
+        voice:doc.data()?['voice'] ?? '',
       )),
     ]);
   }
 
+
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<FeaturedStoryData>>(
+    _featuredStoriesFuture ??= _fetchFeaturedStories(); // Load data only once
+
+    return FutureBuilder<List<StoryData>>(
       future: _featuredStoriesFuture,
       builder: (context, snapshot) {
         if (snapshot.hasError) {
@@ -141,7 +167,7 @@ class _HeroBannerState extends State<HeroBanner> {
         }
 
         if (snapshot.hasData) {
-          final featuredStories = snapshot.data!;
+          final List<StoryData> featuredStories = snapshot.data!;
           return SizedBox(
             height: 200,
             child: Stack(
@@ -155,9 +181,10 @@ class _HeroBannerState extends State<HeroBanner> {
                   },
                   itemBuilder: (context, index) {
                     return BannerCard(
-                      title: featuredStories[index].title,
-                      image: featuredStories[index].imagePath,
-                      subtitle: featuredStories[index].description,
+                      title: featuredStories[index].heading,
+                      image: featuredStories[index].coverImageUrl,
+                      subtitle: featuredStories[index].title,
+                      storyData: featuredStories[index],
                     );
                   },
                 ),
@@ -220,16 +247,26 @@ class BannerCard extends StatelessWidget {
   final String title;
   final String image;
   final String subtitle;
+  final StoryData storyData;
 
   BannerCard({
     required this.title,
     required this.image,
     required this.subtitle,
+    required this.storyData,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return GestureDetector(onTap: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ViewSavedStoryPage(storyData: storyData),
+        ),
+      );
+    },
+    child: Container(
       decoration: BoxDecoration(
         image: DecorationImage(
           image: NetworkImage(image),
@@ -269,7 +306,7 @@ class BannerCard extends StatelessWidget {
           ],
         ),
       ),
-    );
+    ) ,);
   }
 }
 
@@ -313,12 +350,17 @@ class TrendingStoriesList extends StatelessWidget {
         if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
           final List<StoryData> stories = snapshot.data!.docs.map((doc) {
             final data = doc.data() as Map<String, dynamic>;
+            DateTime createdAtDate = (data['createdAt'] as Timestamp).toDate();
+            String formattedDate = DateFormat('dd-MM-yyyy').format(createdAtDate);
             return StoryData(
               coverImageUrl: data['coverImageUrl'] ?? 'assets/placeholderimage.png',
               title: data['title'] ?? '',
               storyId: doc.id,
               description: data['description'] ?? '',
               videoUrl: data['videoUrl'] ?? '',
+              createdAt:formattedDate ?? '',
+              mode:data['mode'] ?? '',
+              voice:data['voice'] ?? '',
             );
           }).toList();
 
@@ -461,52 +503,95 @@ class CategoryCard extends StatelessWidget {
   }
 }
 
-class SuggestedStoriesGrid extends StatelessWidget {
+class SuggestedStoriesGrid extends StatefulWidget {
+  @override
+  _SuggestedStoriesGridState createState() => _SuggestedStoriesGridState();
+}
+
+class _SuggestedStoriesGridState extends State<SuggestedStoriesGrid> {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  List<StoryData> _stories = [];
+  bool _isLoading = false;
+  DocumentSnapshot? _lastDocument; // Track the last document loaded
+
+  @override
+  void initState() {
+    super.initState();
+    _loadStories(); // Load initial batch of stories
+  }
+
+  Future<void> _loadStories() async {
+    if (_isLoading) return;
+    setState(() => _isLoading = true);
+
+    Query query = _firestore
+        .collection('Explore_stories')
+        .orderBy('createdAt', descending: true)
+        .limit(6);
+
+    if (_lastDocument != null) {
+      query = query.startAfterDocument(_lastDocument!);
+    }
+
+    final snapshot = await query.get();
+    if (snapshot.docs.isNotEmpty) {
+      _lastDocument = snapshot.docs.last; // Update last document
+      List<StoryData> newStories = snapshot.docs.map((doc) {
+        final data = doc.data() as Map<String, dynamic>;
+        DateTime createdAtDate = (data['createdAt'] as Timestamp).toDate();
+        String formattedDate = DateFormat('dd-MM-yyyy').format(createdAtDate);
+        return StoryData(
+          coverImageUrl: data['coverImageUrl'] ?? 'assets/placeholderimage.png',
+          title: data['title'] ?? '',
+          storyId: doc.id,
+          description: data['description'] ?? '',
+          videoUrl: data['videoUrl'] ?? '',
+          createdAt: formattedDate,
+          mode: data['mode'] ?? '',
+          voice: data['voice'] ?? '',
+        );
+      }).toList();
+
+      setState(() => _stories.addAll(newStories));
+    }
+
+    setState(() => _isLoading = false);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('Explore_stories')
-          .orderBy('createdAt', descending: true) // Order by creation date (newest first)
-          .limit(6) // Limit the number of stories to display
-          .snapshots(),
-      builder: (context, snapshot) {
-        if (snapshot.hasError) {
-          return Center(child: Text('Error: ${snapshot.error}'));
-        }
-
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
-          final stories = snapshot.data!.docs.map((doc) {
-            final data = doc.data() as Map<String, dynamic>;
-            return StoryData(
-              coverImageUrl: data['coverImageUrl'] ?? 'assets/placeholderimage.png',
-              title: data['title'] ?? '',
-              storyId: doc.id,
-              description: data['description'] ?? '',
-              videoUrl: data['videoUrl'] ?? '',
-            );
-          }).toList();
-
-          return GridView.count(
+    return Column(
+      children: [
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(1),
+          itemCount: _stories.length,
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 2,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            padding: const EdgeInsets.all(1),
             mainAxisSpacing: 16,
             crossAxisSpacing: 2,
-            children: stories.map((story) => StoryCard(image: story.coverImageUrl, title: story.title,  storyData: story,)).toList(),
-          );
-        } else {
-          return const Center(child: Text('No stories found.'));
-        }
-      },
+          ),
+          itemBuilder: (context, index) {
+            final story = _stories[index];
+            return StoryCard(
+              image: story.coverImageUrl,
+              title: story.title,
+              storyData: story,
+            );
+          },
+        ),
+        if (_isLoading) const CircularProgressIndicator(),
+        if (!_isLoading)
+          ElevatedButton(
+            onPressed: _loadStories,
+            child: const Text('Load More'),
+          ),
+      ],
     );
   }
 }
+
 
 // Example story data model (You'll need to replace this with your actual data model)
 
@@ -515,10 +600,14 @@ class FeaturedStoryData {
   final String imagePath;
   final String title;
   final String description;
+  final String storyId;
+  final String videoUrl;
 
   FeaturedStoryData({
     required this.imagePath,
     required this.title,
     required this.description,
+    required this.storyId,
+    required this.videoUrl,
   });
 }

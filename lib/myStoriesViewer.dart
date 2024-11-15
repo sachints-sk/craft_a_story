@@ -6,81 +6,37 @@ import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'story_data.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
 
-
-class ViewSavedStoryPage extends StatefulWidget {
+class Mystoriesviewer extends StatefulWidget {
   final StoryData storyData;
 
-  const ViewSavedStoryPage({Key? key, required this.storyData}) : super(key: key);
+  const Mystoriesviewer({Key? key, required this.storyData}) : super(key: key);
 
   @override
-  State<ViewSavedStoryPage> createState() => _ViewSavedStoryPageState();
+  State<Mystoriesviewer> createState() => _MystoriesviewerState();
 }
 
-class _ViewSavedStoryPageState extends State<ViewSavedStoryPage> {
+class _MystoriesviewerState extends State<Mystoriesviewer> {
   VideoPlayerController? _videoPlayerController;
   ChewieController? _chewieController;
   bool _isVideoInitialized = false;
   bool _showVideoPlayer = false;
 
-  int likeCount = 0;
-  bool isLiked = false;
 
   @override
   void initState() {
     super.initState();
-    _fetchLikeStatus();
   }
 
   @override
   void dispose() {
     _videoPlayerController?.dispose();
-
     _chewieController?.dispose();
     super.dispose();
   }
 
-  Future<void> _fetchLikeStatus() async {
-    final storyDoc = FirebaseFirestore.instance.collection('Explore_stories').doc(widget.storyData.storyId);
-    final docSnapshot = await storyDoc.get();
 
-    if (docSnapshot.exists) {
-      setState(() {
-        likeCount = (docSnapshot.data()?['likeCount'] ?? 0) as int;
-        List likedBy = (docSnapshot.data()?['likedBy'] ?? []);
-         isLiked = likedBy.contains(FirebaseAuth.instance.currentUser!.uid);
-      });
-    }
-  }
-
-  Future<void> _toggleLike() async {
-    final storyDoc = FirebaseFirestore.instance.collection('Explore_stories').doc(widget.storyData.storyId);
-    final userId = FirebaseAuth.instance.currentUser!.uid;
-
-    if (isLiked) {
-      // Unlike the story
-      await storyDoc.update({
-        'likeCount': FieldValue.increment(-1),
-        'likedBy': FieldValue.arrayRemove([userId]),
-      });
-      setState(() {
-        likeCount--;
-        isLiked = false;
-      });
-    } else {
-      // Like the story
-      await storyDoc.update({
-        'likeCount': FieldValue.increment(1),
-        'likedBy': FieldValue.arrayUnion([userId]),
-      });
-      setState(() {
-        likeCount++;
-        isLiked = true;
-      });
-    }
-  }
 
   Future<void> _initializePlayer() async {
     final localVideoPath = await _getLocalFilePath('video_${widget.storyData.storyId}.mp4');
@@ -103,6 +59,7 @@ class _ViewSavedStoryPageState extends State<ViewSavedStoryPage> {
       _isVideoInitialized = true;
     });
   }
+
 
   Future<void> _downloadAndSaveVideo(String videoUrl, String localPath) async {
     final response = await http.get(Uri.parse(videoUrl));
@@ -139,10 +96,44 @@ class _ViewSavedStoryPageState extends State<ViewSavedStoryPage> {
           },
         ),
         title: const Text(
-          "Story Explorer",
+          "Saved Story",
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
+        actions: [
+          PopupMenuButton<String>(
+            onSelected: (value) async {
+              if (value == 'delete') {
+                // Delete the story document from Firestore
+                await FirebaseFirestore.instance
+                    .collection('stories')
+                    .doc(widget.storyData.storyId)
+                    .delete();
+                Navigator.pop(context); // Close the page after deletion
+              }
+            },
+            itemBuilder: (BuildContext context) {
+              return [
+                PopupMenuItem<String>(
+                  value: 'delete',
+                  child: Row(
+                    children: [
+                      Icon(Icons.delete, color: Colors.black87),
+                      SizedBox(width: 8),
+                      Text(
+                        'Delete Story',
+                        style: TextStyle(color: Colors.black87),
+                      ),
+                    ],
+                  ),
+                ),
+              ];
+            },
+            icon: const Icon(Icons.more_vert, color: Colors.white),
+          ),
+
+        ],
       ),
+
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -223,25 +214,7 @@ class _ViewSavedStoryPageState extends State<ViewSavedStoryPage> {
               ),
             ),
             // Like Button with Count
-            Row(
-            children: [
-            IconButton(
-            onPressed: _toggleLike,
-            icon: Icon(
-            isLiked ? Icons.thumb_up : Icons.thumb_up_alt_outlined,
-            color: isLiked ? Colors.blue : Colors.grey,
-            size: 28,
-            ),
-            ),
-            Text(
-            '$likeCount',
-            style: const TextStyle(
-            color: Colors.grey,
-            fontSize: 16,
-            ),
-            ),
-            ],
-            ),
+
           ],
         ),
         const SizedBox(height: 12),
@@ -310,6 +283,7 @@ class _ViewSavedStoryPageState extends State<ViewSavedStoryPage> {
               color: Colors.grey,
             ),
           ),],),
+
         const SizedBox(height: 8),
         const Divider(
           color: Colors.grey,
@@ -333,7 +307,6 @@ class _ViewSavedStoryPageState extends State<ViewSavedStoryPage> {
         ),
         const SizedBox(height: 10),
 
-        // Additional Info
 
         const SizedBox(height: 10),
       ],

@@ -43,9 +43,9 @@ class _CreateStoryWithAIState extends State<CreateStoryWithAI> {
     if (_formKey.currentState!.validate() && _selectedStoryType != null && _selectedGender != null) {
       String prompt = "Write a kids' story with the following details:\n";
       prompt += "Title: ${_storyTitleController.text}\n";
-      prompt += "Kid's Name: ${_characterNameController.text}\n";
+      prompt += "Character's Name: ${_characterNameController.text}\n";
       prompt += "Gender: $_selectedGender\n";
-      prompt += "Kid's Age: ${_characterAgeController.text}\n";
+      prompt += "Character's Age: ${_characterAgeController.text}\n";
       prompt += "Story Mode: $_selectedStoryType\n";
       if (_storySettingController.text.isNotEmpty) {
         prompt += "Story Setting: ${_storySettingController.text}\n";

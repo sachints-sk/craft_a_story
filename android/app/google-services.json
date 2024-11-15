@@ -14,6 +14,30 @@
       },
       "oauth_client": [
         {
+          "client_id": "838703040242-6dran83fmlcvfto4e3tffg50qdk0q6o4.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.craftastory.craft_a_story",
+            "certificate_hash": "be58ed6188f9acee73f701844ea7fca502d7a496"
+          }
+        },
+        {
+          "client_id": "838703040242-fgb8qjchousogmhpvi9se9tpnh5ilj2g.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.craftastory.craft_a_story",
+            "certificate_hash": "2f8bdcfab55e42ff5c45f72f047c5ebb303e4222"
+          }
+        },
+        {
+          "client_id": "838703040242-joogh43ljmh0pji7992k4pp8lu5h1p06.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.craftastory.craft_a_story",
+            "certificate_hash": "ddd1d2b883fba9e1c8307010d70ee970437b59aa"
+          }
+        },
+        {
           "client_id": "838703040242-23kplok33bso32dinoria7i7o3mqehnj.apps.googleusercontent.com",
           "client_type": 3
         }

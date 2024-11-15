@@ -90,6 +90,7 @@ class _ProcessingPageState extends State<ProcessingPage> {
     try {
       // 1. Clear old images
       await _clearOldImages();
+      await _clearOldAudio();
       _timer = await Timer.periodic(const Duration(milliseconds: 50), (timer) {
         setState(() {
           _loadingProgress += 0.01; // Increase progress by 1% every 50ms
@@ -165,13 +166,8 @@ class _ProcessingPageState extends State<ProcessingPage> {
       if(widget.language=="en-US") {
 
 
-        await _speakText(story);
-        if (audioContent == null) { // Check if audio generation was successful
-          setState(() {
-            _statusText = "Error generating audio. Cannot create video.";
-          });
-          return;
-        }
+        await _speakTextTranslated(story);
+
         _timer = Timer.periodic(const Duration(milliseconds: 50), (timer) {
           setState(() {
             _loadingProgress += 0.01; // Increase progress by 1% every 50ms
@@ -186,7 +182,7 @@ class _ProcessingPageState extends State<ProcessingPage> {
         });
 
         //7. create video
-        await _createVideoFromImages(imageUrls, audioContent!);
+        await _createVideoFromImagesTranslated(imageUrls);
 
 
       }else
@@ -307,12 +303,13 @@ class _ProcessingPageState extends State<ProcessingPage> {
 
         if (user != null) {
           final data = jsonDecode(response.body);
-          translatedStory = data['translatedText'];
-
+          translatedStory = data['finaltext'];
+          print(translatedStory);
           final String userId = user!.uid; // Safe to use here
           // await _playAudioFromUrl(userId);
-          final audioUrl = 'https://storage.googleapis.com/craftastoryvoices/${userId}.wav';
+          final audioUrl = 'https://storage.googleapis.com/craftastoryvoices2/${userId}.wav?t=${DateTime.now().millisecondsSinceEpoch}';
           final audioBytes = await _downloadAudio(audioUrl);
+
           if (audioBytes != null) {
 
             // Save audio bytes as a temporary file
@@ -378,6 +375,25 @@ class _ProcessingPageState extends State<ProcessingPage> {
       return null; // Return null if the download fails
     }
   }
+
+  Future<void> _clearOldAudio() async {
+    try {
+      final tempDir = await getTemporaryDirectory();
+      final audioFilePath = '${tempDir.path}/audio.wav';
+      final audioFile = File(audioFilePath);
+
+      if (await audioFile.exists()) {
+        await audioFile.delete();
+        print('Old audio cleared.');
+      } else {
+        print('No old audio to clear.');
+      }
+    } catch (e) {
+      print('Error clearing old audio: $e');
+    }
+  }
+
+
 
   Future<void> _clearOldImages() async {
     try {

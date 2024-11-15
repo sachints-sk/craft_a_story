@@ -8,6 +8,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:path_provider/path_provider.dart'; // For temporary file
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 
 
 class NewVideoPlayer extends StatefulWidget {
@@ -92,7 +93,7 @@ class _NewVideoPlayerState extends State<NewVideoPlayer> {
 
 
 // 2. Download the cover image
-      final coverImagePath = await _downloadCoverImage(widget.coverurl);
+      final coverImagePath = await _downloadAndCompressCoverImage(widget.coverurl);
 
       // 3. Upload cover image to Storage and get its URL
       final coverImageUrl = await _uploadFileToStorage(
@@ -160,7 +161,7 @@ class _NewVideoPlayerState extends State<NewVideoPlayer> {
 
 
 // 2. Download the cover image
-      final coverImagePath = await _downloadCoverImage(widget.coverurl);
+      final coverImagePath = await _downloadAndCompressCoverImage(widget.coverurl);
 
       // 3. Upload cover image to Storage and get its URL
       final coverImageUrl = await _uploadFileToStorage(
@@ -237,6 +238,36 @@ class _NewVideoPlayerState extends State<NewVideoPlayer> {
       throw Exception('Failed to download cover image');
     }
   }
+
+  Future<String> _downloadAndCompressCoverImage(String coverImageUrl) async {
+    // Step 1: Download the image
+    final response = await http.get(Uri.parse(coverImageUrl));
+    if (response.statusCode != 200) {
+      throw Exception('Failed to download cover image');
+    }
+
+    // Step 2: Save the image temporarily
+    final tempDir = await getTemporaryDirectory();
+    final originalPath = '${tempDir.path}/original_cover_image.jpg';
+    final originalImageFile = File(originalPath);
+    await originalImageFile.writeAsBytes(response.bodyBytes);
+
+    // Step 3: Compress the image
+    final compressedPath = '${tempDir.path}/compressed_cover_image.jpg';
+    final compressedImageFile = await FlutterImageCompress.compressAndGetFile(
+      originalPath,
+      compressedPath,
+      quality: 30, // Adjust quality as needed (0-100)
+    );
+
+    if (compressedImageFile == null) {
+      throw Exception('Image compression failed');
+    }
+
+    // Return the path of the compressed image
+    return compressedImageFile.path;
+  }
+
 
 
 
