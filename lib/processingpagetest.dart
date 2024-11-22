@@ -8,7 +8,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:video_player/video_player.dart';
 import 'package:image_gallery_saver/image_gallery_saver.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:flutter/services.dart';
+import 'package:flutter/services.dart' ;
 import 'package:fal_client/fal_client.dart';
 import 'package:image/image.dart' as img;
 import 'package:googleapis_auth/auth_io.dart'; // For service account authentication
@@ -21,6 +21,9 @@ import 'package:page_transition/page_transition.dart';
 import 'newvideoplayer.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:firebase_performance/firebase_performance.dart';
+
+
 
 class ProcessingPage extends StatefulWidget {
   final String prompt; // Receive the prompt
@@ -50,18 +53,20 @@ class _ProcessingPageState extends State<ProcessingPage> {
   String _statusText2 = "audio not generated!";
   String? _accessToken;
   String videoPath = "";
+  String videoPathCombined = "";
   String coverImageUrl="";
   int _scenelength = 0;
   Duration _audioDuration = Duration.zero;
   double _loadingProgress = 0.0; // Track loading progress (0.0 to 1.0)
   Timer? _timer;
   String translatedStory ="";
+  String videoPathConverted="";
 
 
       bool _isLoading = false;
   bool _isAudioReady = false;
   bool _isStoredAudioAvailable = false;
-  String? _storedAudioPath;
+  String _storedAudioPath="";
   final user = FirebaseAuth.instance.currentUser;
 
 
@@ -82,13 +87,37 @@ class _ProcessingPageState extends State<ProcessingPage> {
 
 
 
+  Future<void> requestStoragePermissions() async {
+    // Request permission for devices running Android 10 or below
+    if (await Permission.storage.isGranted) {
+      print("Storage permission granted.");
+    } else {
+      // Check and request permission
+      PermissionStatus status = await Permission.storage.request();
+      if (status.isGranted) {
+        print("Storage permission granted.");
+      } else {
+        // For Android 11 and above, handle MANAGE_EXTERNAL_STORAGE
+        if (await Permission.manageExternalStorage.isGranted) {
+          print("Storage permission granted with manage access.");
+        } else {
+          // Request the broader permission if necessary
+          await Permission.manageExternalStorage.request();
+        }
+      }
+    }
+  }
+
+
 
 
   // Main function to handle all the processing steps
   Future<void> _processStory() async {
-
+    Trace customTrace = FirebasePerformance.instance.newTrace('Create-Visual-Story');
+    await customTrace.start();
     try {
       // 1. Clear old images
+      await requestStoragePermissions();
       await _clearOldImages();
       await _clearOldAudio();
       _timer = await Timer.periodic(const Duration(milliseconds: 50), (timer) {
@@ -163,52 +192,22 @@ class _ProcessingPageState extends State<ProcessingPage> {
         _statusText = "Crafting the soundtrack...";
       });
 
-      if(widget.language=="en-US") {
+      await _speakTextTranslated(story);
 
-
-        await _speakTextTranslated(story);
-
-        _timer = Timer.periodic(const Duration(milliseconds: 50), (timer) {
-          setState(() {
-            _loadingProgress += 0.01; // Increase progress by 1% every 50ms
-            if (_loadingProgress >= 0.7) {
-              _timer?.cancel(); // Stop the timer when progress reaches 100%
-              // You can navigate to the next screen or perform other actions here
-            }
-          });
-        });
+      _timer = Timer.periodic(const Duration(milliseconds: 50), (timer) {
         setState(() {
-          _statusText = "Bringing your video to life ...";
+          _loadingProgress += 0.01; // Increase progress by 1% every 50ms
+          if (_loadingProgress >= 0.7) {
+            _timer?.cancel(); // Stop the timer when progress reaches 100%
+            // You can navigate to the next screen or perform other actions here
+          }
         });
+      });
+      setState(() {
+        _statusText = "Bringing your video to life ...";
+      });
 
-        //7. create video
-        await _createVideoFromImagesTranslated(imageUrls);
-
-
-      }else
-        {
-          await _speakTextTranslated(story);
-
-          _timer = Timer.periodic(const Duration(milliseconds: 50), (timer) {
-            setState(() {
-              _loadingProgress += 0.01; // Increase progress by 1% every 50ms
-              if (_loadingProgress >= 0.7) {
-                _timer?.cancel(); // Stop the timer when progress reaches 100%
-                // You can navigate to the next screen or perform other actions here
-              }
-            });
-          });
-          setState(() {
-            _statusText = "Bringing your video to life ...";
-          });
-
-          await _createVideoFromImagesTranslated(imageUrls);
-
-
-        }
-
-
-
+      await _createVideoFromImagesTranslated(imageUrls);
 
 
 
@@ -225,7 +224,7 @@ class _ProcessingPageState extends State<ProcessingPage> {
           _statusText = "Story created! Ready to play";
         });
 
-
+      await customTrace.stop();
 
         if(widget.language=="en-US"){
           Navigator.push(
@@ -233,12 +232,13 @@ class _ProcessingPageState extends State<ProcessingPage> {
             PageTransition(
               type: PageTransitionType.rightToLeft, // Slide transition from right to left
               child: NewVideoPlayer(
-                videoPath: videoPath!,
+                videoPath: videoPathCombined!,
                 title: widget.title,
                 voice: widget.voice,
                 description: story,
                 coverurl: coverImageUrl,
                 mode:widget.mode,
+                audioPath:_storedAudioPath,
               ),
             ),
           );
@@ -248,12 +248,14 @@ class _ProcessingPageState extends State<ProcessingPage> {
             PageTransition(
               type: PageTransitionType.rightToLeft, // Slide transition from right to left
               child: NewVideoPlayer(
-                videoPath: videoPath!,
+                videoPath: videoPathCombined!,
                 title: widget.title,
                 voice: widget.voice,
                 description: translatedStory,
                 coverurl: coverImageUrl,
                 mode:widget.mode,
+                audioPath:_storedAudioPath!,
+
               ),
             ),
           );
@@ -444,97 +446,12 @@ class _ProcessingPageState extends State<ProcessingPage> {
     }
   }
 
-  Future<void> _createVideoFromImages(List<String> imageUrls,
-      String audioData) async {
-    try {
-      final FlutterFFmpeg _flutterFFmpeg = FlutterFFmpeg();
 
-      // 1. Create a temporary directory to store downloaded images
-      final tempDir = await getTemporaryDirectory();
-      List<String> imagePaths = [];
-
-      // 2. Download images and save them to the temporary directory
-      for (int i = 0; i < imageUrls.length; i++) {
-        final response = await http.get(Uri.parse(imageUrls[i]));
-        if (response.statusCode == 200) {
-          final imageFile = File('${tempDir.path}/image_$i.jpg');
-
-          // Decode and encode as JPEG using the image package
-          final decodedImage = img.decodeImage(response.bodyBytes);
-          if (decodedImage != null) {
-            print('Image $i dimensions: ${decodedImage.width}x${decodedImage
-                .height}'); // Log dimensions
-            final encodedImage = img.encodeJpg(decodedImage);
-            await imageFile.writeAsBytes(encodedImage);
-            imagePaths.add(imageFile.path);
-            setState(() {
-              _loadingProgress += (0.25/_scenelength); // Increase progress by 1% every 50ms
-
-            });
-          }
-        } else {
-          print('Failed to download image: ${response.statusCode}');
-          return;
-        }
-      }
-      // 3. Save the audio data to a temporary file
-      final audioFile = File('${tempDir.path}/audio.mp3');
-      await audioFile.writeAsBytes(base64Decode(audioData));
-      // 4. Create the video using ffmpeg
-      videoPath = '${tempDir.path}/story_video.mp4';
-      double framerate = 1 / (_audioDuration.inSeconds > 0 ? _audioDuration.inSeconds : _scenelength);
-      double imageDuration =1/(( _audioDuration.inSeconds / imageUrls.length)+1.2);
-      print('Frame Rate $framerate');
-      final arguments = [
-        '-framerate',
-        '$imageDuration',  // Frame rate per image
-        '-i',
-        '${tempDir.path}/image_%d.jpg',  // Input image pattern
-        '-i',
-        audioFile.path,  // Input audio file
-
-        '-map',
-        '0:v',  // Map video from images
-        '-map',
-        '1:a',  // Map audio
-        '-c:v',
-        'mpeg4',  // Video codec
-        '-pix_fmt',
-        'yuv420p',  // Pixel format
-// Video filter for scaling and padding to 512x512
-        '-vf',
-        'scale=512:512:force_original_aspect_ratio=decrease,pad=512:512:(ow-iw)/2:(oh-ih)/2',
-
-
-        '-y',  // Overwrite output file
-        videoPath,  // Output video path
-      ];
-
-
-      final int returnCode = await _flutterFFmpeg.executeWithArguments(
-          arguments);
-
-      if (returnCode != 0) {
-        print('FFmpeg execution failed with code $returnCode.');
-        // Handle error
-        return;
-      }
-
-      print('Video created at: $videoPath');
-      // _statusText = 'Video created successfully.';  (No need to update here)
-
-    } catch (e) {
-      print('Error creating video: $e');
-      setState(() {
-        _statusText = 'Error creating video.';
-      });
-    }
-  }
 
 
   Future<void> _createVideoFromImagesTranslated(List<String> imageUrls) async {
     try {
-      final FlutterFFmpeg _flutterFFmpeg = FlutterFFmpeg();
+   final FlutterFFmpeg _flutterFFmpeg = FlutterFFmpeg();
 
       // 1. Create a temporary directory to store downloaded images
       final tempDir = await getTemporaryDirectory();
@@ -550,7 +467,8 @@ class _ProcessingPageState extends State<ProcessingPage> {
           final decodedImage = img.decodeImage(response.bodyBytes);
           if (decodedImage != null) {
             print('Image $i dimensions: ${decodedImage.width}x${decodedImage
-                .height}'); // Log dimensions
+                .height}');
+            print(imageFile.path);// Log dimensions
             final encodedImage = img.encodeJpg(decodedImage);
             await imageFile.writeAsBytes(encodedImage);
             imagePaths.add(imageFile.path);
@@ -567,8 +485,10 @@ class _ProcessingPageState extends State<ProcessingPage> {
 
       // 4. Create the video using ffmpeg
       videoPath = '${tempDir.path}/story_video.mp4';
+      videoPathConverted = '${tempDir.path}/story_video_converted.mp4';
+
       double framerate = 1 / (_audioDuration.inSeconds > 0 ? _audioDuration.inSeconds : _scenelength);
-      double imageDuration =1/(( _audioDuration.inSeconds / imageUrls.length)+1.2);
+      double imageDuration =1/(( _audioDuration.inSeconds / imageUrls.length)+1);
       print('Frame Rate $framerate');
       final arguments = [
         '-framerate',
@@ -583,7 +503,7 @@ class _ProcessingPageState extends State<ProcessingPage> {
         '-map',
         '1:a',  // Map audio
         '-c:v',
-        'mpeg4',  // Video codec
+        'libx264',  // Video codec
         '-pix_fmt',
         'yuv420p',  // Pixel format
 // Video filter for scaling and padding to 512x512
@@ -596,6 +516,7 @@ class _ProcessingPageState extends State<ProcessingPage> {
       ];
 
 
+
       final int returnCode = await _flutterFFmpeg.executeWithArguments(
           arguments);
 
@@ -606,6 +527,9 @@ class _ProcessingPageState extends State<ProcessingPage> {
       }
 
       print('Video created at: $videoPath');
+
+      await mergeNonCompatibleVideos(videoPath);
+
       // _statusText = 'Video created successfully.';  (No need to update here)
 
     } catch (e) {
@@ -615,8 +539,45 @@ class _ProcessingPageState extends State<ProcessingPage> {
       });
     }
   }
+  Future<File> loadVideoFromAssets(String fileName) async {
+    final byteData = await rootBundle.load('assets/$fileName');
+    final tempDir = await getTemporaryDirectory();
+    final file = File('${tempDir.path}/$fileName');
+
+    // Write bytes to a new file in the temp directory
+    await file.writeAsBytes(byteData.buffer.asUint8List());
+    return file;
+  }
+
+  Future<void> mergeNonCompatibleVideos( String video2Path) async {
+    final FlutterFFmpeg ffmpeg = FlutterFFmpeg();
+    final tempDir = await getTemporaryDirectory();
+     videoPathCombined = '${tempDir.path}/story_video_combined.mp4';
+
+    final video1Path = await loadVideoFromAssets('video1.mp4');
+
+  //   // FFmpeg command for re-encoding and merging
+  //   final command = '''
+  //   -i ${video1Path.path}
+  //   -i $video2Path
+  //   -filter_complex "[0:v:0][0:a:0][1:v:0][1:a:0]concat=n=2:v=1:a=1[outv][outa]"
+  //   -map "[outv]"
+  //   -map "[outa]"
+  //   -c:v libx264
+  //   -c:a aac
+  //   -y $videoPathCombined
+  // ''';
+    String commandToExecute = '-y -i ${video1Path.path} -i $video2Path -filter_complex \'[0:v:0]fps=30,setsar=1[vid1]; [1:v:0]fps=30,setsar=1[vid2]; [0:a:0][1:a:0]concat=n=2:v=0:a=1[outa]; [vid1][vid2]concat=n=2:v=1:a=0[outv]\' -map \'[outv]\' -map \'[outa]\' $videoPathCombined';
 
 
+    final result = await ffmpeg.execute(commandToExecute);
+
+    if (result == 0) {
+      print("Videos merged successfully into $videoPathCombined");
+    } else {
+      print("Error merging videos: $result");
+    }
+  }
 
 
 

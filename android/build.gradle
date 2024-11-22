@@ -29,3 +29,6 @@ configurations.all {
         force 'androidx.core:core-ktx:1.6.0'
     }
 }
+ext {
+    flutterFFmpegPackage = "full-gpl" // Replace "full-gpl" with your chosen package name
+}

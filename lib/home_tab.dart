@@ -350,6 +350,8 @@ class _CraftAStoryHomeState extends State<CraftAStoryHome> {
             createdAt:formattedDate ?? '',
             mode:data['mode'] ?? '',
             voice:data['voice'] ?? '',
+            isAudio: data['isAudio'] ?? false,
+            audioUrl: data['audioUrl'] ?? '',
           );
         }).toList();
 
@@ -386,6 +388,8 @@ class _CraftAStoryHomeState extends State<CraftAStoryHome> {
             createdAt:formattedDate ?? '',
             mode:data['mode'] ?? '',
             voice:data['voice'] ?? '',
+            isAudio: data['isAudio'] ?? false,
+            audioUrl: data['audioUrl'] ?? '',
           );
         }).toList();
 

@@ -9,7 +9,8 @@ import 'package:page_transition/page_transition.dart';
 import 'languagePage.dart';
 
 class CreateStoryWithAI extends StatefulWidget {
-  const CreateStoryWithAI({Key? key}) : super(key: key);
+  final bool video;
+  const CreateStoryWithAI({Key? key, required this.video}) : super(key: key);
 
   @override
   State<CreateStoryWithAI> createState() => _CreateStoryWithAIState();
@@ -51,11 +52,12 @@ class _CreateStoryWithAIState extends State<CreateStoryWithAI> {
         prompt += "Story Setting: ${_storySettingController.text}\n";
       }
 
+
       Navigator.push(
         context,
         PageTransition(
           type: PageTransitionType.rightToLeft,
-          child: LanguageAudioPage(prompt: prompt, title: _storyTitleController.text, mode:_selectedStoryType!),
+          child: LanguageAudioPage(prompt: prompt, title: _storyTitleController.text, mode:_selectedStoryType!, isvideo:widget.video),
         ),
       );
     }
@@ -224,12 +226,15 @@ class _CreateStoryWithAIState extends State<CreateStoryWithAI> {
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: _navigateToProcessingPage,
+
+
                     style: ElevatedButton.styleFrom(
+                      backgroundColor:  const Color(0xFF1A2259),
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       textStyle: const TextStyle(fontSize: 18),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
                     ),
-                    child: const Text('Continue', style: TextStyle(color: Colors.black)),
+                    child: const Text('Continue', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                   ),
                 ),
               ),

@@ -10,6 +10,8 @@ class StoryData {
   final String createdAt;
   final String voice;
   final int likes;
+  final bool isAudio;
+  final String audioUrl;
 
   StoryData({
     required this.storyId,
@@ -22,6 +24,8 @@ class StoryData {
     this.voice="",
     this.createdAt="",
     this.likes=0,
+    this.isAudio=false,
+    this.audioUrl="",
   });
   // Add this static method to create an instance from Firestore data
   static StoryData fromFirestore(Map<String, dynamic> data) {

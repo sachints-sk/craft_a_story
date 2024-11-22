@@ -114,6 +114,8 @@ class _MyStoriesPageState extends State<MyStoriesPage> {
               createdAt:formattedDate ?? '',
               mode:data['mode'] ?? '',
               voice:data['voice'] ?? '',
+              isAudio: data['isAudio'] ?? false,
+              audioUrl: data['audioUrl'] ?? '',
             );
           }).toList();
 
@@ -163,10 +165,28 @@ class _MyStoriesPageState extends State<MyStoriesPage> {
                 child: Container(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
-                    image: DecorationImage(
-                      image: NetworkImage(story.coverImageUrl),
-                      fit: BoxFit.cover,
-                    ),
+                  ),
+                  child: Stack(
+                    children: [
+                      // Background Image
+                      Positioned.fill(
+                        child: Image.network(
+                          story.coverImageUrl,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      // Overlay Image
+                      if(story.isAudio)
+                      Positioned.fill(
+                        child: Opacity(
+                          opacity: 1, // Adjust opacity for desired overlay effect
+                          child: Image.asset(
+                            'assets/overlay_image.png', // Path to your overlay image
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),

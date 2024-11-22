@@ -512,7 +512,8 @@ class _SuggestedStoriesGridState extends State<SuggestedStoriesGrid> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   List<StoryData> _stories = [];
   bool _isLoading = false;
-  DocumentSnapshot? _lastDocument; // Track the last document loaded
+  bool _hasMoreStories = true; // Track if more stories are available
+  DocumentSnapshot? _lastDocument;
 
   @override
   void initState() {
@@ -521,7 +522,7 @@ class _SuggestedStoriesGridState extends State<SuggestedStoriesGrid> {
   }
 
   Future<void> _loadStories() async {
-    if (_isLoading) return;
+    if (_isLoading || !_hasMoreStories) return;
     setState(() => _isLoading = true);
 
     Query query = _firestore
@@ -535,7 +536,7 @@ class _SuggestedStoriesGridState extends State<SuggestedStoriesGrid> {
 
     final snapshot = await query.get();
     if (snapshot.docs.isNotEmpty) {
-      _lastDocument = snapshot.docs.last; // Update last document
+      _lastDocument = snapshot.docs.last;
       List<StoryData> newStories = snapshot.docs.map((doc) {
         final data = doc.data() as Map<String, dynamic>;
         DateTime createdAtDate = (data['createdAt'] as Timestamp).toDate();
@@ -553,6 +554,8 @@ class _SuggestedStoriesGridState extends State<SuggestedStoriesGrid> {
       }).toList();
 
       setState(() => _stories.addAll(newStories));
+    } else {
+      setState(() => _hasMoreStories = false); // No more stories to load
     }
 
     setState(() => _isLoading = false);
@@ -582,16 +585,23 @@ class _SuggestedStoriesGridState extends State<SuggestedStoriesGrid> {
           },
         ),
         if (_isLoading) const CircularProgressIndicator(),
-        if (!_isLoading)
-          ElevatedButton(
+        if (!_isLoading && _hasMoreStories)
+          TextButton(
             onPressed: _loadStories,
             child: const Text('Load More'),
+          ),
+        if (!_isLoading && !_hasMoreStories)
+          const Padding(
+            padding: EdgeInsets.all(16.0),
+            child: Text(
+              'No more stories to load.',
+              style: TextStyle(fontSize: 16, color: Colors.grey),
+            ),
           ),
       ],
     );
   }
 }
-
 
 // Example story data model (You'll need to replace this with your actual data model)
 

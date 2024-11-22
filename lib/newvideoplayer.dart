@@ -9,6 +9,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:path_provider/path_provider.dart'; // For temporary file
 import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:firebase_performance/firebase_performance.dart';
 
 
 class NewVideoPlayer extends StatefulWidget {
@@ -18,6 +19,7 @@ class NewVideoPlayer extends StatefulWidget {
   final String coverurl;
   final String mode;
   final String voice;
+  final String audioPath;
 
   const NewVideoPlayer({
     Key? key,
@@ -26,7 +28,8 @@ class NewVideoPlayer extends StatefulWidget {
     required this.description,
     required this.coverurl,
     required this.mode,
-    required this.voice
+    required this.voice,
+    required this.audioPath
   }) : super(key: key);
 
 
@@ -75,6 +78,10 @@ class _NewVideoPlayerState extends State<NewVideoPlayer> {
 
 
   Future<void> _saveStoryToFirebase() async {
+    Trace customTraceVideoStory = FirebasePerformance.instance.newTrace('Upload-VideoStory-CloudStorage');
+    await customTraceVideoStory.start();
+
+
     setState(() {
       _isUploading = true;
       _saveText="Just a moment, we're saving your story.";
@@ -107,6 +114,12 @@ class _NewVideoPlayerState extends State<NewVideoPlayer> {
         'videos/story_$storyId.mp4',   // Use storyId here
       );
 
+      // 5. Upload audio to Storage and get its URL
+      final audioUrl = await _uploadFileToStorage(
+        widget.audioPath,
+        'audios/story_$storyId.mp3',   // Use storyId here
+      );
+
       // 5. Upload story data to Firestore (including coverImageUrl and videoUrl)
       await storyDocRef.set({ // Use storyDocRef with the generated ID
         'storyId': storyId,
@@ -116,6 +129,7 @@ class _NewVideoPlayerState extends State<NewVideoPlayer> {
         'description': widget.description,
         'coverImageUrl': coverImageUrl,
         'videoUrl': videoUrl,
+        'audioUrl': audioUrl,
         'voice' : widget.voice,
         'createdAt': FieldValue.serverTimestamp(),
       });
@@ -124,6 +138,8 @@ class _NewVideoPlayerState extends State<NewVideoPlayer> {
       await _saveFileLocally(coverImagePath, 'cover_$storyId.jpg');
       await _saveFileLocally(widget.videoPath, 'video_$storyId.mp4');
 
+
+      await customTraceVideoStory.stop();
       setState(() {
         _isUploading = false;
         _saveText="Your story is saved! You can view it anytime later.";
@@ -174,7 +190,11 @@ class _NewVideoPlayerState extends State<NewVideoPlayer> {
         widget.videoPath,
         'videos/story_$storyId.mp4',   // Use storyId here
       );
-
+     // 5. Upload audio to Storage and get its URL
+      final audioUrl = await _uploadFileToStorage(
+        widget.audioPath,
+        'audios/story_$storyId.mp3',   // Use storyId here
+      );
       // 5. Upload story data to Firestore (including coverImageUrl and videoUrl)
       await storyDocRef.set({ // Use storyDocRef with the generated ID
         'storyId': storyId,
@@ -184,6 +204,7 @@ class _NewVideoPlayerState extends State<NewVideoPlayer> {
         'description': widget.description,
         'coverImageUrl': coverImageUrl,
         'videoUrl': videoUrl,
+        'audioUrl': audioUrl,
         'voice' : widget.voice,
         'createdAt': FieldValue.serverTimestamp(),
       });

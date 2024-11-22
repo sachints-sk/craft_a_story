@@ -3,6 +3,7 @@ import 'package:dropdown_search/dropdown_search.dart';
 import 'package:lottie/lottie.dart';
 import 'processingpagetest.dart';
 import 'package:page_transition/page_transition.dart';
+import 'processingpageaudio.dart';
 
 enum UserMembership { normal, litePremium, proPremium }
 
@@ -11,9 +12,10 @@ class LanguageAudioPage extends StatefulWidget {
   final String prompt; // Receive the prompt
   final String title;
   final String mode;
+  final bool isvideo;
 
 
-  const LanguageAudioPage({Key? key, required this.prompt,required this.title,required this.mode}) : super(key: key);
+  const LanguageAudioPage({Key? key, required this.prompt,required this.title,required this.mode,required this.isvideo}) : super(key: key);
 
   @override
   State<LanguageAudioPage> createState() => _LanguageAudioPageState();
@@ -385,14 +387,30 @@ class _LanguageAudioPageState extends State<LanguageAudioPage> {
               ElevatedButton(
                 onPressed: () {
                   if (_selectedLanguage != null && _selectedVoice != null) {
+
+                    if(widget.isvideo){
+                      Navigator.push(
+                        context,
+                        PageTransition(
+                          type: PageTransitionType.rightToLeft,
+                          child: ProcessingPage(prompt: widget.prompt, title: widget.title,language :_selectedLanguage!,voice: _selectedVoice!,mode:widget.mode),
+                        ),
+                      );
+                    }else{
+                      Navigator.push(
+                        context,
+                        PageTransition(
+                          type: PageTransitionType.rightToLeft,
+                          child: ProcessingPageAudio (prompt: widget.prompt, title: widget.title,language :_selectedLanguage!,voice: _selectedVoice!,mode:widget.mode),
+                        ),
+                      );
+                    }
+
+
+
+
                     // Pass selected language and voice to next screen or function
-                    Navigator.push(
-                      context,
-                      PageTransition(
-                        type: PageTransitionType.rightToLeft,
-                        child: ProcessingPage(prompt: widget.prompt, title: widget.title,language :_selectedLanguage!,voice: _selectedVoice!,mode:widget.mode),
-                      ),
-                    );
+
                   } else {
                     // Show a message asking the user to select both language and voice
                     ScaffoldMessenger.of(context).showSnackBar(

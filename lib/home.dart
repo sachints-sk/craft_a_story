@@ -5,6 +5,7 @@ import 'home_tab.dart'; // Import your tab pages
 import 'mystories_tab.dart';
 import 'explore_tab.dart';
 import 'settings_tab.dart';
+import 'package:firebase_in_app_messaging/firebase_in_app_messaging.dart';
 
 void main() {
   runApp(const CraftAStoryApphome());
