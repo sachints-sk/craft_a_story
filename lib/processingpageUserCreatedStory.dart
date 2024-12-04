@@ -25,20 +25,20 @@ import 'package:firebase_performance/firebase_performance.dart';
 
 
 
-class ProcessingPage extends StatefulWidget {
-  final String prompt; // Receive the prompt
+class ProcessingPageUserCreatedStory extends StatefulWidget {
+  final String story; // Receive the prompt
   final String title;
   final String language;
   final String voice;
   final String mode;
 
-  const ProcessingPage({Key? key, required this.prompt,required this.title,required this.language,required this.voice, required this.mode}) : super(key: key);
+  const ProcessingPageUserCreatedStory({Key? key, required this.story,required this.title,required this.language,required this.voice, required this.mode}) : super(key: key);
 
   @override
-  State<ProcessingPage> createState() => _ProcessingPageState();
+  State<ProcessingPageUserCreatedStory> createState() => _ProcessingPageUserCreatedStoryState();
 }
 
-class _ProcessingPageState extends State<ProcessingPage> {
+class _ProcessingPageUserCreatedStoryState extends State<ProcessingPageUserCreatedStory> {
   final fal = FalClient.withCredentials(
       "4fad3a2a-9580-4460-a015-71224c171ca2:88cd0149a1673ef98b55fc87849301c8");
   int scenelength = 0;
@@ -63,7 +63,7 @@ class _ProcessingPageState extends State<ProcessingPage> {
   String videoPathConverted="";
 
 
-      bool _isLoading = false;
+  bool _isLoading = false;
   bool _isAudioReady = false;
   bool _isStoredAudioAvailable = false;
   String _storedAudioPath="";
@@ -120,7 +120,7 @@ class _ProcessingPageState extends State<ProcessingPage> {
       await requestStoragePermissions();
       await _clearOldImages();
       await _clearOldAudio();
-      _timer = await Timer.periodic(const Duration(milliseconds: 50), (timer) {
+      _timer = await Timer.periodic(const Duration(milliseconds: 10), (timer) {
         setState(() {
           _loadingProgress += 0.01; // Increase progress by 1% every 50ms
           if (_loadingProgress >= 0.02) {
@@ -131,20 +131,12 @@ class _ProcessingPageState extends State<ProcessingPage> {
       });
 
       // 2. Generate the Story
-      String story = await _generateStoryText(widget.prompt);
-      _timer =await Timer.periodic(const Duration(milliseconds: 50), (timer) {
-        setState(() {
-          _loadingProgress += 0.01; // Increase progress by 1% every 50ms
-          if (_loadingProgress >= 0.1) {
-            _timer?.cancel(); // Stop the timer when progress reaches 100%
-            // You can navigate to the next screen or perform other actions here
-          }
-        });
-      });
+      String story = widget.story;
+
       // 3. Get Character Descriptions
       final characterDescriptions = await _getCharacterDescriptions(story) as List<String>;
 
-      _timer =await  Timer.periodic(const Duration(milliseconds: 50), (timer) {
+      _timer =await  Timer.periodic(const Duration(milliseconds: 10), (timer) {
         setState(() {
           _loadingProgress += 0.01; // Increase progress by 1% every 50ms
           if (_loadingProgress >= 0.2) {
@@ -156,12 +148,12 @@ class _ProcessingPageState extends State<ProcessingPage> {
 
       // 4. Generate Scenes (call the function here)
       List<Map<String, dynamic>> scenes = await _generateScenes(story);
-     print("Generated Scenes: $scenes");
+      print("Generated Scenes: $scenes");
 
 
       // 5. Combine Scenes and Character Descriptions
       List<Map<String, dynamic>> Conscenes = await _appendCharacterDescriptions(scenes, characterDescriptions);
-      _timer =await Timer.periodic(const Duration(milliseconds: 50), (timer) {
+      _timer =await Timer.periodic(const Duration(milliseconds: 10), (timer) {
         setState(() {
           _loadingProgress += 0.01; // Increase progress by 1% every 50ms
           if (_loadingProgress >= 0.35) {
@@ -194,7 +186,7 @@ class _ProcessingPageState extends State<ProcessingPage> {
 
       await _speakTextTranslated(story);
 
-      _timer = Timer.periodic(const Duration(milliseconds: 50), (timer) {
+      _timer = Timer.periodic(const Duration(milliseconds: 10), (timer) {
         setState(() {
           _loadingProgress += 0.01; // Increase progress by 1% every 50ms
           if (_loadingProgress >= 0.7) {
@@ -211,7 +203,7 @@ class _ProcessingPageState extends State<ProcessingPage> {
 
 
 
-      _timer = Timer.periodic(const Duration(milliseconds: 50), (timer) {
+      _timer = Timer.periodic(const Duration(milliseconds: 10), (timer) {
         setState(() {
           _loadingProgress += 0.01; // Increase progress by 1% every 50ms
           if (_loadingProgress >= 1) {
@@ -220,46 +212,46 @@ class _ProcessingPageState extends State<ProcessingPage> {
           }
         });
       });
-        setState(() {
-          _statusText = "Story created! Ready to play";
-        });
+      setState(() {
+        _statusText = "Story created! Ready to play";
+      });
 
       await customTrace.stop();
 
-        if(widget.language=="en-US"){
-          Navigator.push(
-            context,
-            PageTransition(
-              type: PageTransitionType.rightToLeft, // Slide transition from right to left
-              child: NewVideoPlayer(
-                videoPath: videoPathCombined!,
-                title: widget.title,
-                voice: widget.voice,
-                description: story,
-                coverurl: coverImageUrl,
-                mode:widget.mode,
-                audioPath:_storedAudioPath,
-              ),
+      if(widget.language=="en-US"){
+        Navigator.push(
+          context,
+          PageTransition(
+            type: PageTransitionType.rightToLeft, // Slide transition from right to left
+            child: NewVideoPlayer(
+              videoPath: videoPathCombined!,
+              title: widget.title,
+              voice: widget.voice,
+              description: story,
+              coverurl: coverImageUrl,
+              mode:widget.mode,
+              audioPath:_storedAudioPath,
             ),
-          );
-        }else{
-          Navigator.push(
-            context,
-            PageTransition(
-              type: PageTransitionType.rightToLeft, // Slide transition from right to left
-              child: NewVideoPlayer(
-                videoPath: videoPathCombined!,
-                title: widget.title,
-                voice: widget.voice,
-                description: translatedStory,
-                coverurl: coverImageUrl,
-                mode:widget.mode,
-                audioPath:_storedAudioPath!,
+          ),
+        );
+      }else{
+        Navigator.push(
+          context,
+          PageTransition(
+            type: PageTransitionType.rightToLeft, // Slide transition from right to left
+            child: NewVideoPlayer(
+              videoPath: videoPathCombined!,
+              title: widget.title,
+              voice: widget.voice,
+              description: translatedStory,
+              coverurl: coverImageUrl,
+              mode:widget.mode,
+              audioPath:_storedAudioPath!,
 
-              ),
             ),
-          );
-        }
+          ),
+        );
+      }
 
 
 
@@ -348,7 +340,7 @@ class _ProcessingPageState extends State<ProcessingPage> {
           _statusText = "Audio ready!";
           _isAudioReady = true;
         });
-         // Check if the audio was saved successfully
+        // Check if the audio was saved successfully
       } else {
         setState(() {
           _statusText = "Error: ${response.statusCode}";
@@ -451,7 +443,7 @@ class _ProcessingPageState extends State<ProcessingPage> {
 
   Future<void> _createVideoFromImagesTranslated(List<String> imageUrls) async {
     try {
-   final FlutterFFmpeg _flutterFFmpeg = FlutterFFmpeg();
+      final FlutterFFmpeg _flutterFFmpeg = FlutterFFmpeg();
 
       // 1. Create a temporary directory to store downloaded images
       final tempDir = await getTemporaryDirectory();
@@ -552,21 +544,21 @@ class _ProcessingPageState extends State<ProcessingPage> {
   Future<void> mergeNonCompatibleVideos( String video2Path) async {
     final FlutterFFmpeg ffmpeg = FlutterFFmpeg();
     final tempDir = await getTemporaryDirectory();
-     videoPathCombined = '${tempDir.path}/story_video_combined.mp4';
+    videoPathCombined = '${tempDir.path}/story_video_combined.mp4';
 
     final video1Path = await loadVideoFromAssets('video1.mp4');
 
-  //   // FFmpeg command for re-encoding and merging
-  //   final command = '''
-  //   -i ${video1Path.path}
-  //   -i $video2Path
-  //   -filter_complex "[0:v:0][0:a:0][1:v:0][1:a:0]concat=n=2:v=1:a=1[outv][outa]"
-  //   -map "[outv]"
-  //   -map "[outa]"
-  //   -c:v libx264
-  //   -c:a aac
-  //   -y $videoPathCombined
-  // ''';
+    //   // FFmpeg command for re-encoding and merging
+    //   final command = '''
+    //   -i ${video1Path.path}
+    //   -i $video2Path
+    //   -filter_complex "[0:v:0][0:a:0][1:v:0][1:a:0]concat=n=2:v=1:a=1[outv][outa]"
+    //   -map "[outv]"
+    //   -map "[outa]"
+    //   -c:v libx264
+    //   -c:a aac
+    //   -y $videoPathCombined
+    // ''';
     String commandToExecute = '-y -i ${video1Path.path} -i $video2Path -filter_complex \'[0:v:0]fps=30,setsar=1[vid1]; [1:v:0]fps=30,setsar=1[vid2]; [0:a:0][1:a:0]concat=n=2:v=0:a=1[outa]; [vid1][vid2]concat=n=2:v=1:a=0[outv]\' -map \'[outv]\' -map \'[outa]\' $videoPathCombined';
 
 
@@ -585,8 +577,8 @@ class _ProcessingPageState extends State<ProcessingPage> {
     setState(() {
       _statusText = "Crafting the soundtrack ...";
     });
-print("normal method");
-print(widget.voice);
+    print("normal method");
+    print(widget.voice);
     final url = Uri.parse(
         'https://us-central1-adept-ethos-432515-v9.cloudfunctions.net/createspeech');
     try {
@@ -632,7 +624,7 @@ print(widget.voice);
     for (var scene in scenes) {
       // Extract the scene description
       String prompt = scene['scene'];
-print(prompt);
+      print(prompt);
       // Make the API call to generate images using the scene description
       final output = await fal.subscribe("fal-ai/flux/schnell", input: {
         "prompt": prompt,
@@ -672,7 +664,7 @@ print(prompt);
   List<Map<String, dynamic>> _appendCharacterDescriptions(
       List<Map<String, dynamic>> scenes, List<String> characterDescriptions) {
     setState(() {
-      _statusText = "Perfecting tale.";
+      _statusText = "Perfecting tale..";
     });
     // Create a copy of the scenes list to avoid modifying the original
     List<Map<String, dynamic>> modifiedScenes = List.from(scenes);
@@ -909,12 +901,12 @@ print(prompt);
               Row(mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [Text(
                   _statusText,
-                style: const TextStyle(color: Colors.grey),
-              ),Text(
-        '${(_loadingProgress * 100).toInt()}%', // Display percentage
-        style: const TextStyle(color: Colors.grey,),
-      ),
-              ],
+                  style: const TextStyle(color: Colors.grey),
+                ),Text(
+                  '${(_loadingProgress * 100).toInt()}%', // Display percentage
+                  style: const TextStyle(color: Colors.grey,),
+                ),
+                ],
               )
 
             ],

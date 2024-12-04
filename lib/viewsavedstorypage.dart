@@ -9,6 +9,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:animated_toggle_switch/animated_toggle_switch.dart';
 import 'package:audio_waveforms/audio_waveforms.dart';
+import 'package:share_plus/share_plus.dart';
 
 
 
@@ -29,6 +30,8 @@ class _ViewSavedStoryPageState extends State<ViewSavedStoryPage> {
   late PlayerController _audioController;
   bool isToggled= true;
   bool _isDownloading = false;
+  bool _isDownloading2 = false;
+
   String _localAudioPath="";
   double _currentVolume = 1.0;
   bool isPlaying = false;
@@ -173,6 +176,43 @@ class _ViewSavedStoryPageState extends State<ViewSavedStoryPage> {
     }
   }
 
+  Future<void> _shareStory() async {
+    try {
+      // Get the local video file path
+      final localVideoPath = await _getLocalFilePath('video_${widget.storyData.storyId}.mp4');
+      final videoFile = File(localVideoPath);
+
+      if (await videoFile.exists()) {
+        // Share the video file if it exists
+        await Share.shareXFiles(
+          [XFile(localVideoPath)],
+          text: 'Check out this story: ${widget.storyData.title}. More amazing stories await on Craft-a-Story.',
+        );
+      } else {
+        setState(() {
+          _isDownloading2 = true;
+        });
+        // If the video doesn't exist, download it first
+        await _downloadAndSaveVideo(widget.storyData.videoUrl, localVideoPath);
+
+        setState(() {
+          _isDownloading2 = false;
+        });
+        // After downloading, share the video
+        await Share.shareXFiles(
+          [XFile(localVideoPath)],
+          text: 'Check out this story: ${widget.storyData.title}. More amazing stories await on Craft-a-Story.',
+        );
+      }
+    } catch (e) {
+      print('Error while sharing story: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to share the story.')),
+      );
+    }
+  }
+
+
   Future<String> _getLocalFilePath(String filename) async {
     final directory = await getApplicationDocumentsDirectory();
     return '${directory.path}/$filename';
@@ -202,219 +242,243 @@ class _ViewSavedStoryPageState extends State<ViewSavedStoryPage> {
 
   }
 
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF161825),
-        leading: IconButton(
-          icon: const Icon(Icons.close, color: Colors.white),
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        ),
-        title: const Text(
-          "Story Explorer",
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0),
-            child: AnimatedToggleSwitch<bool>.dual(
-              current: isToggled,
-              first: false,
-              second: true,
-              style: const ToggleStyle(
-                backgroundColor: Colors.white10,
-                indicatorColor: Colors.white70,
-
-                borderColor: Colors.white,
-              ),
-              height: 38.0,
-              spacing: 12.0,
-              onChanged: (value) {
-                setState(() {
-                  isToggled = value;
-                });
-                if(value){
-                  isToggledFunction();
-                }else{
-                  isnotToggledFunction();
-                }
+    return Stack(
+      children: [
+        // Main UI
+        Scaffold(
+          appBar: AppBar(
+            backgroundColor: const Color(0xFF161825),
+            leading: IconButton(
+              icon: const Icon(Icons.close, color: Colors.white),
+              onPressed: () {
+                Navigator.pop(context);
               },
-              iconBuilder: (value) => value
-                  ? const Icon(Icons.movie, color: const Color(0xFF161825))
-                  : const Icon(Icons.volume_up, color: const Color(0xFF161825),),
-              textBuilder: (value) => value
-                  ? const Text('Video', style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold))
-                  : const Text('Audio', style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold)),
             ),
-          ),
-        ],
-      ),
+            title: const Text(
+              "Story Explorer",
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            ),
+            actions: [
 
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                child: AnimatedToggleSwitch<bool>.dual(
+                  current: isToggled,
+                  first: false,
+                  second: true,
+                  style: const ToggleStyle(
+                    backgroundColor: Colors.white10,
+                    indicatorColor: Colors.white70,
 
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Video Player or Cover Image Section
-          if(isToggled)
-          Stack(
-            alignment: Alignment.center,
-            children: [
-              AspectRatio(
-                aspectRatio: 1, // Ensures consistent height
-                child: _showVideoPlayer
-                    ? (_isVideoInitialized
-                    ? Chewie(controller: _chewieController!)
-                    : const Center(child: CircularProgressIndicator()))
-                    : Image.network(
-                  widget.storyData.coverImageUrl,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Image.asset(
-                      'assets/testimage.png',
-                      fit: BoxFit.cover,
-                    );
+                    borderColor: Colors.white,
+                  ),
+                  height: 38.0,
+                  spacing: 12.0,
+                  onChanged: (value) {
+                    setState(() {
+                      isToggled = value;
+                    });
+                    if(value){
+                      isToggledFunction();
+                    }else{
+                      isnotToggledFunction();
+                    }
                   },
+                  iconBuilder: (value) => value
+                      ? const Icon(Icons.movie, color: const Color(0xFF161825))
+                      : const Icon(Icons.volume_up, color: const Color(0xFF161825),),
+                  textBuilder: (value) => value
+                      ? const Text('Video', style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold))
+                      : const Text('Audio', style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold)),
                 ),
               ),
-              if (!_showVideoPlayer)
-                IconButton(
-                  iconSize: 64,
-                  icon: const Icon(Icons.play_circle_fill, color: Colors.white),
-                  onPressed: _onPlayButtonPressed,
-                ),
             ],
           ),
 
-          if(!isToggled)
-            _localAudioPath == ""
-                ? Container(
-              width: double.infinity,
-              height: 300, // or adjust based on your layout needs
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  // Background Image (Cover Image)
-                  if (widget.storyData.coverImageUrl != null)
-                    if (!_isDownloading)
-                      Positioned.fill(
-                        child: Image.network(
-                          widget.storyData.coverImageUrl!,
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                  // Play Button on top
-                  if (!_isDownloading)
-                    IconButton(
-                      iconSize: 64,
-                      icon: const Icon(Icons.play_circle_fill, color: Colors.white),
-                      onPressed: _downloadAndPlayAudio,
-                    ),
-                  // Circular Progress Indicator when downloading
-                  if (_isDownloading)
-                    const CircularProgressIndicator(),
-                ],
-              ),
 
-            )
-
-
-                : AudioFileWaveforms(
-              size: Size(MediaQuery.of(context).size.width, 150.0),
-              playerController: _audioController,
-              enableSeekGesture: true,
-              waveformType: WaveformType.long,
-              animationCurve: Curves.easeInOut,
-              playerWaveStyle: PlayerWaveStyle(
-                fixedWaveColor: Colors.grey.shade300,
-                liveWaveColor: Colors.blueAccent,
-                scaleFactor: 400,
-                waveThickness: 3.5,
-                spacing: 10,
-                waveCap: StrokeCap.round,
-                liveWaveGradient: LinearGradient(
-                  colors: [const Color(0xFF1A2259), Colors.purple],
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
-                ).createShader(Rect.fromLTWH(0, 0, 200, 50)),
-              ),
-            ),
-          if(!isToggled)
-          if (_localAudioPath != "")
-            ...[
-              const SizedBox(height: 20),
-              // Control buttons
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  IconButton(
-                    iconSize: 36,
-                    icon: Icon(Icons.replay_10),
-                    onPressed: () async {
-                      final currentPosition = await _audioController.getDuration(DurationType.current) ?? 0;
-                      await _audioController.seekTo(currentPosition - 5000); // Rewind 10 seconds
-                    },
-                  ),
-                  IconButton(
-                    iconSize: 78,
-                    icon: Icon(
-                      isPlaying ? Icons.pause_circle : Icons.play_circle,
-                      color: const Color(0xFF1A2259),
-                    ),
-                    onPressed: () async {
-                      if (isPlaying) {
-                        await _audioController.pausePlayer();
-                      } else {
-                        await _audioController.startPlayer(finishMode: FinishMode.stop);
-                      }
-                      setState(() {
-                        isPlaying = !isPlaying; // Toggle play/pause state
-                      });
-                    },
-                  ),
-                  IconButton(
-                    iconSize: 36,
-                    icon: Icon(Icons.forward_10),
-                    onPressed: () async {
-                      final currentPosition = await _audioController.getDuration(DurationType.current) ?? 0;
-                      await _audioController.seekTo(currentPosition + 5000); // Forward 10 seconds
-                    },
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-
-
-            ],
-
-
-
-          // Scrollable Story Details Section
-          Expanded(
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: const BoxDecoration(
-
-
-              ),
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          body: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Video Player or Cover Image Section
+              if(isToggled)
+                Stack(
+                  alignment: Alignment.center,
                   children: [
-                    _buildStoryHeader(widget.storyData),
-                    const SizedBox(height: 20),
-
+                    AspectRatio(
+                      aspectRatio: 1, // Ensures consistent height
+                      child: _showVideoPlayer
+                          ? (_isVideoInitialized
+                          ? Chewie(controller: _chewieController!)
+                          : const Center(child: CircularProgressIndicator()))
+                          : Image.network(
+                        widget.storyData.coverImageUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Image.asset(
+                            'assets/testimage.png',
+                            fit: BoxFit.cover,
+                          );
+                        },
+                      ),
+                    ),
+                    if (!_showVideoPlayer)
+                      IconButton(
+                        iconSize: 64,
+                        icon: const Icon(Icons.play_circle_fill, color: Colors.white),
+                        onPressed: _onPlayButtonPressed,
+                      ),
                   ],
                 ),
+
+              if(!isToggled)
+                _localAudioPath == ""
+                    ? Container(
+                  width: double.infinity,
+                  height: 300, // or adjust based on your layout needs
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      // Background Image (Cover Image)
+                      if (widget.storyData.coverImageUrl != null)
+                        if (!_isDownloading)
+                          Positioned.fill(
+                            child: Image.network(
+                              widget.storyData.coverImageUrl!,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                      // Play Button on top
+                      if (!_isDownloading)
+                        IconButton(
+                          iconSize: 64,
+                          icon: const Icon(Icons.play_circle_fill, color: Colors.white),
+                          onPressed: _downloadAndPlayAudio,
+                        ),
+                      // Circular Progress Indicator when downloading
+                      if (_isDownloading)
+                        const CircularProgressIndicator(),
+                    ],
+                  ),
+
+                )
+
+
+                    : AudioFileWaveforms(
+                  size: Size(MediaQuery.of(context).size.width, 150.0),
+                  playerController: _audioController,
+                  enableSeekGesture: true,
+                  waveformType: WaveformType.long,
+                  animationCurve: Curves.easeInOut,
+                  playerWaveStyle: PlayerWaveStyle(
+                    fixedWaveColor: Colors.grey.shade300,
+                    liveWaveColor: Colors.blueAccent,
+                    scaleFactor: 400,
+                    waveThickness: 3.5,
+                    spacing: 10,
+                    waveCap: StrokeCap.round,
+                    liveWaveGradient: LinearGradient(
+                      colors: [const Color(0xFF1A2259), Colors.purple],
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                    ).createShader(Rect.fromLTWH(0, 0, 200, 50)),
+                  ),
+                ),
+              if(!isToggled)
+                if (_localAudioPath != "")
+                  ...[
+                    const SizedBox(height: 20),
+                    // Control buttons
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        IconButton(
+                          iconSize: 36,
+                          icon: Icon(Icons.replay_10),
+                          onPressed: () async {
+                            final currentPosition = await _audioController.getDuration(DurationType.current) ?? 0;
+                            await _audioController.seekTo(currentPosition - 5000); // Rewind 10 seconds
+                          },
+                        ),
+                        IconButton(
+                          iconSize: 78,
+                          icon: Icon(
+                            isPlaying ? Icons.pause_circle : Icons.play_circle,
+                            color: const Color(0xFF1A2259),
+                          ),
+                          onPressed: () async {
+                            if (isPlaying) {
+                              await _audioController.pausePlayer();
+                            } else {
+                              await _audioController.startPlayer(finishMode: FinishMode.stop);
+                            }
+                            setState(() {
+                              isPlaying = !isPlaying; // Toggle play/pause state
+                            });
+                          },
+                        ),
+                        IconButton(
+                          iconSize: 36,
+                          icon: Icon(Icons.forward_10),
+                          onPressed: () async {
+                            final currentPosition = await _audioController.getDuration(DurationType.current) ?? 0;
+                            await _audioController.seekTo(currentPosition + 5000); // Forward 10 seconds
+                          },
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+
+
+                  ],
+
+
+
+              // Scrollable Story Details Section
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: const BoxDecoration(
+
+
+                  ),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildStoryHeader(widget.storyData),
+                        const SizedBox(height: 20),
+
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // Fullscreen loading overlay
+        if (_isDownloading2)
+          Positioned.fill(
+            child: Container(
+              color: Colors.black.withOpacity(0.5),
+              child: const Center(
+                child: CircularProgressIndicator(),
               ),
             ),
           ),
-        ],
-      ),
+      ],
     );
   }
+
+
+
+
+
+
 
   Widget _buildStoryHeader(StoryData storyData) {
     return Column(
@@ -444,7 +508,7 @@ class _ViewSavedStoryPageState extends State<ViewSavedStoryPage> {
             onPressed: _toggleLike,
             icon: Icon(
             isLiked ? Icons.thumb_up : Icons.thumb_up_alt_outlined,
-            color: isLiked ? Colors.blue : Colors.grey,
+            color: isLiked ? Colors.blue : Colors.black87,
             size: 28,
             ),
             ),
@@ -455,6 +519,10 @@ class _ViewSavedStoryPageState extends State<ViewSavedStoryPage> {
             fontSize: 16,
             ),
             ),
+              IconButton(
+                icon: const Icon(Icons.share, color: Colors.black87,  ),
+                onPressed: _shareStory,
+              ),
             ],
             ),
           ],

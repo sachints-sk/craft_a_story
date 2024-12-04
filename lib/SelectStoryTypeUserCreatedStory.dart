@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
-import 'SelectStoryType.dart';
+import 'languagepageUserCreatedStory.dart';
 import 'package:page_transition/page_transition.dart';
-import 'userstorydetails.dart';
 
-
-class SelectModePage extends StatelessWidget {
-  const SelectModePage({Key? key}) : super(key: key);
+class SelectStoryTypePageUserCreatedStory extends StatelessWidget {
+  final String story;
+  final String title;
+  final String mode;
+  const SelectStoryTypePageUserCreatedStory({Key? key, required this.story, required this.title,required this.mode}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_rounded, color: Colors.black),
@@ -20,9 +20,10 @@ class SelectModePage extends StatelessWidget {
             Navigator.pop(context);
           },
         ),
-        title: const Text("Choose Your Path",
-            textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+        title: const Text(
+          "Select Story Type",
+          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+        ),
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -30,59 +31,48 @@ class SelectModePage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              const Text(
+                "Choose the mode for your story",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+              ),
               const SizedBox(height: 10),
-              Text(
-                "Choose mode for story creation.",
-                style: TextStyle(
-
-                  fontSize: 18,
-                ),
-              ),const SizedBox(height: 30),
               _buildModeCard(
                 context,
-                imagePath: 'assets/aiwriting.png',
-                title: 'Create with AI',
-                description: 'Generate a story in seconds',
-                buttonText: 'Get Started',
+                imagePath: 'assets/kidsplaying.png',
+                title: 'Visually Engaging',
+                description:
+                'Uses 10 credits.',
+                buttonText: 'Select',
                 onPressed: () {
                   Navigator.push(
                     context,
                     PageTransition(
                       type: PageTransitionType.rightToLeft,
-                      child: const SelectStoryTypePage(),
+                      child:  LanguageAudioPageUserCreatedStory(isvideo: true,story: story,title: title,mode: mode),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 10),
+              _buildModeCard(
+                context,
+                imagePath: 'assets/audioimage.png',
+                title: 'Audio only',
+                description:
+                'Uses 2 credits.',
+                buttonText: 'Select',
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    PageTransition(
+                      type: PageTransitionType.rightToLeft,
+                      child:  LanguageAudioPageUserCreatedStory(isvideo: false,story: story,title: title,mode: mode),
                     ),
                   );
                 },
               ),
               const SizedBox(height: 20),
-              _buildModeCard(
-                context,
-                imagePath: 'assets/personwriting.png',
-                title: 'Write Your Story',
-                description: 'Craft a story from scratch',
-                buttonText: 'Start Writing',
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    PageTransition(
-                      type: PageTransitionType.rightToLeft,
-                      child: CreateStory(),
-                    ),
-                  );
-                  // Navigate to the write your own story page
-                },
-              ),
-              const SizedBox(height: 4),
-              Center(
-                child: Text(
-                  'This feature supports English language only.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 13.0, color: Colors.grey),
-                ),
-              ),
-
-
-
+              _buildTipSection(),
             ],
           ),
         ),
@@ -90,7 +80,7 @@ class SelectModePage extends StatelessWidget {
     );
   }
 
-  // Reusable widget for mode cards
+
   Widget _buildModeCard(
       BuildContext context, {
         required String imagePath,
@@ -144,19 +134,46 @@ class SelectModePage extends StatelessWidget {
                 ElevatedButton(
                   onPressed: onPressed,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1A2259),
+                    backgroundColor:  const Color(0xFF1A2259),
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
                     textStyle: const TextStyle(fontSize: 14),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                     ),
                   ),
-                  child: Text(buttonText, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  child: Text(buttonText, style: const TextStyle(color: Colors.white,fontWeight: FontWeight.bold)),
                 ),
               ],
             ),
           ),
         ],
+      ),
+    );
+  }
+
+
+
+
+  Widget _buildTipSection() {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Row(
+          children: [
+            const Icon(Icons.info, color: Colors.blue, size: 40),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Tip: Audio stories are great for reducing screen time, while visually engaging stories add an extra spark of creativity!',
+                style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

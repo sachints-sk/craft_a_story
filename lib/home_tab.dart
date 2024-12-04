@@ -8,16 +8,21 @@ import 'buycredits.dart';
 import 'package:giffy_dialog/giffy_dialog.dart';
 import 'package:algolia_helper_flutter/algolia_helper_flutter.dart';
 import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
-
+import 'dart:io';
 import 'viewsavedstorypage.dart';
 import 'viewSearchStory.dart';
 import 'package:intl/intl.dart';
 import 'myStoriesViewer.dart';
 
 
+import 'package:purchases_flutter/purchases_flutter.dart';
+import 'package:purchases_ui_flutter/purchases_ui_flutter.dart';
+
+
+
 class CraftAStoryHome extends StatefulWidget {
   final Function(int) onTabSelected;
-  CraftAStoryHome({required this.onTabSelected});
+  const CraftAStoryHome({Key? key, required this.onTabSelected}) : super(key: key);
 
   @override
   State<CraftAStoryHome> createState() => _CraftAStoryHomeState();
@@ -32,10 +37,11 @@ class _CraftAStoryHomeState extends State<CraftAStoryHome> {
   HitsSearcher? _productsSearcher; // Declare without initializing
   final _searchTextController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
+  int Credits = 0;
 
   Stream<SearchMetadata>? get _searchMetadata => _productsSearcher?.responses.map(SearchMetadata.fromResponse);
   Stream<HitsPage>? get _searchPage => _productsSearcher?.responses.map(HitsPage.fromResponse);
-
+ bool _subscribed = false;
   void initState() {
     super.initState();
 
@@ -80,6 +86,8 @@ class _CraftAStoryHomeState extends State<CraftAStoryHome> {
       });
     });
 
+    _configureSDK();
+    _setupIsPro();
   }
   @override
   void dispose() {
@@ -88,6 +96,45 @@ class _CraftAStoryHomeState extends State<CraftAStoryHome> {
     _searchFocusNode.dispose();
     super.dispose();
   }
+
+
+
+  Future<void> _configureSDK() async {
+    await Purchases.setLogLevel(LogLevel.debug);
+    PurchasesConfiguration? configuration;
+
+    if(Platform.isAndroid){
+      configuration=PurchasesConfiguration("goog_ROHmfEQIqmPakpNaNfXYdMByLKh");
+    }
+
+
+    if(configuration != null){
+      await Purchases.configure(configuration);
+    //  final paywallResult =await RevenueCatUI.presentPaywallIfNeeded("Premium",displayCloseButton: true);
+    //  print('Paywall Result: $paywallResult');
+    }
+
+  }
+
+  Future<void> _setupIsPro() async{
+    Purchases.addCustomerInfoUpdateListener((customerInfo) async {
+      EntitlementInfo? entitlement = customerInfo.entitlements.all['Premium'];
+      setState(() {
+        _subscribed= entitlement?.isActive ?? false;
+      });
+    });
+  }
+
+
+
+void showpaywall () async{
+
+  final paywallResult =await RevenueCatUI.presentPaywallIfNeeded("Premium",displayCloseButton: true);;
+}
+
+
+
+
 
 
   @override
@@ -240,25 +287,71 @@ class _CraftAStoryHomeState extends State<CraftAStoryHome> {
                       width: 19,
                     ),
                     const SizedBox(width: 4),
-                    const Text('5', style: TextStyle(color: Colors.white, fontSize: 16)),
+                    StreamBuilder<DocumentSnapshot>(
+                      stream: FirebaseFirestore.instance
+                          .collection('users')
+                          .doc(FirebaseAuth.instance.currentUser?.uid)
+                          .snapshots(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          // Show a loading indicator while data is being fetched
+                          return const Text(
+                            '...',
+                            style: TextStyle(color: Colors.white, fontSize: 16),
+                          );
+                        }
+
+                        if (snapshot.hasError) {
+                          // Handle errors
+                          return const Text(
+                            'Error',
+                            style: TextStyle(color: Colors.red, fontSize: 16),
+                          );
+                        }
+
+                        if (snapshot.hasData && snapshot.data != null) {
+                          final userData = snapshot.data!.data() as Map<String, dynamic>?;
+                          final userCredits = userData?['credits'] ?? 0; // Fallback to 0 if credits are null
+                          Credits= userCredits;
+
+                          return Text(
+                            '$userCredits',
+                            style: const TextStyle(color: Colors.white, fontSize: 16),
+                          );
+                        }
+
+                        // Fallback UI if no data is found
+                        return const Text(
+                          '0',
+                          style: TextStyle(color: Colors.white, fontSize: 16),
+                        );
+                      },
+                    ),
                   ],
                 ),
+
               ),
             ),
+            if (_subscribed) ...[
             const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.all(9),
-              decoration: BoxDecoration(
-                color: const Color(0xFF8A44F2),
-                borderRadius: BorderRadius.circular(8),
+            GestureDetector(
+              onTap: () => showPaywallDialog(context),
+              child: Container(
+
+                padding: const EdgeInsets.all(9),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF8A44F2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Image.asset(
+                  'assets/crown.png',
+                  height: 22,
+                  width: 22,
+                  color: Colors.white,
+                ),
               ),
-              child: Image.asset(
-                'assets/crown.png',
-                height: 22,
-                width: 22,
-                color: Colors.white,
-              ),
-            ),
+            )],
+
           ],
         ),
       ],
@@ -409,7 +502,7 @@ class _CraftAStoryHomeState extends State<CraftAStoryHome> {
         ),
         GestureDetector(
           onTap: () {
-          //  onTabSelected(page);
+            widget.onTabSelected(page);
           },
           child: const Text(
             'View All',
@@ -595,14 +688,60 @@ class _CraftAStoryHomeState extends State<CraftAStoryHome> {
     );
   }
 
+  void showPaywallDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
 
-  Future<int> _getUserCredits() async {
-    // ... (Your logic to get credits from Firestore or local storage)
-    return 10; // Example: Return 10 credits
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Stack(
+            children: [
+              // ClipRRect(
+              //   borderRadius: BorderRadius.circular(16),
+              //   child: PaywallScreen(),
+              // ),
+              Positioned(
+                top: 8,
+                right: 8,
+                child: GestureDetector(
+                  onTap: () {
+                    Navigator.of(context).pop(); // Close the dialog
+                  },
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade200,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black26,
+                          blurRadius: 4,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Icon(
+                      Icons.close,
+                      size: 28,
+                      color: Colors.black,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
+
+
+
   void _showCreditsDialog(BuildContext context) async {
-    int credits = await _getUserCredits();
+
 
     showDialog(
       context: context,
@@ -623,7 +762,7 @@ class _CraftAStoryHomeState extends State<CraftAStoryHome> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'You have $credits credits to craft amazing stories.',
+                'You have $Credits credits to craft amazing stories.',
                 textAlign: TextAlign.center,
                 style: const TextStyle(fontSize: 18.0),
               ),
@@ -635,25 +774,7 @@ class _CraftAStoryHomeState extends State<CraftAStoryHome> {
               ),
             ],
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context), // Close the dialog
-              child: const Text('Close', style: TextStyle(color: Colors.black)),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-                // Navigate to the Purchase Credits page
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const PurchaseCreditsPage(),
-                  ),
-                );
-              },
-              child: const Text('Buy Credits', style: TextStyle(color: Colors.black)),
-            ),
-          ],
+
 
         );
       },

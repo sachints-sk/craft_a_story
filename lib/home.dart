@@ -1,3 +1,5 @@
+
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -6,42 +8,22 @@ import 'mystories_tab.dart';
 import 'explore_tab.dart';
 import 'settings_tab.dart';
 import 'package:firebase_in_app_messaging/firebase_in_app_messaging.dart';
+import 'dart:io';
+import 'package:purchases_flutter/purchases_flutter.dart';
+import 'package:purchases_ui_flutter/purchases_ui_flutter.dart';
 
 void main() {
   runApp(const CraftAStoryApphome());
 }
 
-
-
-
-
-class CraftAStoryApphome extends StatelessWidget {
+class CraftAStoryApphome extends StatefulWidget {
   const CraftAStoryApphome({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Craft-a-Story',
-      theme: ThemeData(
-        useMaterial3: true, // Enable Material Design 3
-        colorSchemeSeed: const Color(0xFF161825), // Define a custom color scheme
-        textTheme: GoogleFonts.poppinsTextTheme(
-          Theme.of(context).textTheme,
-        ),
-      ),
-      home: const MainScreen(),
-    );
-  }
+  State<CraftAStoryApphome> createState() => _CraftAStoryApphomeState();
 }
 
-class MainScreen extends StatefulWidget {
-  const MainScreen({Key? key}) : super(key: key);
-
-  @override
-  State<MainScreen> createState() => _MainScreenState();
-}
-
-class _MainScreenState extends State<MainScreen> {
+class _CraftAStoryApphomeState extends State<CraftAStoryApphome> {
   int _selectedIndex = 0; // Index of the currently selected tab
 
   // Callback function to change the selected tab index
@@ -49,6 +31,38 @@ class _MainScreenState extends State<MainScreen> {
     setState(() {
       _selectedIndex = index;
     });
+  }
+
+  bool _paywallShown = false;
+  bool _subscribed = false;// Flag to track if paywall is shown
+
+  @override
+  void initState() {
+    super.initState();
+
+
+
+    _configureSDK();
+  }
+
+
+
+  Future<void> _configureSDK() async {
+    await Purchases.setLogLevel(LogLevel.debug);
+    PurchasesConfiguration? configuration;
+
+    if(Platform.isAndroid){
+      configuration=PurchasesConfiguration("goog_ROHmfEQIqmPakpNaNfXYdMByLKh");
+    }
+
+
+    if(configuration != null){
+      await Purchases.configure(configuration);
+      await Future.delayed(const Duration(seconds: 5));
+      final paywallResult =await RevenueCatUI.presentPaywallIfNeeded("Premium",displayCloseButton: true);
+      print('Paywall Result: $paywallResult');
+    }
+
   }
 
   @override
@@ -61,10 +75,8 @@ class _MainScreenState extends State<MainScreen> {
     ];
 
     return Scaffold(
-      // Set your primary color
       backgroundColor: Colors.white, // Set the background color
       body: _pages[_selectedIndex], // Display the selected tab's content
-
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
         onDestinationSelected: (index) {
@@ -96,3 +108,4 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 }
+

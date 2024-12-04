@@ -7,6 +7,8 @@ import 'package:lottie/lottie.dart';
 import 'buycredits.dart';
 import 'viewsavedstorypage.dart';
 import 'package:intl/intl.dart';
+import 'topCategories.dart';
+import 'package:page_transition/page_transition.dart';
 
 class ExploreTab extends StatelessWidget {
   const ExploreTab({Key? key}) : super(key: key);
@@ -437,7 +439,6 @@ class StoryCard extends StatelessWidget {
     );
   }
 }
-// Widget for Top Categories (Horizontal Scroll)
 class TopCategoriesList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -454,23 +455,34 @@ class TopCategoriesList extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16), // Add padding to the sides
       child: Wrap(
         spacing: 4,
-
         children: categories.map((category) {
-          return Chip(
-            label: Text(
-              category,
-              style: const TextStyle(
-                color: Colors.black,
+          return GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                PageTransition(
+                  type: PageTransitionType.rightToLeft,
+                  child: Topcategories(selectedCategory: category),
+                ),
+              );
+
+            },
+            child: Chip(
+              label: Text(
+                category,
+                style: const TextStyle(
+                  color: Colors.black,
+                ),
               ),
+              elevation: 0,
             ),
-            // Set background color to blue
-            elevation: 0,
           );
         }).toList(),
       ),
     );
   }
 }
+
 
 // Widget for a single Category Card
 class CategoryCard extends StatelessWidget {

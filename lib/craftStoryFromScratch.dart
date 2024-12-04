@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'ValidateScratchStory.dart';
 
 class CraftStoryPage extends StatefulWidget {
+  final String title;
+  final String mode;
+
+  const CraftStoryPage({Key? key, required this.title,required this.mode}) : super(key: key);
   @override
   _CraftStoryPageState createState() => _CraftStoryPageState();
 }
@@ -34,7 +38,7 @@ class _CraftStoryPageState extends State<CraftStoryPage> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => ValidateScratchStory(story:_textController.text), // Replace with your next page
+          builder: (context) => ValidateScratchStory(story:_textController.text, title: widget.title,mode: widget.mode), // Replace with your next page
         ),
       );
     }

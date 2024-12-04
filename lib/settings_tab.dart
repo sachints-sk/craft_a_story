@@ -5,6 +5,11 @@ import 'buycredits.dart';
 import 'package:page_transition/page_transition.dart';
 import 'Subscription.dart';
 import 'languagePage.dart';
+import 'storageSettingsPage.dart';
+import 'helpCenterPage.dart';
+import 'PrivacyPolicyPage.dart';
+import 'TermsofUsePage.dart';
+import 'Paywall.dart';
 
 class SettingsTab extends StatefulWidget {
   const SettingsTab({Key? key}) : super(key: key);
@@ -174,8 +179,26 @@ centerTitle: true,
         if (label == 'Logout') {
           _logout(); // Call logout function on tap
         }
+        if (label == 'Storage') {
+          Navigator.push(
+            context,
+            PageTransition(
+              type: PageTransitionType.rightToLeft,
+              child:  StorageSettingsPage(),
+            ),
+          );
+        }
+        if (label == 'Help Center') {
+          Navigator.push(
+            context,
+            PageTransition(
+              type: PageTransitionType.rightToLeft,
+              child:  HelpCenterPage(),
+            ),
+          );
+        }
         if (label == 'Terms of Use') {
-          throw Exception();// Call logout function on tap
+         // throw Exception();// Call logout function on tap
         }
         if (label == 'Buy Credits') {
           Navigator.push(
@@ -191,7 +214,25 @@ centerTitle: true,
             context,
             PageTransition(
               type: PageTransitionType.rightToLeft,
-              child:  SubscriptionPage(),
+              child:  PaywallScreen(),
+            ),
+          ); // Call logout function on tap
+        }
+        if (label == 'Privacy Policy') {
+          Navigator.push(
+            context,
+            PageTransition(
+              type: PageTransitionType.rightToLeft,
+              child:  PrivacyPolicyPage(),
+            ),
+          ); // Call logout function on tap
+        }
+        if (label == 'Terms of Use') {
+          Navigator.push(
+            context,
+            PageTransition(
+              type: PageTransitionType.rightToLeft,
+              child:  TermsOfUsePage(),
             ),
           ); // Call logout function on tap
         }

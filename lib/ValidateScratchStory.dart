@@ -1,11 +1,18 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:giffy_dialog/giffy_dialog.dart';
+import 'package:lottie/lottie.dart';
+import 'SelectStoryTypeUserCreatedStory.dart';
+import 'package:page_transition/page_transition.dart';
+import 'GuidelinesPage.dart';
 
 class ValidateScratchStory extends StatefulWidget {
   final String story;
+  final String title;
+  final String mode;
 
-  const ValidateScratchStory({Key? key, required this.story}) : super(key: key);
+  const ValidateScratchStory({Key? key, required this.story, required this.title,required this.mode}) : super(key: key);
 
   @override
   _ValidateScratchStoryState createState() => _ValidateScratchStoryState();
@@ -13,13 +20,28 @@ class ValidateScratchStory extends StatefulWidget {
 
 class _ValidateScratchStoryState extends State<ValidateScratchStory> {
   bool _isLoading = false;
+
+  bool _analysing = false;
+  bool _analysed = false;
+  bool _validatefailed = false;
+  bool _moderatefailed = false;
+  bool _issuccess = false;
   String _message = "";
+  // Categories you want to check
+  List<String> selectedCategories = ['Insult', 'Profanity','Toxic','Sexual','Violent'];
+
+  @override
+  void initState() {
+    super.initState();
+    validateAndModerateStory();
+  }
 
   // Function to validate story
   Future<bool> validateStory(String story) async {
     try {
       final response = await http.post(
-        Uri.parse("https://us-central1-adept-ethos-432515-v9.cloudfunctions.net/Validate-Story"),
+        Uri.parse(
+            "https://us-central1-adept-ethos-432515-v9.cloudfunctions.net/Validate-Story"),
         body: {'text': story},
       );
 
@@ -27,7 +49,8 @@ class _ValidateScratchStoryState extends State<ValidateScratchStory> {
         print("200 isvalid");
         return getBooleanFromGemini(response.body);
       } else {
-        throw Exception("Validation failed. Status code: ${response.statusCode}");
+        throw Exception(
+            "Validation failed. Status code: ${response.statusCode}");
       }
     } catch (e) {
       setState(() {
@@ -42,26 +65,29 @@ class _ValidateScratchStoryState extends State<ValidateScratchStory> {
   Future<bool> moderateStory(String story) async {
     try {
       final response = await http.post(
-        Uri.parse("https://us-central1-adept-ethos-432515-v9.cloudfunctions.net/moderate"),
+        Uri.parse(
+            "https://us-central1-adept-ethos-432515-v9.cloudfunctions.net/moderate"),
         body: {'text': story},
       );
-      
 
       if (response.statusCode == 200) {
         final responseJson = json.decode(response.body);
         final moderationResult = responseJson['moderationResult'];
-        if (moderationResult == null || moderationResult['moderationCategories'] == null) {
+        if (moderationResult == null ||
+            moderationResult['moderationCategories'] == null) {
           setState(() {
             _message = "Moderation result is missing or invalid.";
           });
           return false;
         }
 
-        final moderationCategories = moderationResult['moderationCategories'] as List<dynamic>;
+        final moderationCategories =
+            moderationResult['moderationCategories'] as List<dynamic>;
 
-        return isStorySafeForKids(moderationCategories);
+        return isStorySafeForKids(moderationCategories, selectedCategories);
       } else {
-        throw Exception("Moderation failed. Status code: ${response.statusCode}");
+        throw Exception(
+            "Moderation failed. Status code: ${response.statusCode}");
       }
     } catch (e) {
       setState(() {
@@ -72,28 +98,40 @@ class _ValidateScratchStoryState extends State<ValidateScratchStory> {
     }
   }
 
-  // Function to check if story is safe for kids
-  bool isStorySafeForKids(List categories) {
+  /// Function to check if story is safe for kids
+  bool isStorySafeForKids(List categories, List<String> selectedCategories) {
     print(categories);
-    for (var category in categories) {
-      if (category['confidence'] > 0.3) {
-        print("Story is not safe for kids due to category: ${category['name']}");
+
+    // Filter only the selected categories to check
+    final filteredCategories = categories.where((category) =>
+        selectedCategories.contains(category['name'])
+    );
+
+    for (var category in filteredCategories) {
+      if (category['confidence'] > 0.5) {
+        print(
+            "Story is not safe for kids due to category: ${category['name']}");
         setState(() {
-          _message = "Story is not safe for kids due to category: ${category['name']}";
+          _message =
+          "Story is not safe for kids due to category: ${category['name']}";
+          _moderatefailed = true;
         });
         return false;
       }
     }
+
     setState(() {
       _message = "Story is safe for kids!";
+      _issuccess = true;
     });
     return true;
   }
 
+
   // Validate and moderate story
   Future<void> validateAndModerateStory() async {
     setState(() {
-      _isLoading = true;
+      _analysing = true;
       _message = "";
     });
 
@@ -104,17 +142,36 @@ class _ValidateScratchStoryState extends State<ValidateScratchStory> {
       print("issafe ${isSafe}");
       if (!isSafe) {
         setState(() {
-          _message = "Story is not safe for kids.";
+
+          _analysing = false;
+          _moderatefailed= true;
         });
+
+
+      }else{
+        setState(() {
+          _analysing = false;
+
+        });
+        await Future.delayed(const Duration(seconds: 3));
+        Navigator.push(
+          context,
+          PageTransition(
+            type: PageTransitionType.rightToLeft,
+            child:  SelectStoryTypePageUserCreatedStory(story: widget.story,title: widget.title,mode: widget.mode),
+          ),
+        );
       }
     } else {
       setState(() {
-        _message = "Story validation failed.";
+
+        _analysing = false;
+        _validatefailed = true;
       });
     }
 
     setState(() {
-      _isLoading = false;
+      _analysing = false;
     });
   }
 
@@ -122,37 +179,135 @@ class _ValidateScratchStoryState extends State<ValidateScratchStory> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Validate Scratch Story"),
+        title: const Text("Safety Assurance",style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            Expanded(
-              child: SingleChildScrollView(
-                child: Text(widget.story, style: const TextStyle(fontSize: 16)),
-              ),
-            ),
-            if (_message.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: Text(
-                  _message,
+      body:
+
+
+      Center(
+          child:Padding(padding: const EdgeInsets.only(left: 16,right: 16),
+            child:
+             Column(
+              // Use a Column for the description
+
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if(_analysing)
+                  ...[
+                Lottie.asset('assets/analyse.json', width: 200,
+                  height: 200,),
+                Text(
+                  'Analyzing Story',
+                  textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: _message.contains("safe") ? Colors.green : Colors.red,
-                    fontWeight: FontWeight.bold,
+                    fontSize: 22.0,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.blue,
                   ),
                 ),
-              ),
-            ElevatedButton(
-              onPressed: validateAndModerateStory,
-              child: const Text("Validate and Moderate"),
-            ),
-          ],
-        ),
-      ),
+                Text(
+                  'Analyzing the story. Please hold on while we review its content.',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 18.0),
+                ),],
+                if(_validatefailed)
+                  ...[
+                    Lottie.asset('assets/failed.json', width: 200,
+                      height: 200,
+                    repeat: false),
+                    Text(
+                      'Story Validation Failed',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 22.0,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.blue,
+                      ),
+                    ),
+                    Text(
+                      "The input provided does not meet the criteria for a valid story.",
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontSize: 18.0),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          PageTransition(
+                            type: PageTransitionType.rightToLeft,
+                            child:  GuidelinesPage(),
+                          ),
+                        );
+                      },
+                      child: Text(
+                        "Check Guideline",
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontSize: 14.0, color: Colors.grey),
+                      ),
+                    ),
+                  ],
+                if(_moderatefailed)
+                  ...[
+                    Lottie.asset('assets/failed.json', width: 200,
+                      height: 200,
+                    repeat: false),
+                    Text(
+                      'Story Moderation Rejected',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 22.0,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.blue,
+                      ),
+                    ),
+                    Text(
+                      "Your story violates our community guidelines.",
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontSize: 18.0),
+                    ),
+                    Text(
+                      _message,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontSize: 17.0),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          PageTransition(
+                            type: PageTransitionType.rightToLeft,
+                            child:  GuidelinesPage(),
+                          ),
+                        );
+                      },
+                      child: Text(
+                        "Check Guideline",
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontSize: 14.0, color: Colors.grey),
+                      ),
+                    ),],
+                if(_issuccess)
+                  ...[
+                    Lottie.asset('assets/success.json', width: 160,
+                      height:160,
+                    repeat: false),
+                    Text(
+                      'Checked and Safe',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 22.0,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.blue,
+                      ),
+                    ),
+                    Text(
+                      'This story has been validated and is safe for young audiences.',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontSize: 18.0),
+                    ),],
+
+              ],
+            ) ,) )
     );
   }
 }
@@ -160,8 +315,24 @@ class _ValidateScratchStoryState extends State<ValidateScratchStory> {
 // Function to get boolean from string response
 bool getBooleanFromGemini(String geminiResponse) {
   final text = geminiResponse.trim().toLowerCase();
-  const yesPatterns = [r'yes', r'true', r'yeah', r'yup', r'affirmative', r'correct', r'1'];
-  const noPatterns = [r'no', r'false', r'nope', r'nah', r'negative', r'incorrect', r'0'];
+  const yesPatterns = [
+    r'yes',
+    r'true',
+    r'yeah',
+    r'yup',
+    r'affirmative',
+    r'correct',
+    r'1'
+  ];
+  const noPatterns = [
+    r'no',
+    r'false',
+    r'nope',
+    r'nah',
+    r'negative',
+    r'incorrect',
+    r'0'
+  ];
 
   for (final pattern in yesPatterns) {
     if (RegExp(pattern).hasMatch(text)) return true;
@@ -171,4 +342,3 @@ bool getBooleanFromGemini(String geminiResponse) {
   }
   throw Exception("Invalid response: $geminiResponse");
 }
-

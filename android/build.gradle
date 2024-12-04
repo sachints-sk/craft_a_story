@@ -30,5 +30,5 @@ configurations.all {
     }
 }
 ext {
-    flutterFFmpegPackage = "full-gpl" // Replace "full-gpl" with your chosen package name
+    flutterFFmpegPackage = "min-gpl" // Replace "full-gpl" with your chosen package name
 }

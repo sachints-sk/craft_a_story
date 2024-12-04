@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'home.dart'; // Import your HomePage here
+import 'package:firebase_remote_config/firebase_remote_config.dart';
 
 class SignInPage extends StatelessWidget {
   const SignInPage({Key? key}) : super(key: key);
@@ -51,26 +52,44 @@ class SignInPage extends StatelessWidget {
 
   // Function to create user document in Firestore
   Future<void> _createUserDocument(User user) async {
+    final remoteConfig = FirebaseRemoteConfig.instance;
+
+    await remoteConfig.setDefaults({'NewUserCredits': 0}); // Set a default value for "NewUserCredits"
+    await remoteConfig.fetchAndActivate(); // Fetch and activate the latest values
+
     final firestore = FirebaseFirestore.instance;
     final userDocRef = firestore.collection('users').doc(user.uid);
 
-    // Check if the user document already exists
-    final docSnapshot = await userDocRef.get();
-    if (!docSnapshot.exists) {
-      // Create the document if it doesn't exist
-      await userDocRef.set({
-        'userId': user.uid,
-        'displayName': user.displayName,
-        'email': user.email,
-        'createdAt': FieldValue.serverTimestamp(), // Use server timestamp
-        // ... add other user data as needed
-      });
+    try {
+      // Initialize Remote Config
+      final remoteConfig = FirebaseRemoteConfig.instance;
+      await remoteConfig.setDefaults({'NewUserCredits': 0}); // Set default value
+      await remoteConfig.fetchAndActivate(); // Fetch and activate Remote Config values
 
-      print('User document created successfully!');
-    } else {
-      print('User document already exists!');
+      // Get the value of "NewUserCredits" from Remote Config
+      final newUserCredits = remoteConfig.getInt('NewUserCredits') ;
+
+      // Check if the user document already exists
+      final docSnapshot = await userDocRef.get();
+      if (!docSnapshot.exists) {
+        // Create the document if it doesn't exist
+        await userDocRef.set({
+          'userId': user.uid,
+          'displayName': user.displayName,
+          'email': user.email,
+          'createdAt': FieldValue.serverTimestamp(), // Use server timestamp
+          'credits': newUserCredits, // Add the "credits" field
+        });
+
+        print('User document created successfully with $newUserCredits credits!');
+      } else {
+        print('User document already exists!');
+      }
+    } catch (e) {
+      print('Error creating user document: $e');
     }
   }
+
 
   Future<UserCredential?> _signInWithGoogle() async {
     try {

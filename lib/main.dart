@@ -9,6 +9,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_in_app_messaging/firebase_in_app_messaging.dart';
 import 'package:firebase_app_installations/firebase_app_installations.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
+
+import 'firebase_options.dart';
 import 'Services/notification_services.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'dart:ui';
@@ -28,6 +31,13 @@ void main() async {
 //  PlatformDispatcher.instance.onError = (error, stack) {
 //    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
 ////  };
+
+  // Initialize App Check
+  await FirebaseAppCheck.instance.activate(
+    androidProvider: AndroidProvider.debug,
+  //  appleProvider: AppleProvider.deviceCheck, // Use AppleProvider.debug for testing
+  );
+
 
   await NotificationServices.instance.initialise();
   runApp(const CraftAStoryApp());

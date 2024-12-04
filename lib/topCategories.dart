@@ -2,33 +2,36 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:lottie/lottie.dart';
-import 'myStoriesViewer.dart';
+import 'viewsavedstorypage.dart';
 import 'story_data.dart';
 import 'package:intl/intl.dart';
 
-class MyStoriesPage extends StatefulWidget {
-  const MyStoriesPage({Key? key}) : super(key: key);
+
+
+class Topcategories extends StatefulWidget {
+  final String selectedCategory; // New parameter for selected category
+
+  const Topcategories({Key? key, required this.selectedCategory}) : super(key: key);
 
   @override
-  State<MyStoriesPage> createState() => _MyStoriesPageState();
+  State<Topcategories> createState() => _TopcategoriesState();
 }
 
-class _MyStoriesPageState extends State<MyStoriesPage> {
+class _TopcategoriesState extends State<Topcategories> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
-        title: const Text(
-          'My Stories',
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+        title: Text(
+          widget.selectedCategory, // Display the selected category
+          style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
         ),
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0),
         child: Column(
           children: [
-
             Expanded(child: _buildStoryGrid()),
           ],
         ),
@@ -36,57 +39,11 @@ class _MyStoriesPageState extends State<MyStoriesPage> {
     );
   }
 
-  Widget _buildSearchBar() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(30),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.3),
-            spreadRadius: 2,
-            blurRadius: 6,
-            offset: const Offset(0, 3), // Shadow position
-          ),
-        ],
-      ),
-      child: TextField(
-        decoration: InputDecoration(
-          hintText: 'Search here',
-          hintStyle: TextStyle(color: Colors.grey[500]),
-          filled: true,
-          fillColor: Colors.white,
-          prefixIcon: Icon(Icons.search, color: Colors.grey[700]),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(30),
-            borderSide: BorderSide.none,
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(30),
-            borderSide: BorderSide.none,
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(30),
-            borderSide: BorderSide.none,
-          ),
-        ),
-      ),
-    );
-  }
-
-
   Widget _buildStoryGrid() {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      return const Center(child: Text("Please sign in to see your stories."));
-    }
-
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
-          .collection('stories')
-          .where('userId', isEqualTo: user.uid)
+          .collection('Explore_stories')
+          .where('mode', isEqualTo: widget.selectedCategory) // Filter by category
           .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
@@ -111,9 +68,9 @@ class _MyStoriesPageState extends State<MyStoriesPage> {
               description: data['description'] ?? '',
               coverImageUrl: data['coverImageUrl'],
               videoUrl: data['videoUrl'] ?? '',
-              createdAt:formattedDate ?? '',
-              mode:data['mode'] ?? '',
-              voice:data['voice'] ?? '',
+              createdAt: formattedDate,
+              mode: data['mode'] ?? '',
+              voice: data['voice'] ?? '',
               isAudio: data['isAudio'] ?? false,
               audioUrl: data['audioUrl'] ?? '',
             );
@@ -144,7 +101,7 @@ class _MyStoriesPageState extends State<MyStoriesPage> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => Mystoriesviewer(storyData: story),
+            builder: (context) => ViewSavedStoryPage(storyData: story),
           ),
         );
       },
@@ -160,7 +117,6 @@ class _MyStoriesPageState extends State<MyStoriesPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Cover Image
               Expanded(
                 child: Container(
                   decoration: BoxDecoration(
@@ -168,21 +124,17 @@ class _MyStoriesPageState extends State<MyStoriesPage> {
                   ),
                   child: Stack(
                     children: [
-                      // Background Image
                       Positioned.fill(
                         child: Image.network(
                           story.coverImageUrl,
                           fit: BoxFit.cover,
                         ),
                       ),
-                      // Overlay Image
-
                     ],
                   ),
                 ),
               ),
               const SizedBox(height: 8),
-              // Title
               Text(
                 story.title,
                 style: const TextStyle(
@@ -194,26 +146,23 @@ class _MyStoriesPageState extends State<MyStoriesPage> {
                 overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: 4),
-              // Genre
               Row(
                 children: [
                   const Icon(Icons.category, size: 14, color: Colors.grey),
                   const SizedBox(width: 4),
                   Text(
-                   story.mode, // Assuming `genre` is a field in StoryData
+                    story.mode,
                     style: const TextStyle(fontSize: 12, color: Colors.grey),
                   ),
-
                 ],
               ),
               const SizedBox(height: 4),
-              // Voice
               Row(
                 children: [
                   const Icon(Icons.graphic_eq, size: 14, color: Colors.grey),
                   const SizedBox(width: 4),
                   Text(
-                    story.voice, // Assuming `voice` is a field in StoryData
+                    story.voice,
                     style: const TextStyle(fontSize: 12, color: Colors.grey),
                   ),
                 ],
@@ -221,46 +170,6 @@ class _MyStoriesPageState extends State<MyStoriesPage> {
             ],
           ),
         ),
-      ),
-    );
-  }
-
-
-
-  Widget _buildCoverImage(String? imageUrl) {
-    if (imageUrl != null && imageUrl.isNotEmpty) {
-      return ClipRRect(
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-        child: Image.network(
-          imageUrl,
-          height: 140,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) {
-            return _buildPlaceholderImage();
-          },
-          loadingBuilder: (context, child, loadingProgress) {
-            if (loadingProgress == null) {
-              return child;
-            }
-            return SizedBox(
-              height: 140,
-              child: Lottie.asset('assets/loadingplaceholder.json', ),
-            );
-          },
-        ),
-      );
-    } else {
-      return _buildPlaceholderImage();
-    }
-  }
-
-  Widget _buildPlaceholderImage() {
-    return ClipRRect(
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-      child: Image.asset(
-        'assets/placeholderimage.png',
-        height: 140,
-        fit: BoxFit.cover,
       ),
     );
   }
