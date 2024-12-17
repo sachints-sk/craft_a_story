@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:chewie/chewie.dart';
@@ -7,13 +6,16 @@ import 'package:http/http.dart' as http;
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:path_provider/path_provider.dart'; // For temporary file
+import 'package:path_provider/path_provider.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:firebase_performance/firebase_performance.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'home.dart';
+import 'package:page_transition/page_transition.dart';
 
-class NewVideoPlayer extends StatefulWidget {
-  final String videoPath; // Pass the video path as a parameter
+class FirstStoryPlayer extends StatefulWidget {
+  final String videoPath;
   final String title;
   final String description;
   final String coverurl;
@@ -21,7 +23,7 @@ class NewVideoPlayer extends StatefulWidget {
   final String voice;
   final String audioPath;
 
-  const NewVideoPlayer({
+  const FirstStoryPlayer({
     Key? key,
     required this.videoPath,
     required this.title,
@@ -32,20 +34,17 @@ class NewVideoPlayer extends StatefulWidget {
     required this.audioPath
   }) : super(key: key);
 
-
   @override
-  State<NewVideoPlayer> createState() => _NewVideoPlayerState();
+  State<FirstStoryPlayer> createState() => _FirstStoryPlayerState();
 }
 
-class _NewVideoPlayerState extends State<NewVideoPlayer> {
+class _FirstStoryPlayerState extends State<FirstStoryPlayer> {
   late VideoPlayerController _videoPlayerController;
   ChewieController? _chewieController;
   bool _isUploading = false;
   String _saveText = "Save your story to access it later.";
   final firestore = FirebaseFirestore.instance;
   String username ="";
-
-
 
   @override
   void initState() {
@@ -57,44 +56,45 @@ class _NewVideoPlayerState extends State<NewVideoPlayer> {
   @override
   void dispose() {
     _videoPlayerController.dispose();
-    _chewieController?.dispose(); // Dispose Chewie controller
+    _chewieController?.dispose();
     super.dispose();
   }
 
   Future<void> _initializePlayer() async {
-    // Initialize the video player
     _videoPlayerController = VideoPlayerController.file(File(widget.videoPath));
-
-
     await _videoPlayerController.initialize();
 
-    // Initialize Chewie controller
     _chewieController = ChewieController(
       videoPlayerController: _videoPlayerController,
       aspectRatio: 1,
       autoPlay: true,
-      looping: false, // Set to false if you don't want looping
-      // Add other Chewie options as needed
+      looping: false,
+      // showControls: false
     );
-
-    setState(() {}); // Update the UI
+    setState(() {});
   }
 
-Future<void> getusername() async{
-  final user = FirebaseAuth.instance.currentUser;
-  username= user!.uid;
+  Future<void> getusername() async{
+    final user = FirebaseAuth.instance.currentUser;
+    username= user!.uid;
 
-}
+  }
+
+  Future<void> goHome() async{
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (context) => CraftAStoryApphome()),
+          (Route<dynamic> route) => false, // Removes all existing routes
+    );
+
+  }
   Future<void> _saveStoryToFirebase() async {
     Trace customTraceVideoStory = FirebasePerformance.instance.newTrace('Upload-VideoStory-CloudStorage');
     await customTraceVideoStory.start();
-
-
     setState(() {
       _isUploading = true;
       _saveText="Just a moment, we're saving your story.";
     });
-
     try {
       final user = FirebaseAuth.instance.currentUser;
       username= user!.uid;
@@ -102,34 +102,24 @@ Future<void> getusername() async{
         throw Exception('User not authenticated');
       }
 
-      // 1. Generate the storyId first
       final storyDocRef = firestore.collection('stories').doc();
       final storyId = storyDocRef.id;
-
-
-// 2. Download the cover image
       final coverImagePath = await _downloadAndCompressCoverImage(widget.coverurl);
-
-      // 3. Upload cover image to Storage and get its URL
       final coverImageUrl = await _uploadFileToStorage(
         coverImagePath,
-        'images/story_$storyId\_cover.jpg', // Use storyId here
+        'images/story_$storyId\_cover.jpg',
       );
-
-      // 4. Upload video to Storage and get its URL
       final videoUrl = await _uploadFileToStorage(
         widget.videoPath,
-        'videos/story_$storyId.mp4',   // Use storyId here
+        'videos/story_$storyId.mp4',
       );
-
-      // 5. Upload audio to Storage and get its URL
       final audioUrl = await _uploadFileToStorage(
         widget.audioPath,
         'audios/story_$storyId.mp3',   // Use storyId here
       );
 
-      // 5. Upload story data to Firestore (including coverImageUrl and videoUrl)
-      await storyDocRef.set({ // Use storyDocRef with the generated ID
+
+      await storyDocRef.set({
         'storyId': storyId,
         'mode': widget.mode,
         'userId': user!.uid,
@@ -141,8 +131,6 @@ Future<void> getusername() async{
         'voice' : widget.voice,
         'createdAt': FieldValue.serverTimestamp(),
       });
-
-      // 6. Save cover image and video locally
       await _saveFileLocally(coverImagePath, 'cover_$storyId.jpg');
       await _saveFileLocally(widget.videoPath, 'video_$storyId.mp4');
 
@@ -198,7 +186,7 @@ Future<void> getusername() async{
         widget.videoPath,
         'videos/story_$storyId.mp4',   // Use storyId here
       );
-     // 5. Upload audio to Storage and get its URL
+      // 5. Upload audio to Storage and get its URL
       final audioUrl = await _uploadFileToStorage(
         widget.audioPath,
         'audios/story_$storyId.mp3',   // Use storyId here
@@ -218,8 +206,8 @@ Future<void> getusername() async{
       });
 
       // 6. Save cover image and video locally
-    //  await _saveFileLocally(coverImagePath, 'cover_$storyId.jpg');
-    //  await _saveFileLocally(widget.videoPath, 'video_$storyId.mp4');
+      //  await _saveFileLocally(coverImagePath, 'cover_$storyId.jpg');
+      //  await _saveFileLocally(widget.videoPath, 'video_$storyId.mp4');
 
       setState(() {
         _isUploading = false;
@@ -240,7 +228,6 @@ Future<void> getusername() async{
   }
 
 
-  // Helper function to save a file to local storage
   Future<void> _saveFileLocally(String filePath, String fileName) async {
     try {
       final directory = await getApplicationDocumentsDirectory();
@@ -250,11 +237,9 @@ Future<void> getusername() async{
       print('File saved locally: ${newFile.path}');
     } catch (e) {
       print('Error saving file locally: $e');
-      // ... (handle error appropriately) ...
     }
   }
 
-  // Helper function to download the cover image
   Future<String> _downloadCoverImage(String coverImageUrl) async {
     final response = await http.get(Uri.parse(coverImageUrl));
     if (response.statusCode == 200) {
@@ -269,50 +254,32 @@ Future<void> getusername() async{
   }
 
   Future<String> _downloadAndCompressCoverImage(String coverImageUrl) async {
-    // Step 1: Download the image
     final response = await http.get(Uri.parse(coverImageUrl));
     if (response.statusCode != 200) {
       throw Exception('Failed to download cover image');
     }
-
-    // Step 2: Save the image temporarily
     final tempDir = await getTemporaryDirectory();
     final originalPath = '${tempDir.path}/original_cover_image.jpg';
     final originalImageFile = File(originalPath);
     await originalImageFile.writeAsBytes(response.bodyBytes);
-
-    // Step 3: Compress the image
     final compressedPath = '${tempDir.path}/compressed_cover_image.jpg';
     final compressedImageFile = await FlutterImageCompress.compressAndGetFile(
       originalPath,
       compressedPath,
-      quality: 30, // Adjust quality as needed (0-100)
+      quality: 30,
     );
-
     if (compressedImageFile == null) {
       throw Exception('Image compression failed');
     }
-
-    // Return the path of the compressed image
     return compressedImageFile.path;
   }
 
-
-
-
-  // Helper function to upload files to Firebase Storage
   Future<String> _uploadFileToStorage(String filePath, String storagePath) async {
     final storage = FirebaseStorage.instance;
     final file = File(filePath);
-
-    // Create a reference to the file's path in Firebase Storage
     final storageRef = storage.ref().child(storagePath);
-
-    // Upload the file
     try {
       await storageRef.putFile(file);
-      print('Uploaded file to: ${storageRef.fullPath}');
-      // Get and return the download URL
       final downloadURL = await storageRef.getDownloadURL();
       return downloadURL;
     } on FirebaseException catch (e) {
@@ -321,10 +288,8 @@ Future<void> getusername() async{
     }
   }
 
-
   Future<void> _downloadAndSaveVideo(String videoUrl, String localPath) async {
     final response = await http.get(Uri.parse(videoUrl));
-
     if (response.statusCode == 200) {
       final file = File(localPath);
       await file.writeAsBytes(response.bodyBytes);
@@ -337,207 +302,232 @@ Future<void> getusername() async{
     final directory = await getApplicationDocumentsDirectory();
     return '${directory.path}/$filename';
   }
-Future<void> _shareStory() async{
-  try {
-    // Get the local video file path
-    final localVideoPath = widget.videoPath;
-    final videoFile = File(localVideoPath);
 
-    if (await videoFile.exists()) {
-      // Share the video file if it exists
-      await Share.shareXFiles(
-        [XFile(localVideoPath)],
-        text: 'I just created an incredible story: ${widget.title}! Made with Craft-a-Story. Check it out!',
+
+  Future<void> _shareStory() async{
+    try {
+      final localVideoPath = widget.videoPath;
+      final videoFile = File(localVideoPath);
+      if (await videoFile.exists()) {
+        await Share.shareXFiles(
+          [XFile(localVideoPath)],
+          text: 'I just created an incredible story: ${widget.title}! Made with Craft-a-Story. Check it out!',
+        );
+      }
+    } catch (e) {
+      print('Error while sharing story: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to share the story.')),
       );
     }
-  } catch (e) {
-    print('Error while sharing story: $e');
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Failed to share the story.')),
-    );
   }
-
-}
-
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-
         leading: IconButton(
-          icon: const Icon(Icons.close,color: Colors.black,),
+          icon: const Icon(Icons.close, color: Colors.black,),
           onPressed: () {
-            Navigator.pop(context);
-            Navigator.pop(context);
-            Navigator.pop(context);
-            Navigator.pop(context);
-            Navigator.pop(context);
+            goHome();
           },
         ),
-        title: const Text('Crafted Story',style: TextStyle(color: Colors.black,fontWeight: FontWeight.bold),),
+        title: Text('Your Crafted Story',
+          style: GoogleFonts.poppins(
+            textStyle: const TextStyle(
+                color: Colors.black, fontWeight: FontWeight.w600),
+          ),),
+        centerTitle: true,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
       ),
-      body: SingleChildScrollView( // Make the Column scrollable
+      body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Video Player using Chewie
             _chewieController != null &&
                 _videoPlayerController.value.isInitialized
                 ? AspectRatio(
-                   aspectRatio: 1, // Keep the video player square
-                    child: Chewie(
-                    controller: _chewieController!,
+              aspectRatio: 1,
+              child: Chewie(
+                controller: _chewieController!,
               ),
             )
                 : const Center(
-              child: CircularProgressIndicator(), // Show loader while video is initializing
+              child: CircularProgressIndicator(),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 10),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-
-                  const SizedBox(height: 8), // Add space before button
-                  // Save Story Button
                   SizedBox(
-                    width: double.infinity, // Make the button full-width
+                    width: double.infinity,
                     child: ElevatedButton.icon(
-
-                      onPressed: () {
+                      onPressed: _isUploading ? null : () {
                         _saveStoryToFirebase();
                       },
-                      icon: const Icon(Icons.save, color: Colors.white,), // Save icon
-                      label: const Text('Save Story',style: TextStyle(color: Colors.white),), // Button label
+                      icon: const Icon(Icons.save, color: Colors.black,),
+                      label: Text('Save Story', style: GoogleFonts.poppins(
+                        textStyle: const TextStyle(color: Colors.black),
+                      )),
                       style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),backgroundColor:  const Color(
-                          0xFF282943),// Button padding
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          backgroundColor: Colors.grey.shade200,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25))
                       ),
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  //temp save to explore button
+
                   if(username=="DYxrS1A8UuM0y1AOoA99yTIGTQn2")
-                  SizedBox(
-                    width: double.infinity, // Make the button full-width
-                    child: ElevatedButton.icon(
-
-                      onPressed: () {
-                        _saveStoryToExplore();
-                      },
-                      icon: const Icon(Icons.save, color: Colors.white,), // Save icon
-                      label: const Text('Save Story to Explore',style: TextStyle(color: Colors.white),), // Button label
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),backgroundColor:  const Color(
-                          0xFF282943),// Button padding
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          _saveStoryToExplore();
+                        },
+                        icon: const Icon(Icons.save, color: Colors.white,),
+                        label: Text('Save to Explore', style: GoogleFonts.poppins(
+                          textStyle: const TextStyle(color: Colors.white),
+                        )),
+                        style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            backgroundColor: const Color(0xFF1A2259),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25))
+                        ),
                       ),
                     ),
-                  ),
-
-
-                  const SizedBox(height: 8), // Add space for description
-                  Center( // Wrap in Center widget
-                    child:  Text(
+                  const SizedBox(height: 4),
+                  Center(
+                    child: Text(
                       _saveText,
-                      style: const TextStyle(color: const Color(0xFF373636)),
+                      style: GoogleFonts.poppins(
+                        textStyle: const TextStyle(color: Color(0xFF373636)),
+                      ),
                     ),
                   ),
                   if (_isUploading)
                     const LinearProgressIndicator(),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: _isUploading ? null : () {
+                        goHome();
+                      },
+                      icon: const Icon(Icons.home, color: Colors.white,),
+                      label: Text('Let\'s Go Home!', style: GoogleFonts.poppins(
+                        textStyle: const TextStyle(color: Colors.white),
+                      )),
+                      style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          backgroundColor: const Color(0xFF1A2259),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25))
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 15),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // Story Title
                       Expanded(
                         child: Text(
                           widget.title,
-                          style: const TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
+                          style: GoogleFonts.poppins(
+                            textStyle: const TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black
+                            ),
                           ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.share, color: Colors.black87,  ),
-                        onPressed: _shareStory,
+                      InkWell(
+                        onTap: _shareStory,
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.5),
+                          ),
+                          child: Icon(Icons.share, color: Theme.of(context).colorScheme.onPrimaryContainer,size: 28,),
+                        ),
                       ),
-                      // Like Button with Count
 
                     ],
                   ),
                   const SizedBox(height: 12),
-                   Row(
+                  Row(
                     children: [
-                      const Icon(Icons.category, color: Colors.grey, size: 20),
+                      Icon(Icons.category, color: Colors.grey[500], size: 20),
                       const SizedBox(width: 8),
                       Text(
-                        'Genre: ', // Placeholder for genre
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey,
+                        'Genre: ',
+                        style: GoogleFonts.poppins(
+                          textStyle: TextStyle(
+                              fontSize: 16,
+                              color: Colors.grey[500]
+                          ),
                         ),
                       ),
                       Text(
-                        widget.mode, // Placeholder for genre
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey,
+                        widget.mode,
+                        style: GoogleFonts.poppins(
+                          textStyle: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey[500],
+                          ),
                         ),
                       ),
                     ],
                   ),
                   Row(
                     children: [
-                      const Icon(Icons.record_voice_over, color: Colors.grey, size: 20),
+                      Icon(Icons.record_voice_over, color: Colors.grey[500], size: 20),
                       const SizedBox(width: 8),
                       Text(
-                        'Voice: ', // Placeholder for voice type
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey,
+                        'Voice: ',
+                        style:  GoogleFonts.poppins(
+                          textStyle: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey[500],
+                          ),
                         ),
                       ),
                       Text(
-                        widget.voice, // Placeholder for voice type
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey,
+                        widget.voice,
+                        style:  GoogleFonts.poppins(
+                          textStyle: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey[500],
+                          ),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
-
-
-
+                  const SizedBox(height: 16),
                   const Divider(
                     color: Colors.grey,
                     thickness: 0.5,
                   ),
-
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 16),
                   Text(
-                    widget.description,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      color: Colors.black,
-                    ),
+                      widget.description,
+                      style: GoogleFonts.poppins(
+                        textStyle: const TextStyle(
+                            fontSize: 16,
+                            color: Colors.black
+                        ),
+                      )
                   ),
-                  const SizedBox(height: 20),
 
-                  // Divider
+                  const SizedBox(height: 20),
                   const Divider(
                     color: Colors.grey,
                     thickness: 0.5,
                   ),
-                  const SizedBox(height: 10),
-
 
                 ],
               ),

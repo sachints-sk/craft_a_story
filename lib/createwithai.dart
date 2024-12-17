@@ -49,7 +49,7 @@ class _CreateStoryWithAIState extends State<CreateStoryWithAI> {
       prompt += "Character's Age: ${_characterAgeController.text}\n";
       prompt += "Story Mode: $_selectedStoryType\n";
       if (_storySettingController.text.isNotEmpty) {
-        prompt += "Story Setting: ${_storySettingController.text}\n";
+        prompt += "Story plot: ${_storySettingController.text}\n";
       }
 
 

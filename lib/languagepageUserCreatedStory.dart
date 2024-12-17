@@ -4,8 +4,11 @@ import 'package:lottie/lottie.dart';
 import 'processingpageUserCreatedStory.dart';
 import 'package:page_transition/page_transition.dart';
 import 'processingpageaudioUserCreatedStory.dart';
+import 'dart:io';
+import 'package:purchases_flutter/purchases_flutter.dart';
+import 'package:purchases_ui_flutter/purchases_ui_flutter.dart';
 
-enum UserMembership { normal, litePremium, proPremium }
+enum UserMembership { normal,  proPremium }
 
 
 class LanguageAudioPageUserCreatedStory extends StatefulWidget {
@@ -26,6 +29,8 @@ class _LanguageAudioPageUserCreatedStoryState extends State<LanguageAudioPageUse
   String? _selectedVoice;
   List<String> _availableVoices = [];
   bool _isLoading = false;
+  bool _subscribed =false;
+
 
   List<Map<String, String>> _languages = [
     {'name': 'English (US)', 'code': 'en-US'},
@@ -37,20 +42,21 @@ class _LanguageAudioPageUserCreatedStoryState extends State<LanguageAudioPageUse
     'en-US': ['en-US-Standard-A', 'en-US-Standard-B', 'en-US-Standard-C', 'en-US-Standard-D', 'en-US-Standard-E', 'en-US-Standard-F', 'en-US-Standard-G', 'en-US-Standard-H', 'en-US-Standard-I','en-US-Standard-J',  'en-US-Wavenet-A', 'en-US-Wavenet-B', 'en-US-Wavenet-C', 'en-US-Wavenet-D', 'en-US-Wavenet-E', 'en-US-Wavenet-F', 'en-US-Wavenet-G', 'en-US-Wavenet-H', 'en-US-Wavenet-I', 'en-US-Wavenet-J','en-US-Neural2-A','en-US-Neural2-C','en-US-Neural2-D','en-US-Neural2-E','en-US-Neural2-F','en-US-Neural2-G','en-US-Neural2-H','en-US-Neural2-I','en-US-Neural2-J','en-US-News-K','en-US-News-L','en-US-News-N','en-US-Casual-K','en-US-Journey-D','en-US-Journey-F','en-US-Journey-O','en-US-Studio-O','en-US-Studio-Q'],
     };
 
-
   UserMembership _currentMembership = UserMembership.normal;
 
   // Function to fetch the user's membership level
   Future<UserMembership> _fetchUserMembership() async {
-    // Fetch the user's membership level from Firestore or your backend service
-    // For now, using a placeholder
-    await Future.delayed(const Duration(seconds: 1)); // Simulate API call delay
-    return UserMembership.proPremium;
+    if (_subscribed)
+      return UserMembership.proPremium;
+    else
+      return UserMembership.normal;
   }
 
   @override
   void initState() {
     super.initState();
+    _configureSDK();
+    _setupIsPro();
     // Fetch the user's membership level first
     _fetchUserMembership().then((membership) {
       _currentMembership = membership; // Update _currentMembership
@@ -66,6 +72,30 @@ class _LanguageAudioPageUserCreatedStoryState extends State<LanguageAudioPageUse
     _updateAvailableVoices();
   }
 
+  Future<void> _setupIsPro() async{
+    Purchases.addCustomerInfoUpdateListener((customerInfo) async {
+      EntitlementInfo? entitlement = customerInfo.entitlements.all['Premium'];
+      setState(() {
+        _subscribed= entitlement?.isActive ?? false;
+      });
+    });
+  }
+  Future<void> _configureSDK() async {
+    await Purchases.setLogLevel(LogLevel.debug);
+    PurchasesConfiguration? configuration;
+
+    if(Platform.isAndroid){
+      configuration=PurchasesConfiguration("goog_ROHmfEQIqmPakpNaNfXYdMByLKh");
+    }
+
+
+    if(configuration != null){
+      await Purchases.configure(configuration);
+      //  final paywallResult =await RevenueCatUI.presentPaywallIfNeeded("Premium",displayCloseButton: true);
+      //  print('Paywall Result: $paywallResult');
+    }
+
+  }
 
 
 
@@ -82,11 +112,7 @@ class _LanguageAudioPageUserCreatedStoryState extends State<LanguageAudioPageUse
 
         // Only standard voices for normal users
         _availableVoices = _availableVoices.where((voice) => voice.contains('Standard')).toList();
-      } else if (_currentMembership == UserMembership.litePremium) {
-        // Lite Premium users: Can choose languages but only standard voices
-        // Only standard voices for lite premium users
-        _availableVoices = _availableVoices.where((voice) => voice.contains('Standard')).toList();
-      } else if (_currentMembership == UserMembership.proPremium) {
+      }  else if (_currentMembership == UserMembership.proPremium) {
         // Pro Premium users: Can choose any language and voice
         // No filtering needed
       }
@@ -172,7 +198,7 @@ class _LanguageAudioPageUserCreatedStoryState extends State<LanguageAudioPageUse
               const Text(
                 'Let your story come to life with the perfect language and voice.',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 16),
+                style: TextStyle(fontSize: 16 , fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 20),
 
@@ -245,8 +271,7 @@ class _LanguageAudioPageUserCreatedStoryState extends State<LanguageAudioPageUse
                   );
                 }).toList(),
                 onChanged:
-                _currentMembership == UserMembership.normal ||
-                    _currentMembership == UserMembership.litePremium
+                _currentMembership == UserMembership.normal
                     ? null // Disable voice selection
                     : (String? newValue) {
                   setState(() {
@@ -259,7 +284,7 @@ class _LanguageAudioPageUserCreatedStoryState extends State<LanguageAudioPageUse
                 Padding(
                   padding: const EdgeInsets.only(top: 8.0),
                   child: Text(
-                    'Upgrade to Pro Premium to explore premium voice selections.',
+                    'Upgrade to Premium to explore premium voice selections.',
                     textAlign: TextAlign.center,
                     style: TextStyle(color: Colors.grey, fontSize: 14),
                   ),
@@ -303,11 +328,12 @@ class _LanguageAudioPageUserCreatedStoryState extends State<LanguageAudioPageUse
                     );
                   }
                 },style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF1A2259),
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 textStyle: const TextStyle(fontSize: 18),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
               ),
-                child: const Text('Continue'),
+                child: const Text('Continue', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
               ),
 
 

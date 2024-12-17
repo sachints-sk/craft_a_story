@@ -1,8 +1,7 @@
 
-
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-
+import 'package:page_transition/page_transition.dart';
 import 'home_tab.dart'; // Import your tab pages
 import 'mystories_tab.dart';
 import 'explore_tab.dart';
@@ -11,6 +10,7 @@ import 'package:firebase_in_app_messaging/firebase_in_app_messaging.dart';
 import 'dart:io';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:purchases_ui_flutter/purchases_ui_flutter.dart';
+import 'CustompayWall.dart';
 
 void main() {
   runApp(const CraftAStoryApphome());
@@ -25,6 +25,9 @@ class CraftAStoryApphome extends StatefulWidget {
 
 class _CraftAStoryApphomeState extends State<CraftAStoryApphome> {
   int _selectedIndex = 0; // Index of the currently selected tab
+  bool _subscribed = false;
+  void Function(CustomerInfo)? _customerInfoListener;
+
 
   // Callback function to change the selected tab index
   void _onTabSelected(int index) {
@@ -33,37 +36,50 @@ class _CraftAStoryApphomeState extends State<CraftAStoryApphome> {
     });
   }
 
-  bool _paywallShown = false;
-  bool _subscribed = false;// Flag to track if paywall is shown
+
 
   @override
   void initState() {
     super.initState();
+    _setupIsPro();
 
+  }
 
+  @override
+  void dispose() {
+    if (_customerInfoListener != null) {
+      Purchases.removeCustomerInfoUpdateListener(_customerInfoListener!);
+    }
 
-    _configureSDK();
+    super.dispose();
+  }
+
+  Future<void> _setupIsPro() async {
+    await Future.delayed(const Duration(seconds: 7));
+    _customerInfoListener = (CustomerInfo customerInfo) {
+      EntitlementInfo? entitlement = customerInfo.entitlements.all['Premium'];
+      if (mounted) {
+        setState(() {
+          _subscribed = entitlement?.isActive ?? false;
+        });
+      }
+    };
+    Purchases.addCustomerInfoUpdateListener(_customerInfoListener!);
+    if(!_subscribed)
+      _showPaywall();
   }
 
 
-
-  Future<void> _configureSDK() async {
-    await Purchases.setLogLevel(LogLevel.debug);
-    PurchasesConfiguration? configuration;
-
-    if(Platform.isAndroid){
-      configuration=PurchasesConfiguration("goog_ROHmfEQIqmPakpNaNfXYdMByLKh");
-    }
-
-
-    if(configuration != null){
-      await Purchases.configure(configuration);
-      await Future.delayed(const Duration(seconds: 5));
-      final paywallResult =await RevenueCatUI.presentPaywallIfNeeded("Premium",displayCloseButton: true);
-      print('Paywall Result: $paywallResult');
-    }
-
+  Future<void> _showPaywall() async{
+    Navigator.push(
+      context,
+      PageTransition(
+        type: PageTransitionType.leftToRight,
+        child:  PaywallPage(),
+      ),
+    );
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -108,4 +124,3 @@ class _CraftAStoryApphomeState extends State<CraftAStoryApphome> {
     );
   }
 }
-

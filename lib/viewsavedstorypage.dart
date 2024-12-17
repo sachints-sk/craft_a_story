@@ -313,17 +313,22 @@ class _ViewSavedStoryPageState extends State<ViewSavedStoryPage> {
                           ? (_isVideoInitialized
                           ? Chewie(controller: _chewieController!)
                           : const Center(child: CircularProgressIndicator()))
-                          : Image.network(
-                        widget.storyData.coverImageUrl,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Image.asset(
-                            'assets/testimage.png',
-                            fit: BoxFit.cover,
-                          );
-                        },
+                          : Hero(
+                        tag: widget.storyData.coverImageUrl, // Use the same unique tag
+                        child: Image.network(
+                          widget.storyData.coverImageUrl,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Image.asset(
+                              'assets/testimage.png',
+                              fit: BoxFit.cover,
+                            );
+                          },
+                        ),
                       ),
+
                     ),
+
                     if (!_showVideoPlayer)
                       IconButton(
                         iconSize: 64,

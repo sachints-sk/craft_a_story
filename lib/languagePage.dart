@@ -4,8 +4,11 @@ import 'package:lottie/lottie.dart';
 import 'processingpagetest.dart';
 import 'package:page_transition/page_transition.dart';
 import 'processingpageaudio.dart';
+import 'dart:io';
+import 'package:purchases_flutter/purchases_flutter.dart';
+import 'package:purchases_ui_flutter/purchases_ui_flutter.dart';
 
-enum UserMembership { normal, litePremium, proPremium }
+enum UserMembership { normal,  proPremium }
 
 
 class LanguageAudioPage extends StatefulWidget {
@@ -26,6 +29,7 @@ class _LanguageAudioPageState extends State<LanguageAudioPage> {
   String? _selectedVoice;
   List<String> _availableVoices = [];
   bool _isLoading = false;
+  bool _subscribed =false;
 
    List<Map<String, String>> _languages = [
     {'name': 'Afrikaans (South Africa)', 'code': 'af-ZA'},
@@ -151,15 +155,17 @@ class _LanguageAudioPageState extends State<LanguageAudioPage> {
 
   // Function to fetch the user's membership level
   Future<UserMembership> _fetchUserMembership() async {
-    // Fetch the user's membership level from Firestore or your backend service
-    // For now, using a placeholder
-    await Future.delayed(const Duration(seconds: 1)); // Simulate API call delay
+   if (_subscribed)
     return UserMembership.proPremium;
+   else
+     return UserMembership.normal;
   }
 
   @override
   void initState() {
     super.initState();
+
+    _setupIsPro();
     // Fetch the user's membership level first
     _fetchUserMembership().then((membership) {
       _currentMembership = membership; // Update _currentMembership
@@ -175,6 +181,14 @@ class _LanguageAudioPageState extends State<LanguageAudioPage> {
   _updateAvailableVoices();
   }
 
+  Future<void> _setupIsPro() async{
+    Purchases.addCustomerInfoUpdateListener((customerInfo) async {
+      EntitlementInfo? entitlement = customerInfo.entitlements.all['Premium'];
+      setState(() {
+        _subscribed= entitlement?.isActive ?? false;
+      });
+    });
+  }
 
 
 
@@ -191,11 +205,7 @@ class _LanguageAudioPageState extends State<LanguageAudioPage> {
 
         // Only standard voices for normal users
         _availableVoices = _availableVoices.where((voice) => voice.contains('Standard')).toList();
-      } else if (_currentMembership == UserMembership.litePremium) {
-        // Lite Premium users: Can choose languages but only standard voices
-        // Only standard voices for lite premium users
-        _availableVoices = _availableVoices.where((voice) => voice.contains('Standard')).toList();
-      } else if (_currentMembership == UserMembership.proPremium) {
+      }  else if (_currentMembership == UserMembership.proPremium) {
         // Pro Premium users: Can choose any language and voice
         // No filtering needed
       }
@@ -281,7 +291,7 @@ class _LanguageAudioPageState extends State<LanguageAudioPage> {
               const Text(
                 'Let your story come to life with the perfect language and voice.',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 16),
+                style: TextStyle(fontSize: 16,fontWeight: FontWeight.w600,),
               ),
               const SizedBox(height: 20),
 
@@ -362,8 +372,7 @@ class _LanguageAudioPageState extends State<LanguageAudioPage> {
                   );
                 }).toList(),
   onChanged:
-  _currentMembership == UserMembership.normal ||
-  _currentMembership == UserMembership.litePremium
+  _currentMembership == UserMembership.normal
   ? null // Disable voice selection
       : (String? newValue) {
   setState(() {
@@ -376,7 +385,7 @@ class _LanguageAudioPageState extends State<LanguageAudioPage> {
                 Padding(
                   padding: const EdgeInsets.only(top: 8.0),
                   child: Text(
-                    'Upgrade to Pro Premium to explore premium voice selections.',
+                    'Upgrade to Premium to explore premium voice selections.',
                     textAlign: TextAlign.center,
                     style: TextStyle(color: Colors.grey, fontSize: 14),
                   ),
@@ -420,11 +429,12 @@ class _LanguageAudioPageState extends State<LanguageAudioPage> {
                     );
                   }
                 },style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF1A2259),
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 textStyle: const TextStyle(fontSize: 18),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
               ),
-                child: const Text('Continue'),
+                child: const Text('Continue', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
               ),
 
 

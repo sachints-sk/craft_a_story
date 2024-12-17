@@ -268,7 +268,7 @@ class BannerCard extends StatelessWidget {
         ),
       );
     },
-    child: Container(
+    child:Container(
       decoration: BoxDecoration(
         image: DecorationImage(
           image: NetworkImage(image),
@@ -308,7 +308,7 @@ class BannerCard extends StatelessWidget {
           ],
         ),
       ),
-    ) ,);
+    ), );
   }
 }
 
@@ -417,7 +417,7 @@ class StoryCard extends StatelessWidget {
         child: Column(
           children: [
             Expanded(
-              child: Container(
+              child:Hero(tag: storyData.coverImageUrl, child: Container(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
                   image: DecorationImage(
@@ -425,7 +425,7 @@ class StoryCard extends StatelessWidget {
                     fit: BoxFit.cover,
                   ),
                 ),
-              ),
+              ),)
             ),
             const SizedBox(height: 8),
             Text(

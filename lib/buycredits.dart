@@ -128,65 +128,85 @@ class _PurchaseCreditsPageState extends State<PurchaseCreditsPage> {
     // For example, update user's story balance or unlock features.
   }
 
-  // Function to call the Cloud Function and update credits
   Future<void> _updateCredits(PurchaseDetails purchaseDetails) async {
     // 1. Get the product ID
     final productId = purchaseDetails.productID;
+    if (productId == null) {
+      print('Error: Product ID is null');
+      return; // Exit the function if productId is null
+    }
 
     // 2. Get the purchase token
-    final purchaseToken = purchaseDetails.verificationData.serverVerificationData;
+    final purchaseToken = purchaseDetails.verificationData?.serverVerificationData;
+    if (purchaseToken == null) {
+      print('Error: Purchase token is null');
+      return; // Exit the function if purchaseToken is null
+    }
 
-
-    // Get the user's ID token
+    // 3. Get the user's ID token
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
       print('Error: User is not signed in');
-      return; // Or handle the error appropriately
+      return; // Exit the function if user is not signed in
     }
+
     final idToken = await user.getIdToken();
-    // 3. Create the data to send to the Cloud Function
+    if (idToken == null) {
+      print('Error: Failed to fetch ID token');
+      return; // Exit the function if ID token is null
+    }
+
+    // 4. Create the data to send to the Cloud Function
     final data = {
       'productId': productId,
       'purchaseToken': purchaseToken,
     };
 
     try {
-      // 4. Call the Cloud Function using http.post
+      // 5. Call the Cloud Function using http.post
       final response = await http.post(
         Uri.parse('https://us-central1-craft-a-story.cloudfunctions.net/updateUserCredits'),
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer $idToken',  // Send ID token in the header
+          'Authorization': 'Bearer $idToken', // Send ID token in the header
         },
         body: jsonEncode(data),
       );
 
-      // 5. Handle the response
+      // 6. Handle the response
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = jsonDecode(response.body);
         print('Credits updated successfully: ${responseData['message']}');
 
-        // Display a success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Credits updated!')),
-        );
+        // Display a success message, check if the widget is still mounted
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Credits updated!')),
+          );
+        }
       } else {
         print('Error updating credits: ${response.statusCode}');
         print('Error message: ${response.body}');
 
-        // Display an error message
+        // Display an error message, check if the widget is still mounted
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Failed to update credits.')),
+          );
+        }
+      }
+    } catch (e) {
+      print('Error calling Cloud Function: $e');
+
+      // Handle the error appropriately, check if the widget is still mounted
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Failed to update credits.')),
         );
       }
-    } catch (e) {
-      print('Error calling Cloud Function: $e');
-      // Handle the error appropriately (e.g., show a snackbar)
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to update credits.')),
-      );
     }
   }
+
 
 
   @override
@@ -224,7 +244,7 @@ class _PurchaseCreditsPageState extends State<PurchaseCreditsPage> {
             const SizedBox(height: 2),
 
              Text(
-              'Select a package to unlock\nmore stories!',
+              'Select a package to create more stories!',
                style: GoogleFonts.poppins(
                  fontWeight: FontWeight.w700, // Use Bold 700
                  fontSize: 24,                // Font size example
@@ -254,7 +274,7 @@ class _PurchaseCreditsPageState extends State<PurchaseCreditsPage> {
                  imagepath= 'assets/book10.png';
                 } else if (product.description == 'Epic Tale Collection') {
                   desciptionofproduct="20 Stories (200 Credits)";
-                  discount = 20;
+                  discount = 15;
                   imagepath='assets/book20.png';
                 }
                 return _buildStoryPackageCard(
@@ -263,7 +283,7 @@ class _PurchaseCreditsPageState extends State<PurchaseCreditsPage> {
                   title: product.description,
                   description:desciptionofproduct,
                   originalPrice: product.rawPrice.toString(),
-                  discountedPrice: product.rawPrice.toString(),
+                  discountedPrice: product.price.toString(),
                   discountPercentage: discount,
                   product: product, // Disable button during purchase
                 );
@@ -272,40 +292,10 @@ class _PurchaseCreditsPageState extends State<PurchaseCreditsPage> {
             const SizedBox(height: 20),
 
             // Restore Purchases Button
-            Container(
-              width: double.infinity, // Makes the button full width
-              child: ElevatedButton(
-                onPressed: () {
-                  _inAppPurchase.restorePurchases();
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.grey[300],
-                  padding: const EdgeInsets.symmetric(vertical: 10),
-                  textStyle: const TextStyle(fontSize: 16),
-                  shape: const RoundedRectangleBorder(
-                    borderRadius: BorderRadius.zero, // Remove rounded corners
-                  ),
-                ),
-                child: const Text(
-                  'Restore Purchases',
-                  style: TextStyle(color: Colors.black),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
+
 
             // Terms and Conditions Link
-            Center(
-              child: TextButton(
-                onPressed: () {
-                  // Handle view terms and conditions action
-                },
-                child: const Text(
-                  'View Terms and Conditions',
-                  style: TextStyle(color: Colors.blue),
-                ),
-              ),
-            ),
+
           ],
         ),
       ),
@@ -405,31 +395,25 @@ class _PurchaseCreditsPageState extends State<PurchaseCreditsPage> {
 
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '$currencySymbol $originalPrice',
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          decoration: discountPercentage > 0 ? TextDecoration.lineThrough : null, // Add strikethrough if discount
-                        ),
-                      ),
+
+
                       const SizedBox(height: 5),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            '$currencySymbol $discountedPrice',
+                            '$currencySymbol $originalPrice',
                             style: const TextStyle(
                               color: Colors.indigo,
                               fontWeight: FontWeight.bold,
-                              fontSize: 18,
+                              fontSize: 20,
                             ),
                           ),
                           if (!_isPurchasing)
                             ElevatedButton(
                               onPressed: () => _buyProduct(product),
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.blue,
+                                backgroundColor: const Color(0xFF1A2259),
                                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                                 textStyle: const TextStyle(fontSize: 14),
                                 shape: RoundedRectangleBorder(
@@ -451,26 +435,7 @@ class _PurchaseCreditsPageState extends State<PurchaseCreditsPage> {
           ),
 
           // Discount Badge (only show if there's a discount)
-          if (discountPercentage > 0)
-            Positioned(
-              top: 10,
-              left: 10,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.red,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  '${discountPercentage}% OFF',
-                  style: GoogleFonts.poppins( // Apply GoogleFonts here
-                    fontWeight: FontWeight.w700,
-                    fontSize: 12,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ),
+
         ],
       ),
     );

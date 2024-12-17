@@ -13,8 +13,9 @@ import 'viewsavedstorypage.dart';
 import 'viewSearchStory.dart';
 import 'package:intl/intl.dart';
 import 'myStoriesViewer.dart';
-
-
+import 'buycredits.dart';
+import 'CustompayWall.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:purchases_ui_flutter/purchases_ui_flutter.dart';
 
@@ -33,15 +34,17 @@ class CraftAStoryHome extends StatefulWidget {
 class _CraftAStoryHomeState extends State<CraftAStoryHome> {
   final PagingController<int, Product> _pagingController = PagingController(firstPageKey: 0);
   bool _isSearching = false;
-
+  String _userName = '';
   HitsSearcher? _productsSearcher; // Declare without initializing
   final _searchTextController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
   int Credits = 0;
+  late final void Function(CustomerInfo) _customerInfoListener;
 
   Stream<SearchMetadata>? get _searchMetadata => _productsSearcher?.responses.map(SearchMetadata.fromResponse);
   Stream<HitsPage>? get _searchPage => _productsSearcher?.responses.map(HitsPage.fromResponse);
  bool _subscribed = false;
+
   void initState() {
     super.initState();
 
@@ -86,51 +89,68 @@ class _CraftAStoryHomeState extends State<CraftAStoryHome> {
       });
     });
 
-    _configureSDK();
+
     _setupIsPro();
+    _fetchUserName();
+
   }
   @override
   void dispose() {
     _searchTextController.dispose();
     _productsSearcher?.dispose();
     _searchFocusNode.dispose();
+    Purchases.removeCustomerInfoUpdateListener(_customerInfoListener);
     super.dispose();
   }
 
+  Future<void> _fetchUserName() async {
+    try{
 
 
-  Future<void> _configureSDK() async {
-    await Purchases.setLogLevel(LogLevel.debug);
-    PurchasesConfiguration? configuration;
+      final user = FirebaseAuth.instance.currentUser;
+      if(user == null){
+        setState(() {
+          _userName = "Guest User";
+        });
+        return;
+      }
 
-    if(Platform.isAndroid){
-      configuration=PurchasesConfiguration("goog_ROHmfEQIqmPakpNaNfXYdMByLKh");
+      final userDocRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
+      final userDoc = await userDocRef.get();
+      if(userDoc.exists){
+        final userData = userDoc.data() as Map<String,dynamic>;
+        setState(() {
+          _userName = userData['name'] as String? ?? "User";
+        });
+      } else {
+        setState(() {
+          _userName = "User";
+        });
+      }
+    } catch (e) {
+      print("Error getting user name: $e");
     }
+    finally{
 
-
-    if(configuration != null){
-      await Purchases.configure(configuration);
-    //  final paywallResult =await RevenueCatUI.presentPaywallIfNeeded("Premium",displayCloseButton: true);
-    //  print('Paywall Result: $paywallResult');
     }
 
   }
 
-  Future<void> _setupIsPro() async{
-    Purchases.addCustomerInfoUpdateListener((customerInfo) async {
+  Future<void> _setupIsPro() async {
+    _customerInfoListener = (CustomerInfo customerInfo) {
       EntitlementInfo? entitlement = customerInfo.entitlements.all['Premium'];
-      setState(() {
-        _subscribed= entitlement?.isActive ?? false;
-      });
-    });
+      if (mounted) {
+        setState(() {
+          _subscribed = entitlement?.isActive ?? false;
+        });
+      }
+    };
+    Purchases.addCustomerInfoUpdateListener(_customerInfoListener);
   }
 
 
 
-void showpaywall () async{
 
-  final paywallResult =await RevenueCatUI.presentPaywallIfNeeded("Premium",displayCloseButton: true);;
-}
 
 
 
@@ -252,32 +272,37 @@ void showpaywall () async{
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: const [
-            Text(
-              'Hello👋',
-              style: TextStyle(color: Colors.black, fontSize: 20),
-            ),
-            Text(
-              'Jacob Jones',
-              style: TextStyle(
-                color: Colors.black,
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
+      Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Hello👋',
+          style: GoogleFonts.poppins(
+            textStyle: const TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.w500),
+          ),
+
         ),
+        Text(
+          _userName,
+          style: GoogleFonts.poppins(
+            textStyle: const TextStyle(
+              color: Colors.black,
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ],
+    ),
         Row(
           children: [
             GestureDetector(
               onTap: () => _showCreditsDialog(context),
               child: Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
                 decoration: BoxDecoration(
                   color: const Color(0xFF24A17F),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(10),
                 ),
                 child: Row(
                   children: [
@@ -296,7 +321,7 @@ void showpaywall () async{
                         if (snapshot.connectionState == ConnectionState.waiting) {
                           // Show a loading indicator while data is being fetched
                           return const Text(
-                            '...',
+                            '',
                             style: TextStyle(color: Colors.white, fontSize: 16),
                           );
                         }
@@ -316,7 +341,7 @@ void showpaywall () async{
 
                           return Text(
                             '$userCredits',
-                            style: const TextStyle(color: Colors.white, fontSize: 16),
+                            style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
                           );
                         }
 
@@ -333,31 +358,55 @@ void showpaywall () async{
               ),
             ),
             if (_subscribed) ...[
-            const SizedBox(width: 8),
-            GestureDetector(
-              onTap: () => showPaywallDialog(context),
-              child: Container(
+            const SizedBox(width: 1),
+              Container(
 
-                padding: const EdgeInsets.all(9),
+
                 decoration: BoxDecoration(
-                  color: const Color(0xFF8A44F2),
+
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Image.asset(
-                  'assets/crown.png',
-                  height: 22,
-                  width: 22,
-                  color: Colors.white,
+                child: SizedBox(
+
+                  height: 75,
+                  child: Lottie.asset('assets/premiumbadge.json'),
                 ),
-              ),
-            )],
+              )],
+            if (!_subscribed) ...[
+              const SizedBox(width: 4),
+              GestureDetector(onTap:() => _showPaywall(),
+              child:Container(
+
+
+                decoration: BoxDecoration(
+
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: SizedBox(
+
+
+                  width: 80,
+                  child: Lottie.asset('assets/getpremium2.json'),
+                ),
+              ) ,)
+              ],
 
           ],
         ),
       ],
     );
   }
+  Future<void> _showPaywall() async{
 
+
+    Navigator.push(
+      context,
+      PageTransition(
+        type: PageTransitionType.leftToRight,
+        child:  PaywallPage(),
+      ),
+    );
+  }
   // Create Section
   Widget buildCreateSection(BuildContext context) {
     return Container(
@@ -470,7 +519,13 @@ void showpaywall () async{
 
         List<StoryData> stories = snapshot.data!.docs.map((doc) {
           final data = doc.data() as Map<String, dynamic>;
-          DateTime createdAtDate = (data['createdAt'] as Timestamp).toDate();
+          // Safely handle 'createdAt' field
+          DateTime createdAtDate;
+          if (data['createdAt'] != null) {
+            createdAtDate = (data['createdAt'] as Timestamp).toDate();
+          } else {
+            createdAtDate = DateTime.now(); // Temporary fallback for missing timestamps
+          }
           String formattedDate = DateFormat('dd-MM-yyyy').format(createdAtDate);
           return StoryData(
             coverImageUrl: data['coverImageUrl'] ?? 'assets/testimage.png',
@@ -605,16 +660,20 @@ void showpaywall () async{
             children: [
               // Cover Image
               Expanded(
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    image: DecorationImage(
-                      image: NetworkImage(story.coverImageUrl),
-                      fit: BoxFit.cover,
+                child: Hero(
+                  tag: story.coverImageUrl, // Use a unique tag (e.g., coverImageUrl)
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      image: DecorationImage(
+                        image: NetworkImage(story.coverImageUrl),
+                        fit: BoxFit.cover,
+                      ),
                     ),
                   ),
                 ),
               ),
+
               const SizedBox(height: 8),
               // Title
               Text(
@@ -659,12 +718,15 @@ void showpaywall () async{
             children: [
               // Cover Image
               Expanded(
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    image: DecorationImage(
-                      image: NetworkImage(story.coverImageUrl),
-                      fit: BoxFit.cover,
+                child: Hero(
+                  tag: story.coverImageUrl, // Use a unique tag (e.g., coverImageUrl)
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      image: DecorationImage(
+                        image: NetworkImage(story.coverImageUrl),
+                        fit: BoxFit.cover,
+                      ),
                     ),
                   ),
                 ),
@@ -771,6 +833,23 @@ void showpaywall () async{
                 "Need more inspiration? Get more credits to unlock endless storytelling possibilities!",
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 16.0),
+              ),
+              const SizedBox(height: 16),
+              TextButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    PageTransition(
+                      type: PageTransitionType.rightToLeft,
+                      child:  PurchaseCreditsPage(),
+                    ),
+                  );
+                },
+                child: Text(
+                  "Buy Credits",
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 14.0,fontWeight: FontWeight.w600, color: Colors.indigo),
+                ),
               ),
             ],
           ),

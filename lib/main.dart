@@ -1,46 +1,63 @@
+
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_performance/firebase_performance.dart';
-import 'firebase_options.dart';
-import 'testfolder/texttospeech.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:firebase_in_app_messaging/firebase_in_app_messaging.dart';
 import 'package:firebase_app_installations/firebase_app_installations.dart';
-import 'package:firebase_app_check/firebase_app_check.dart';
-
 import 'firebase_options.dart';
 import 'Services/notification_services.dart';
-import 'package:flutter_native_splash/flutter_native_splash.dart';
-import 'dart:ui';
 import 'signinpage.dart';
 import 'home.dart';
+import 'dart:ui';
+import 'signinPagenew.dart';
+import 'onboarding_page.dart';
+import 'UserNameInputScreen.dart';
+
+import 'package:purchases_flutter/purchases_flutter.dart';
+import 'package:purchases_ui_flutter/purchases_ui_flutter.dart';
 
 void main() async {
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
+
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // Pass all uncaught "fatal" errors from the framework to Crashlytics
-//  FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
-  // Pass all uncaught asynchronous errors that aren't handled by the Flutter framework to Crashlytics
-//  PlatformDispatcher.instance.onError = (error, stack) {
-//    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
-////  };
+  await _initializeFirebaseServices();
 
+  await initializeFCM();
+
+  await initializeRevenueCat();
+
+  FlutterNativeSplash.remove();
+
+
+
+  runApp(const CraftAStoryApp());
+}
+
+Future<void> _initializeFirebaseServices() async {
   // Initialize App Check
   await FirebaseAppCheck.instance.activate(
-    androidProvider: AndroidProvider.debug,
-  //  appleProvider: AppleProvider.deviceCheck, // Use AppleProvider.debug for testing
+    androidProvider: AndroidProvider.playIntegrity,
   );
 
-
+  // Initialize Notifications
   await NotificationServices.instance.initialise();
-  runApp(const CraftAStoryApp());
+
+  // Initialize Crashlytics and Performance Monitoring
+  FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+  PlatformDispatcher.instance.onError = (error, stack) {
+    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+    return true;
+  };
 }
 
 class CraftAStoryApp extends StatefulWidget {
@@ -50,52 +67,92 @@ class CraftAStoryApp extends StatefulWidget {
   _CraftAStoryAppState createState() => _CraftAStoryAppState();
 }
 
+
 class _CraftAStoryAppState extends State<CraftAStoryApp> {
 
+  late Future<bool> _userCheckFuture;
 
   @override
   void initState(){
     super.initState();
-    initialisation();
-    _initializeFCM();
+    _userCheckFuture = _checkUserSignedIn();
   }
 
-  void initialisation() async{
+  Future<bool> _checkUserSignedIn() async {
+    final user = FirebaseAuth.instance.currentUser;
 
-    await Future.delayed(const Duration(seconds: 3));
-    FlutterNativeSplash.remove();
+    if(user != null){
+      await initializeRevenueCat();
+      return true;
+    }
+    return false;
   }
-  void _initializeFCM() async {
-    String? token = await FirebaseMessaging.instance.getToken();
-    print('FCM Token: $token');
-    // Send token to backend for saving
-    FirebaseInstallations.instance.getId().then((fid) {
-      print('Firebase Installation ID: $fid');
-    });
 
-  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'Craft-a-Story',
       theme: ThemeData(
         useMaterial3: true,
         primaryColor: Colors.blue, // Set your primary color
         scaffoldBackgroundColor: Colors.white, // Set the background color
       ),
-      // Use a StreamBuilder to listen for authentication state changes
-      home: StreamBuilder<User?>(
-        stream: FirebaseAuth.instance.authStateChanges(),
+      home: FutureBuilder<bool>(
+        future: _userCheckFuture,
         builder: (context, snapshot) {
-          // If the user is logged in
-          if (snapshot.hasData) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          } else if (snapshot.data == true) {
             return const CraftAStoryApphome(); // Navigate to your home page
-          } else {
-            return const SignInPage(); // Navigate to sign-in page
+          }else{
+            return Onboarding(); // Navigate to your onboarding page
           }
         },
       ),
     );
   }
+}
+
+
+Future<void> initializeRevenueCat() async {
+  final user = FirebaseAuth.instance.currentUser;
+
+  // Ensure the user is authenticated
+  if (user != null) {
+    final configuration = PurchasesConfiguration("goog_ROHmfEQIqmPakpNaNfXYdMByLKh")
+      ..appUserID = user!.uid; // Pass Firebase UID as appUserID
+    await Purchases.configure(configuration);
+    print("RevenueCat configured for user ID: ${user.uid}");
+  } else {
+    // If no user is logged in, configure anonymously
+    final configuration = PurchasesConfiguration("goog_ROHmfEQIqmPakpNaNfXYdMByLKh");
+    await Purchases.configure(configuration);
+    print("RevenueCat configured anonymously");
+  }
+}
+
+
+
+class FirebaseMessagingService {
+  static final FirebaseMessaging _messaging = FirebaseMessaging.instance;
+
+  static Future<void> initializeFCM() async {
+    try {
+
+
+      // Additional logic for backend token storage can be implemented here.
+    } catch (e) {
+      print('Error initializing FCM: $e');
+    }
+  }
+}
+
+// Initialize FCM after Firebase setup
+Future<void> initializeFCM() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  FirebaseMessagingService.initializeFCM();
 }

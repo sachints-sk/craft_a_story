@@ -18,7 +18,8 @@ import 'package:chewie/chewie.dart';
 import 'dart:async'; // For Timer
 import 'package:lottie/lottie.dart';
 import 'package:page_transition/page_transition.dart';
-import 'newvideoplayer.dart';
+import 'FirstStoryPlayer.dart';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:firebase_performance/firebase_performance.dart';
@@ -65,7 +66,7 @@ class _ProcessingPageState extends State<ProcessingPage> {
   String videoPathConverted="";
 
 
-      bool _isLoading = false;
+  bool _isLoading = false;
   bool _isAudioReady = false;
   bool _isStoredAudioAvailable = false;
   String _storedAudioPath="";
@@ -130,14 +131,14 @@ class _ProcessingPageState extends State<ProcessingPage> {
 
   // Main function to handle all the processing steps
   Future<void> _processStory() async {
-    Trace customTrace = FirebasePerformance.instance.newTrace('Create-Visual-Story');
+    Trace customTrace = FirebasePerformance.instance.newTrace('First-Story');
     await customTrace.start();
     try {
       // 1. Clear old images
       await requestStoragePermissions();
       await _clearOldImages();
       await _clearOldAudio();
-      bool eligible= await canCreateStory(user!.uid,  10);
+      bool eligible= await canCreateStory(user!.uid,  0);
       print("Eligible : $eligible");
 
       if(eligible){
@@ -230,7 +231,7 @@ class _ProcessingPageState extends State<ProcessingPage> {
 
         await _createVideoFromImagesTranslated(imageUrls);
 
-        await _DeductCredits();
+
 
 
         _timer = Timer.periodic(const Duration(milliseconds: 50), (timer) {
@@ -253,7 +254,7 @@ class _ProcessingPageState extends State<ProcessingPage> {
             context,
             PageTransition(
               type: PageTransitionType.rightToLeft, // Slide transition from right to left
-              child: NewVideoPlayer(
+              child: FirstStoryPlayer(
                 videoPath: videoPathCombined!,
                 title: widget.title,
                 voice: widget.voice,
@@ -269,7 +270,7 @@ class _ProcessingPageState extends State<ProcessingPage> {
             context,
             PageTransition(
               type: PageTransitionType.rightToLeft, // Slide transition from right to left
-              child: NewVideoPlayer(
+              child: FirstStoryPlayer(
                 videoPath: videoPathCombined!,
                 title: widget.title,
                 voice: widget.voice,
@@ -526,7 +527,7 @@ class _ProcessingPageState extends State<ProcessingPage> {
           _statusText = "Audio ready!";
           _isAudioReady = true;
         });
-         // Check if the audio was saved successfully
+        // Check if the audio was saved successfully
       } else {
         _showStoryCreationErrorDialog(context);
         print('Error: ${response.body}');
@@ -624,7 +625,7 @@ class _ProcessingPageState extends State<ProcessingPage> {
 
   Future<void> _createVideoFromImagesTranslated(List<String> imageUrls) async {
     try {
-   final FlutterFFmpeg _flutterFFmpeg = FlutterFFmpeg();
+      final FlutterFFmpeg _flutterFFmpeg = FlutterFFmpeg();
 
       // 1. Create a temporary directory to store downloaded images
       final tempDir = await getTemporaryDirectory();
@@ -702,6 +703,10 @@ class _ProcessingPageState extends State<ProcessingPage> {
 
       print('Video created at: $videoPath');
 
+      setState(() {
+        _statusText = "Almost There...";
+      });
+
       await mergeNonCompatibleVideos(videoPath);
 
       // _statusText = 'Video created successfully.';  (No need to update here)
@@ -727,21 +732,21 @@ class _ProcessingPageState extends State<ProcessingPage> {
   Future<void> mergeNonCompatibleVideos( String video2Path) async {
     final FlutterFFmpeg ffmpeg = FlutterFFmpeg();
     final tempDir = await getTemporaryDirectory();
-     videoPathCombined = '${tempDir.path}/story_video_combined.mp4';
+    videoPathCombined = '${tempDir.path}/story_video_combined.mp4';
 
     final video1Path = await loadVideoFromAssets('video1.mp4');
 
-  //   // FFmpeg command for re-encoding and merging
-  //   final command = '''
-  //   -i ${video1Path.path}
-  //   -i $video2Path
-  //   -filter_complex "[0:v:0][0:a:0][1:v:0][1:a:0]concat=n=2:v=1:a=1[outv][outa]"
-  //   -map "[outv]"
-  //   -map "[outa]"
-  //   -c:v libx264
-  //   -c:a aac
-  //   -y $videoPathCombined
-  // ''';
+    //   // FFmpeg command for re-encoding and merging
+    //   final command = '''
+    //   -i ${video1Path.path}
+    //   -i $video2Path
+    //   -filter_complex "[0:v:0][0:a:0][1:v:0][1:a:0]concat=n=2:v=1:a=1[outv][outa]"
+    //   -map "[outv]"
+    //   -map "[outa]"
+    //   -c:v libx264
+    //   -c:a aac
+    //   -y $videoPathCombined
+    // ''';
     String commandToExecute = '-y -i ${video1Path.path} -i $video2Path -filter_complex \'[0:v:0]fps=30,setsar=1[vid1]; [1:v:0]fps=30,setsar=1[vid2]; [0:a:0][1:a:0]concat=n=2:v=0:a=1[outa]; [vid1][vid2]concat=n=2:v=1:a=0[outv]\' -map \'[outv]\' -map \'[outa]\' $videoPathCombined';
 
 
@@ -761,8 +766,8 @@ class _ProcessingPageState extends State<ProcessingPage> {
     setState(() {
       _statusText = "Crafting the soundtrack ...";
     });
-print("normal method");
-print(widget.voice);
+    print("normal method");
+    print(widget.voice);
     final url = Uri.parse(
         'https://us-central1-adept-ethos-432515-v9.cloudfunctions.net/createspeech');
     try {
@@ -809,7 +814,7 @@ print(widget.voice);
     for (var scene in scenes) {
       // Extract the scene description
       String prompt = scene['scene'];
-print(prompt);
+      print(prompt);
       // Make the API call to generate images using the scene description
       final output = await fal.subscribe("fal-ai/flux/schnell", input: {
         "prompt": prompt,
@@ -1123,12 +1128,12 @@ print(prompt);
               Row(mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [Text(
                   _statusText,
-                style: const TextStyle(color: Colors.grey),
-              ),Text(
-        '${(_loadingProgress * 100).toInt()}%', // Display percentage
-        style: const TextStyle(color: Colors.grey,),
-      ),
-              ],
+                  style: const TextStyle(color: Colors.grey),
+                ),Text(
+                  '${(_loadingProgress * 100).toInt()}%', // Display percentage
+                  style: const TextStyle(color: Colors.grey,),
+                ),
+                ],
               )
 
             ],

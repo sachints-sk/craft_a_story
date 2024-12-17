@@ -278,15 +278,18 @@ class _MystoriesviewerState extends State<Mystoriesviewer> {
                           ? (_isVideoInitialized
                           ? Chewie(controller: _chewieController!)
                           : const Center(child: CircularProgressIndicator()))
-                          : Image.network(
-                        widget.storyData.coverImageUrl,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Image.asset(
-                            'assets/testimage.png',
-                            fit: BoxFit.cover,
-                          );
-                        },
+                          : Hero(
+                        tag: widget.storyData.coverImageUrl, // Use the same unique tag
+                        child: Image.network(
+                          widget.storyData.coverImageUrl,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Image.asset(
+                              'assets/testimage.png',
+                              fit: BoxFit.cover,
+                            );
+                          },
+                        ),
                       ),
                     ),
                     if (!_showVideoPlayer)
@@ -299,7 +302,7 @@ class _MystoriesviewerState extends State<Mystoriesviewer> {
                 )
               else
                 _localAudioPath == null
-                    ? Container(
+                    ? Hero(tag: widget.storyData.coverImageUrl, child: Container(
                   width: double.infinity,
                   height: 300, // or adjust based on your layout needs
                   child: Stack(
@@ -328,7 +331,7 @@ class _MystoriesviewerState extends State<Mystoriesviewer> {
                   ),
 
                 )
-
+                )
 
                     : AudioFileWaveforms(
                   size: Size(MediaQuery.of(context).size.width, 150.0),

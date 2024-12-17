@@ -162,7 +162,7 @@ class _MyStoriesPageState extends State<MyStoriesPage> {
             children: [
               // Cover Image
               Expanded(
-                child: Container(
+                child:Hero(tag: story.coverImageUrl, child: Container(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -179,7 +179,7 @@ class _MyStoriesPageState extends State<MyStoriesPage> {
 
                     ],
                   ),
-                ),
+                ),) ,
               ),
               const SizedBox(height: 8),
               // Title

@@ -7,6 +7,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:audio_waveforms/audio_waveforms.dart';
+import 'package:share_plus/share_plus.dart';
 
 class NewAudioPlayer extends StatefulWidget {
   final String title;
@@ -39,12 +40,15 @@ class _NewAudioPlayerState extends State<NewAudioPlayer> {
 
   bool _isUploading = false;
   String _saveText = "Save your story to access it later.";
+  final firestore = FirebaseFirestore.instance;
+  String username ="";
 
   @override
   void initState() {
     super.initState();
 
     _initializePlayer();
+    getusername();
   }
 
   @override
@@ -55,7 +59,11 @@ class _NewAudioPlayerState extends State<NewAudioPlayer> {
     super.dispose();
   }
 
+  Future<void> getusername() async{
+    final user = FirebaseAuth.instance.currentUser;
+    username= user!.uid;
 
+  }
 
   void _playandPause() async {
     controller.playerState == PlayerState.playing
@@ -83,7 +91,7 @@ class _NewAudioPlayerState extends State<NewAudioPlayer> {
     });
 
     try {
-      final firestore = FirebaseFirestore.instance;
+
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) throw Exception('User not authenticated');
 
@@ -136,6 +144,30 @@ class _NewAudioPlayerState extends State<NewAudioPlayer> {
         );
       });
     }
+  }
+
+  Future<void> _shareStory() async {
+
+    try {
+      // Get the local video file path
+      final localAudioPath = widget.audioPath;
+      final audioFile = File(localAudioPath);
+
+      if (await audioFile.exists()) {
+        // Share the video file if it exists
+        await Share.shareXFiles(
+          [XFile(localAudioPath)],
+          text: 'I just created an incredible audio story: ${widget.title}! Made with Craft-a-Story. Check it out!',
+        );
+      }
+    } catch (e) {
+      print('Error while sharing story: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to share the story.')),
+      );
+    }
+
+
   }
 
   Future<String> _downloadAndCompressCoverImage(String coverImageUrl) async {
@@ -227,23 +259,142 @@ class _NewAudioPlayerState extends State<NewAudioPlayer> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  ElevatedButton.icon(
-                    onPressed: () => _saveStory('stories'),
-                    icon: const Icon(Icons.save),
-                    label: const Text('Save Story'),
-                  ),
-                  ElevatedButton.icon(
-                    onPressed: () => _saveStory('Explore_stories'),
-                    icon: const Icon(Icons.save),
-                    label: const Text('Save Story to Explore'),
+                  const SizedBox(height: 8), // Add space before button
+                  // Save Story Button
+                  SizedBox(
+                    width: double.infinity, // Make the button full-width
+                    child: ElevatedButton.icon(
+
+                      onPressed: () {
+                        _saveStory('stories');
+                      },
+                      icon: const Icon(Icons.save, color: Colors.white,), // Save icon
+                      label: const Text('Save Story',style: TextStyle(color: Colors.white),), // Button label
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),backgroundColor:  const Color(
+                          0xFF282943),// Button padding
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 8),
-                  Center(child: Text(_saveText)),
+                  //temp save to explore button
+                  if(username=="DYxrS1A8UuM0y1AOoA99yTIGTQn2")
+                    SizedBox(
+                      width: double.infinity, // Make the button full-width
+                      child: ElevatedButton.icon(
+
+                        onPressed: () {
+                          _saveStory('Explore_stories');
+                        },
+                        icon: const Icon(Icons.save, color: Colors.white,), // Save icon
+                        label: const Text('Save Story to Explore',style: TextStyle(color: Colors.white),), // Button label
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),backgroundColor:  const Color(
+                            0xFF282943),// Button padding
+                        ),
+                      ),
+                    ),
+
+                  const SizedBox(height: 8), // Add space for description
+                  Center( // Wrap in Center widget
+                    child:  Text(
+                      _saveText,
+                      style: const TextStyle(color: const Color(0xFF373636)),
+                    ),
+                  ),
                   if (_isUploading) const LinearProgressIndicator(),
                   const SizedBox(height: 20),
-                  Text(widget.title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // Story Title
+                      Expanded(
+                        child: Text(
+                          widget.title,
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.share, color: Colors.black87,  ),
+                        onPressed: _shareStory,
+                      ),
+                      // Like Button with Count
+
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      const Icon(Icons.category, color: Colors.grey, size: 20),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Genre: ', // Placeholder for genre
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey,
+                        ),
+                      ),
+                      Text(
+                        widget.mode, // Placeholder for genre
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      const Icon(Icons.record_voice_over, color: Colors.grey, size: 20),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Voice: ', // Placeholder for voice type
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey,
+                        ),
+                      ),
+                      Text(
+                        widget.voice, // Placeholder for voice type
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 8),
-                  Text(widget.description),
+
+
+
+                  const Divider(
+                    color: Colors.grey,
+                    thickness: 0.5,
+                  ),
+
+                  const SizedBox(height: 8),
+                  Text(
+                    widget.description,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      color: Colors.black,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Divider
+                  const Divider(
+                    color: Colors.grey,
+                    thickness: 0.5,
+                  ),
+                  const SizedBox(height: 10),
+
                 ],
               ),
             ),

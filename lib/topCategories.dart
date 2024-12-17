@@ -118,7 +118,7 @@ class _TopcategoriesState extends State<Topcategories> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: Container(
+                child: Hero(tag: story.coverImageUrl, child: Container(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -132,7 +132,7 @@ class _TopcategoriesState extends State<Topcategories> {
                       ),
                     ],
                   ),
-                ),
+                ),)
               ),
               const SizedBox(height: 8),
               Text(

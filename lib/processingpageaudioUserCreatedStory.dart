@@ -23,6 +23,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:firebase_performance/firebase_performance.dart';
 import 'newaudioplayer.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:giffy_dialog/giffy_dialog.dart';
+import 'buycredits.dart';
 
 class ProcessingPageAudioUserCreatedStory extends StatefulWidget {
   final String story; // Receive the prompt
@@ -81,7 +84,30 @@ class _ProcessingPageAudioUserCreatedStoryState extends State<ProcessingPageAudi
   }
 
 
+  Future<bool> canCreateStory(String userId, int requiredCredits) async {
+    try {
+      // Reference to the Firestore user document
+      final DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
 
+      // Check if the document exists
+      if (!userDoc.exists) {
+        print("User document not found.");
+        return false;
+      }
+
+      // Extract user's current credits
+      final userCredits = userDoc['credits'] as int? ?? 0;
+
+      // Compare credits
+      return userCredits >= requiredCredits;
+    } catch (e) {
+      print("Error checking story eligibility: $e");
+      return false; // Return false in case of an error
+    }
+  }
 
 
 
@@ -96,103 +122,120 @@ class _ProcessingPageAudioUserCreatedStoryState extends State<ProcessingPageAudi
       });
       await _clearOldImages();
       await _clearOldAudio();
-      _timer = await Timer.periodic(const Duration(milliseconds: 10), (timer) {
-        setState(() {
-          _loadingProgress += 0.01; // Increase progress by 1% every 50ms
-          if (_loadingProgress >= 0.02) {
-            _timer?.cancel(); // Stop the timer when progress reaches 100%
-            // You can navigate to the next screen or perform other actions here
-          }
+
+      bool eligible= await canCreateStory(user!.uid,  2);
+      print("Eligible : $eligible");
+
+      if(eligible){
+
+
+        _timer = await Timer.periodic(const Duration(milliseconds: 10), (timer) {
+          setState(() {
+            _loadingProgress += 0.01; // Increase progress by 1% every 50ms
+            if (_loadingProgress >= 0.02) {
+              _timer?.cancel(); // Stop the timer when progress reaches 100%
+              // You can navigate to the next screen or perform other actions here
+            }
+          });
         });
-      });
 
 
 
 
-      String story = widget.story;
-      await _speakTextTranslated(story);
+        String story = widget.story;
+        await _speakTextTranslated(story);
 
-      _timer = await Timer.periodic(const Duration(milliseconds: 10), (timer) {
-        setState(() {
-          _loadingProgress += 0.01; // Increase progress by 1% every 50ms
-          if (_loadingProgress >= 0.5) {
-            _timer?.cancel(); // Stop the timer when progress reaches 100%
-            // You can navigate to the next screen or perform other actions here
-          }
+        _timer = await Timer.periodic(const Duration(milliseconds: 10), (timer) {
+          setState(() {
+            _loadingProgress += 0.01; // Increase progress by 1% every 50ms
+            if (_loadingProgress >= 0.5) {
+              _timer?.cancel(); // Stop the timer when progress reaches 100%
+              // You can navigate to the next screen or perform other actions here
+            }
+          });
         });
-      });
 
-      setState(() {
-        _statusText = "Audio in Progress....";
-      });
-
-      final coverPrompt = await _getcoverPrompt(story) as String;
-      _timer = Timer.periodic(const Duration(milliseconds: 10), (timer) {
         setState(() {
-          _loadingProgress += 0.01; // Increase progress by 1% every 50ms
-          if (_loadingProgress >= 0.7) {
-            _timer?.cancel(); // Stop the timer when progress reaches 100%
-            // You can navigate to the next screen or perform other actions here
-          }
+          _statusText = "Audio in Progress....";
         });
-      });
 
-      setState(() {
-        _statusText = "Finalizing Audio...";
-      });
-      coverImageUrl = await _generateCoverImage(coverPrompt) ?? '';// Make coverImageUrl nullable
-      print("Cover image URL: $coverImageUrl");
-      _timer = Timer.periodic(const Duration(milliseconds: 10), (timer) {
+        final coverPrompt = await _getcoverPrompt(story) as String;
+        _timer = Timer.periodic(const Duration(milliseconds: 10), (timer) {
+          setState(() {
+            _loadingProgress += 0.01; // Increase progress by 1% every 50ms
+            if (_loadingProgress >= 0.7) {
+              _timer?.cancel(); // Stop the timer when progress reaches 100%
+              // You can navigate to the next screen or perform other actions here
+            }
+          });
+        });
+
         setState(() {
-          _loadingProgress += 0.01; // Increase progress by 1% every 50ms
-          if (_loadingProgress >= 1) {
-            _timer?.cancel(); // Stop the timer when progress reaches 100%
-            // You can navigate to the next screen or perform other actions here
-          }
+          _statusText = "Finalizing Audio...";
         });
-      });
+        coverImageUrl = await _generateCoverImage(coverPrompt) ?? '';// Make coverImageUrl nullable
+        print("Cover image URL: $coverImageUrl");
+
+
+        await _DeductCredits();
+
+        _timer = Timer.periodic(const Duration(milliseconds: 10), (timer) {
+          setState(() {
+            _loadingProgress += 0.01; // Increase progress by 1% every 50ms
+            if (_loadingProgress >= 1) {
+              _timer?.cancel(); // Stop the timer when progress reaches 100%
+              // You can navigate to the next screen or perform other actions here
+            }
+          });
+        });
 
 
 
-      setState(() {
-        _statusText = "Story created! Ready to play";
-      });
+        setState(() {
+          _statusText = "Story created! Ready to play";
+        });
 
-      await customTrace.stop();
+        await customTrace.stop();
 
-      if(widget.language=="en-US"){
-        Navigator.push(
-          context,
-          PageTransition(
-            type: PageTransitionType.rightToLeft, // Slide transition from right to left
-            child: NewAudioPlayer(
+        if(widget.language=="en-US"){
+          Navigator.push(
+            context,
+            PageTransition(
+              type: PageTransitionType.rightToLeft, // Slide transition from right to left
+              child: NewAudioPlayer(
 
-              title: widget.title,
-              voice: widget.voice,
-              description: story,
-              coverurl: coverImageUrl,
-              mode:widget.mode,
-              audioPath:_storedAudioPath,
+                title: widget.title,
+                voice: widget.voice,
+                description: story,
+                coverurl: coverImageUrl,
+                mode:widget.mode,
+                audioPath:_storedAudioPath,
+              ),
             ),
-          ),
-        );
-      }else{
-        Navigator.push(
-          context,
-          PageTransition(
-            type: PageTransitionType.rightToLeft, // Slide transition from right to left
-            child: NewAudioPlayer(
+          );
+        }else{
+          Navigator.push(
+            context,
+            PageTransition(
+              type: PageTransitionType.rightToLeft, // Slide transition from right to left
+              child: NewAudioPlayer(
 
-              title: widget.title,
-              voice: widget.voice,
-              description: translatedStory,
-              coverurl: coverImageUrl,
-              mode:widget.mode,
-              audioPath:_storedAudioPath!,
+                title: widget.title,
+                voice: widget.voice,
+                description: translatedStory,
+                coverurl: coverImageUrl,
+                mode:widget.mode,
+                audioPath:_storedAudioPath!,
 
+              ),
             ),
-          ),
-        );
+          );
+        }
+
+
+      } else {
+        _showInsufficientCreditsDialog(context);
+
       }
 
 
@@ -201,11 +244,194 @@ class _ProcessingPageAudioUserCreatedStoryState extends State<ProcessingPageAudi
 
     } catch (e) {
       print('Error during processing: $e');
+      _showStoryCreationErrorDialog(context);
       setState(() {
         _statusText = "Error: ${e.toString()}";
       });
     }
   }
+
+  Future<void> _DeductCredits() async {
+    setState(() {
+      _statusText = "Updating Credits ....";
+    });
+    try {
+      final response = await http.post(
+        Uri.parse(
+            'https://us-central1-craft-a-story.cloudfunctions.net/DeductCredits'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'userId': user!.uid,
+          'creditsToDeduct': 2,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        print("Credits deducted successfully");
+      } else {
+        throw Exception('Failed to deduct credit: ${response.statusCode}');
+        _showStoryCreationErrorDialog(context);
+      }
+    } catch (e) {
+      print('Error Deduct Credit: $e');
+      _showStoryCreationErrorDialog(context);
+      throw e; // Rethrow the exception
+    }
+  }
+
+  void _showInsufficientCreditsDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return GiffyDialog.lottie(
+          Lottie.asset(
+            'assets/coinswallet.json',
+            width: 170,
+            height: 170,
+          ),
+          title: Text(
+            'Insufficient Credits',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 22.0,
+              fontWeight: FontWeight.w600,
+              color: Colors.redAccent,
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Oops! You don\'t have enough credits to craft a story.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 18.0),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                "Top up your credits now to continue your creative journey!",
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 16.0),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).pop();
+                Navigator.of(context).pop();
+                Navigator.of(context).pop();
+                Navigator.of(context).pop();
+                Navigator.of(context).pop();
+                Navigator.of(context).pop();
+                Navigator.of(context).pop();// Close the dialog
+              },
+              child: Text(
+                'Close',
+                style: TextStyle(color: Colors.grey),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                _processStory();
+                Navigator.of(context).pop();
+              },
+              child: Text(
+                'Retry',
+                style: TextStyle(color: Colors.grey),
+              ),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor:  const Color(0xFF1A2259),
+
+              ),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  PageTransition(
+                    type: PageTransitionType.rightToLeft,
+                    child:  PurchaseCreditsPage(),
+                  ),
+                ); // Navigate to Buy Credits page
+              },
+              child: Text(
+                'Buy Credits',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+
+  void _showStoryCreationErrorDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return GiffyDialog.lottie(
+          Lottie.asset(
+            'assets/error2.json', // Replace with your error animation (like a warning or error icon)
+            width: 170,
+            height: 170,
+          ),
+          title: Text(
+            'Error Occurred',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 22.0,
+              fontWeight: FontWeight.w600,
+              color: Colors.redAccent,
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+
+              SizedBox(height: 10),
+              Text(
+                "Something went wrong while creating your story. Please try again .",
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 16.0),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).pop();
+                Navigator.of(context).pop();
+                Navigator.of(context).pop();
+                Navigator.of(context).pop();
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              child: Text(
+                'Close',
+                style: TextStyle(color: Colors.grey),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                _processStory(); // Retry story creation
+                Navigator.of(context).pop();
+              },
+              child: Text(
+                'Retry',
+                style: TextStyle(color: Colors.grey),
+              ),
+            ),
+
+          ],
+        );
+      },
+    );
+  }
+
+
+
 
 // Function to get character descriptions from your Cloud Function
   Future<String> _getcoverPrompt(String story) async {
@@ -229,9 +455,11 @@ class _ProcessingPageAudioUserCreatedStoryState extends State<ProcessingPageAudi
       } else {
         throw Exception(
             'Failed to get cover Prompt: ${response.statusCode}');
+        _showStoryCreationErrorDialog(context);
       }
     } catch (e) {
       print('Error getting Cover Prompt: $e');
+      _showStoryCreationErrorDialog(context);
       throw e; // Rethrow the exception to be handled in the main try...catch
     }
   }
@@ -296,6 +524,7 @@ class _ProcessingPageAudioUserCreatedStoryState extends State<ProcessingPageAudi
 
           } else {
             throw Exception("Failed to download audio");
+            _showStoryCreationErrorDialog(context);
           }
         } else {
           // Handle the case when the user is not logged in
@@ -319,6 +548,7 @@ class _ProcessingPageAudioUserCreatedStoryState extends State<ProcessingPageAudi
     } catch (e) {
       setState(() {
         _statusText = "Failed to generate audio.";
+        _showStoryCreationErrorDialog(context);
         print('Error: $e');
       });
     } finally {
@@ -375,6 +605,7 @@ class _ProcessingPageAudioUserCreatedStoryState extends State<ProcessingPageAudi
         return data['story'];
       } else {
         throw Exception('Failed to generate story: ${response.statusCode}');
+        _showStoryCreationErrorDialog(context);
       }
     } catch (e) {
       print('Error generating story: $e');
