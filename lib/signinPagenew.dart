@@ -20,46 +20,7 @@ import 'package:firebase_performance/firebase_performance.dart';
 class Signinpagenew extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Enhanced Login',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        fontFamily: 'Montserrat',
-        textTheme: const TextTheme(
-          titleLarge: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
-          ),
-          bodyMedium: TextStyle(color: Colors.black54),
-        ),
-        inputDecorationTheme: InputDecorationTheme(
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12.0),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderSide: BorderSide(color: Colors.blue),
-            borderRadius: BorderRadius.circular(12.0),
-          ),
-        ),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12.0),
-            ),
-          ),
-        ),
-        outlinedButtonTheme: OutlinedButtonThemeData(
-          style: OutlinedButton.styleFrom(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12.0),
-            ),
-            side: const BorderSide(color: Colors.black12),
-          ),
-        ),
-      ),
-      home: LoginPage(),
-    );
+    return LoginPage();
   }
 }
 

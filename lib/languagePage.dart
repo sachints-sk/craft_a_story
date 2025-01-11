@@ -184,6 +184,7 @@ class _LanguageAudioPageState extends State<LanguageAudioPage> {
   Future<void> _setupIsPro() async{
     Purchases.addCustomerInfoUpdateListener((customerInfo) async {
       EntitlementInfo? entitlement = customerInfo.entitlements.all['Premium'];
+      if(mounted)
       setState(() {
         _subscribed= entitlement?.isActive ?? false;
       });
@@ -193,6 +194,7 @@ class _LanguageAudioPageState extends State<LanguageAudioPage> {
 
 
   void _updateAvailableVoices() {
+    if(mounted)
     setState(() {
       // Filter voices based on user membership
       _availableVoices = _voicesByLanguage[_selectedLanguage] ?? [];

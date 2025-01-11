@@ -29,7 +29,7 @@ class _CreateStoryState extends State<CreateStory> {
 
 
   final List<String> _storyTypes = [
-    'Adventure', 'Fantasy', 'Sci-Fi', 'Mystery', 'Humorous',
+    'Adventure', 'Fantasy', 'Sci-Fi', 'Mystery', 'Humorous','Educational',
   ];
 
   bool _isLoading = false;

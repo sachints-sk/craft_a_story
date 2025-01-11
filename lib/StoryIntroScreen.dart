@@ -25,7 +25,7 @@ class StoryIntroScreen extends StatelessWidget {
             children: [
               SizedBox(height: 10),
               Center(
-                child: RoundedImage(imagePath: 'assets/onboarding1.png'),
+                child: RoundedImage(imagePath: 'assets/image02.png'),
               ),
               SizedBox(height: 20),
               Text(

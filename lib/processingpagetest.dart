@@ -602,7 +602,7 @@ class _ProcessingPageState extends State<ProcessingPage> {
     // Make the API call to generate the cover image
     final output = await fal.subscribe("fal-ai/flux/schnell", input: {
       "prompt": prompt,
-      "image_size": "landscape_16_9", // Set landscape aspect ratio
+      "image_size": "landscape_4_3", // Set landscape aspect ratio
       "num_inference_steps": 4,
       "num_images": 1,
       "enable_safety_checker": false
@@ -701,6 +701,10 @@ class _ProcessingPageState extends State<ProcessingPage> {
       }
 
       print('Video created at: $videoPath');
+
+   setState(() {
+     _statusText = "Just a Moment... We're Almost Done!";
+   });
 
       await mergeNonCompatibleVideos(videoPath);
 
@@ -1081,14 +1085,14 @@ print(prompt);
             children: [
               // Blue circle with icons (replace with your actual icons)
               Container(
-                width: 170,
-                height: 170,
+                width: 220,
+                height: 220,
 
                 child: Center( // Center the icon
                   child:  Lottie.asset(
-                    'assets/writing.json',  // AI animation
-                    width: 170,
-                    height: 170,
+                    'assets/Animation001.json',  // AI animation
+                    width: 220,
+                    height: 220,
                   ),
                 ),
               ),
@@ -1115,7 +1119,7 @@ print(prompt);
               LinearProgressIndicator(
                 value: _loadingProgress, // Use the loading progress variable
                 backgroundColor: Colors.grey[300],
-                valueColor: const AlwaysStoppedAnimation<Color>(Colors.blueGrey), // Customize color
+                valueColor: const AlwaysStoppedAnimation<Color>(Colors.indigo), // Customize color
                 minHeight: 8, // Set the height of the progress bar
               ),
               const SizedBox(height: 20),

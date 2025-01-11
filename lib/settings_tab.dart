@@ -16,10 +16,11 @@ import 'dart:io';
 import 'CustompayWall.dart';
 import 'onboarding_page.dart';
 import 'package:redacted/redacted.dart';
-
+import 'package:share_plus/share_plus.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-
+import 'package:store_redirect/store_redirect.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'premiumMember.dart';
 
 
 class SettingsTab extends StatefulWidget {
@@ -120,11 +121,28 @@ centerTitle: true,
 
   }
 
+  // Function to handle the sharing action
+  void _shareApp(BuildContext context) async {
+    const String appName = 'Craft-a-Story'; // Replace with your app name
+    const String appLink = 'https://play.google.com/store/apps/details?id=com.craftastory.craft_a_story'; // Replace with your app's link
+    const String shareMessage =
+        'Check out $appName!, Create personalized AI-powered stories for kids. Download it now: $appLink';
+
+    try {
+      await Share.share(shareMessage,
+          subject: 'Share $appName'); // Optional subject for email sharing
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error sharing, please try again!')));
+    }
+  }
+
   Future<void> _fetchUserProfile() async {
     try{
-      setState(() {
+      if (mounted) {setState(() {
         _isLoading = true;
-      });
+      });}
+
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) {
         return;
@@ -133,10 +151,11 @@ centerTitle: true,
       final userDoc = await userDocRef.get();
       if(userDoc.exists){
         final userData = userDoc.data() as Map<String,dynamic>;
+        if(mounted){
         setState(() {
           _userName = userData['name'] as String? ?? 'User';
           _profilePicUrl = userData['profilePicUrl'] as String?;
-        });
+        }); }
       }
 
 
@@ -145,9 +164,10 @@ centerTitle: true,
       print('Error fetching profile data: $e');
     }
     finally{
+      if(mounted){
       setState(() {
         _isLoading = false;
-      });
+      }); }
     }
   }
 
@@ -195,6 +215,20 @@ centerTitle: true,
         ),
       ],
     );
+
+  }
+
+  void _reviewApp(BuildContext context) async {
+    try{
+      StoreRedirect.redirect(
+        androidAppId: 'com.craftastory.craft_a_story', // Replace with your Android app ID
+        iOSAppId: 'com.craftastory.craft_a_story', // Replace with your iOS app ID
+      );
+
+    }catch(e){
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error redirecting to the App store')));
+    }
 
   }
 
@@ -320,14 +354,30 @@ centerTitle: true,
             ),
           ); // Call logout function on tap
         }
+        if (label == 'Share us on Social Media') {
+          _shareApp(context);
+        }
+        if (label == 'Review Us') {
+        _reviewApp(context);
+        }
         if (label == 'Subscriptions') {
-          Navigator.push(
-            context,
-            PageTransition(
-              type: PageTransitionType.rightToLeft,
-              child:  PaywallScreen(),
-            ),
-          ); // Call logout function on tap
+          if(_subscribed) {
+            Navigator.push(
+              context,
+              PageTransition(
+                type: PageTransitionType.rightToLeft,
+                child:  PremiumPage(),
+              ),
+            );
+          }else{
+            Navigator.push(
+              context,
+              PageTransition(
+                type: PageTransitionType.rightToLeft,
+                child:  PaywallPage(),
+              ),
+            );
+          }
         }
         if (label == 'Privacy Policy') {
           Navigator.push(
@@ -380,9 +430,10 @@ centerTitle: true,
       title: Text(label),
       value: value,
       onChanged: (newValue) {
+        if(mounted){
         setState(() {
           _isDarkMode = newValue; // Update dark mode state
-        });
+        }); }
         // Handle switch change
       },
     );

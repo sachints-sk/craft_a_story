@@ -31,7 +31,7 @@ class _CreateStoryWithAIState extends State<CreateStoryWithAI> {
 
   final List<String> _genders = ['Boy', 'Girl'];
   final List<String> _storyTypes = [
-    'Adventure', 'Fantasy', 'Sci-Fi', 'Mystery', 'Humorous',
+    'Adventure', 'Fantasy', 'Sci-Fi', 'Mystery', 'Humorous','Educational',
   ];
 
   bool _isLoading = false;

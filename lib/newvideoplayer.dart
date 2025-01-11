@@ -230,6 +230,7 @@ Future<void> getusername() async{
       });
     } catch (e) {
       print('Error saving story: $e');
+
       setState(() {
         _isUploading = false;
         ScaffoldMessenger.of(context).showSnackBar(

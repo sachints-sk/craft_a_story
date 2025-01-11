@@ -148,7 +148,7 @@ class _StorySettingsScreenState extends State<StorySettingsScreen> {
               children: [
                 SizedBox(height: 20),
                 Center(
-                  child: RoundedImage(imagePath: 'assets/personwriting.png'),
+                  child: RoundedImage(imagePath: 'assets/image05.png'),
                 ),
                 SizedBox(height: 20),
                 Text(

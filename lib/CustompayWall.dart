@@ -21,6 +21,7 @@ class _PaywallPageState extends State<PaywallPage> {
   Future<void> _fetchPackages() async {
     try {
       Offerings offerings = await Purchases.getOfferings();
+      if(mounted)
       setState(() {
         monthlyPackage = offerings.current?.monthly;
         annualPackage = offerings.current?.annual;
@@ -28,6 +29,7 @@ class _PaywallPageState extends State<PaywallPage> {
       });
     } catch (e) {
       print("Error fetching offerings: $e");
+      if(mounted)
       setState(() {
         isLoading = false;
       });
@@ -73,7 +75,7 @@ class _PaywallPageState extends State<PaywallPage> {
                   height: MediaQuery.of(context).size.height * 0.30,
                   decoration: BoxDecoration(
                     image: DecorationImage(
-                      image: AssetImage('assets/personwritting2.png'),
+                      image: AssetImage('assets/img001.png'),
                       fit: BoxFit.cover,
                     ),
                   ),
@@ -107,6 +109,7 @@ class _PaywallPageState extends State<PaywallPage> {
                               "Full access for just ${monthlyPackage!.storeProduct.priceString}/month\n+ Get 100 Credits for Crafting Stories Monthly",
                               isSelected: _selectedOption == "Monthly",
                               onTap: () {
+                                if(mounted)
                                 setState(() {
                                   _selectedOption = "Monthly";
                                 });
@@ -120,6 +123,7 @@ class _PaywallPageState extends State<PaywallPage> {
                               discount: _calculateDiscount(monthlyPackage, annualPackage),
                               isSelected: _selectedOption == "Annual",
                               onTap: () {
+                                if(mounted)
                                 setState(() {
                                   _selectedOption = "Annual";
                                 });

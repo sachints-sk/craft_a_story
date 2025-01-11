@@ -636,7 +636,7 @@ class _ProcessingPageAudioState extends State<ProcessingPageAudio> {
     // Make the API call to generate the cover image
     final output = await fal.subscribe("fal-ai/flux/schnell", input: {
       "prompt": prompt,
-      "image_size": "landscape_16_9", // Set landscape aspect ratio
+      "image_size": "square", // Set landscape aspect ratio
       "num_inference_steps": 4,
       "num_images": 1,
       "enable_safety_checker": false
@@ -700,14 +700,14 @@ class _ProcessingPageAudioState extends State<ProcessingPageAudio> {
             children: [
               // Blue circle with icons (replace with your actual icons)
               Container(
-                width: 170,
-                height: 170,
+                width: 220,
+                height: 220,
 
                 child: Center( // Center the icon
                   child:  Lottie.asset(
-                    'assets/audioprocess2.json',  // AI animation
-                    width: 170,
-                    height: 170,
+                    'assets/Animation001.json',  // AI animation
+                    width: 220,
+                    height: 220,
                   ),
                 ),
               ),

@@ -42,7 +42,7 @@ class _StoryTitleInputScreenState extends State<StoryTitleInputScreen> {
               children: [
                 SizedBox(height: 10),
                 Center(
-                  child: RoundedImage(imagePath: 'assets/onboarding2.png'),
+                  child: RoundedImage(imagePath: 'assets/image03.png'),
                 ),
                 SizedBox(height: 20),
                 Text(

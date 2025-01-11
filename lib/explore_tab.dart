@@ -9,6 +9,8 @@ import 'viewsavedstorypage.dart';
 import 'package:intl/intl.dart';
 import 'topCategories.dart';
 import 'package:page_transition/page_transition.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:shimmer/shimmer.dart';
 
 class ExploreTab extends StatelessWidget {
   const ExploreTab({Key? key}) : super(key: key);
@@ -61,8 +63,10 @@ class _HeroBannerState extends State<HeroBanner> {
   @override
   void initState() {
     super.initState();
-    _featuredStoriesFuture ??= _fetchFeaturedStories(); // Load data only once
-    _startAutoScroll();
+    _featuredStoriesFuture = _fetchFeaturedStories(); // Load data only once
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _startAutoScroll();
+    });
   }
 
   @override
@@ -80,14 +84,19 @@ class _HeroBannerState extends State<HeroBanner> {
   }
 
   void _animateToNextPage() {
+    if (!mounted) return;
+
     int nextPage = (_currentPageNotifier.value + 1) % 3;
-    _pageController.animateToPage(
-      nextPage,
-      duration: const Duration(milliseconds: 500),
-      curve: Curves.easeInOut,
-    );
-    _currentPageNotifier.value = nextPage;
+    if(_pageController.positions.isNotEmpty) {
+      _pageController.animateToPage(
+        nextPage,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+      );
+      _currentPageNotifier.value = nextPage;
+    }
   }
+
 
 
 
@@ -251,67 +260,90 @@ class BannerCard extends StatelessWidget {
   final String subtitle;
   final StoryData storyData;
 
-  BannerCard({
+  const BannerCard({
+    Key? key,
     required this.title,
     required this.image,
     required this.subtitle,
     required this.storyData,
-  });
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(onTap: () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => ViewSavedStoryPage(storyData: storyData),
-        ),
-      );
-    },
-    child:Container(
-      decoration: BoxDecoration(
-        image: DecorationImage(
-          image: NetworkImage(image),
-          fit: BoxFit.cover,
-        ),
-      ),
-      child: Container(
-        alignment: Alignment.bottomLeft,
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.black.withOpacity(0.3), Colors.black.withOpacity(0.6)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ViewSavedStoryPage(storyData: storyData),
           ),
+        );
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.end,
+        child: Stack(
           children: [
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+            ClipRRect(
+
+              child: CachedNetworkImage(
+                imageUrl: image,
+                fit: BoxFit.cover,
+                height: 250, // or however you like the banner's height,
+                width: double.infinity, // Make sure the image is full width
+                placeholder: (context, url) => Shimmer.fromColors(
+                  baseColor: Colors.grey[300]!,
+                  highlightColor: Colors.grey[100]!,
+                  child: Container(
+                    height: 250,
+                    width: double.infinity,
+                    color: Colors.grey,
+                  ),
+                ),
+                errorWidget: (context, url, error) => const Icon(Icons.error, color: Colors.grey),
               ),
             ),
-            const SizedBox(height: 4),
-            Text(
-              subtitle,
-              style: const TextStyle(
-                fontSize: 16,
-                color: Colors.white,
+            Container(
+              alignment: Alignment.bottomLeft,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+
+                gradient: LinearGradient(
+                  colors: [Colors.black.withOpacity(0.3), Colors.black.withOpacity(0.6)],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
         ),
       ),
-    ), );
+    );
   }
 }
-
 // Widget for Section Titles
 class SectionTitle extends StatelessWidget {
   final String title;
@@ -417,15 +449,29 @@ class StoryCard extends StatelessWidget {
         child: Column(
           children: [
             Expanded(
-              child:Hero(tag: storyData.coverImageUrl, child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  image: DecorationImage(
-                    image: NetworkImage(image),
-                    fit: BoxFit.cover,
+              child: Hero(
+                tag: storyData.coverImageUrl,
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: CachedNetworkImage(
+                      imageUrl: image,
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) => Shimmer.fromColors(
+                        baseColor: Colors.grey[300]!,
+                        highlightColor: Colors.grey[100]!,
+                        child: Container(
+                          color: Colors.grey,
+                        ),
+                      ),
+                      errorWidget: (context, url, error) => const Icon(Icons.error, color: Colors.grey),
+                    ),
                   ),
                 ),
-              ),)
+              ),
             ),
             const SizedBox(height: 8),
             Text(
@@ -445,6 +491,7 @@ class TopCategoriesList extends StatelessWidget {
     // Data for the categories
     List<String> categories = [
       'Adventure',
+      'Educational',
       'Fantasy',
       'Sci-Fi',
       'Mystery',
@@ -535,8 +582,9 @@ class _SuggestedStoriesGridState extends State<SuggestedStoriesGrid> {
 
   Future<void> _loadStories() async {
     if (_isLoading || !_hasMoreStories) return;
-    setState(() => _isLoading = true);
-
+    if(mounted) {
+      setState(() => _isLoading = true);
+    }
     Query query = _firestore
         .collection('Explore_stories')
         .orderBy('createdAt', descending: true)
@@ -564,13 +612,15 @@ class _SuggestedStoriesGridState extends State<SuggestedStoriesGrid> {
           voice: data['voice'] ?? '',
         );
       }).toList();
-
-      setState(() => _stories.addAll(newStories));
+      if(mounted){
+      setState(() => _stories.addAll(newStories));  }
     } else {
-      setState(() => _hasMoreStories = false); // No more stories to load
+      if(mounted){
+      setState(() => _hasMoreStories = false); }// No more stories to load
     }
 
-    setState(() => _isLoading = false);
+    if(mounted){
+    setState(() => _isLoading = false); }
   }
 
   @override
@@ -596,7 +646,40 @@ class _SuggestedStoriesGridState extends State<SuggestedStoriesGrid> {
             );
           },
         ),
-        if (_isLoading) const CircularProgressIndicator(),
+        if (_isLoading)
+        Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+        Shimmer.fromColors(
+        baseColor: Colors.grey[300]!,
+        highlightColor: Colors.grey[100]!,
+        child: Container(
+        height: 250, // Match your StoryCard's height
+        width: 170, // Match your StoryCard's width
+        decoration: BoxDecoration(
+        color: Colors.grey,
+        borderRadius: BorderRadius.circular(12)
+        ),
+        ),
+        ),
+        Shimmer.fromColors(
+        baseColor: Colors.grey[300]!,
+    highlightColor: Colors.grey[100]!,
+    child: Container(
+    height: 250, // Match your StoryCard's height
+    width: 170, // Match your StoryCard's width
+    decoration: BoxDecoration(
+    color: Colors.grey,
+    borderRadius: BorderRadius.circular(12)
+    ),
+    ),
+    ),
+    ],
+    ),
+    ),
+
         if (!_isLoading && _hasMoreStories)
           TextButton(
             onPressed: _loadStories,

@@ -31,6 +31,7 @@ class _CraftAStoryApphomeState extends State<CraftAStoryApphome> {
 
   // Callback function to change the selected tab index
   void _onTabSelected(int index) {
+    if(mounted)
     setState(() {
       _selectedIndex = index;
     });
@@ -71,6 +72,7 @@ class _CraftAStoryApphomeState extends State<CraftAStoryApphome> {
 
 
   Future<void> _showPaywall() async{
+    if(mounted)
     Navigator.push(
       context,
       PageTransition(
@@ -96,6 +98,7 @@ class _CraftAStoryApphomeState extends State<CraftAStoryApphome> {
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
         onDestinationSelected: (index) {
+          if(mounted)
           setState(() {
             _selectedIndex = index;
           });

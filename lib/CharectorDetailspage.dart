@@ -112,7 +112,7 @@ class _CharacterDetailsInputScreenState extends State<CharacterDetailsInputScree
               children: [
                 SizedBox(height: 10),
                 Center(
-                  child: RoundedImage(imagePath: 'assets/Splash10.png'),
+                  child: RoundedImage(imagePath: 'assets/image04.png'),
                 ),
                 SizedBox(height: 20),
                 Text(

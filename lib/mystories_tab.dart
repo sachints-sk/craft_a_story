@@ -5,6 +5,8 @@ import 'package:lottie/lottie.dart';
 import 'myStoriesViewer.dart';
 import 'story_data.dart';
 import 'package:intl/intl.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:shimmer/shimmer.dart';
 
 class MyStoriesPage extends StatefulWidget {
   const MyStoriesPage({Key? key}) : super(key: key);
@@ -162,24 +164,29 @@ class _MyStoriesPageState extends State<MyStoriesPage> {
             children: [
               // Cover Image
               Expanded(
-                child:Hero(tag: story.coverImageUrl, child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Stack(
-                    children: [
-                      // Background Image
-                      Positioned.fill(
-                        child: Image.network(
-                          story.coverImageUrl,
-                          fit: BoxFit.cover,
+                child: Hero(
+                  tag: story.coverImageUrl,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: CachedNetworkImage(
+                        imageUrl: story.coverImageUrl,
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) => Shimmer.fromColors(
+                          baseColor: Colors.grey[300]!,
+                          highlightColor: Colors.grey[100]!,
+                          child: Container(
+                            color: Colors.grey,
+                          ),
                         ),
+                        errorWidget: (context, url, error) => const Icon(Icons.error, color: Colors.grey),
                       ),
-                      // Overlay Image
-
-                    ],
+                    ),
                   ),
-                ),) ,
+                ),
               ),
               const SizedBox(height: 8),
               // Title

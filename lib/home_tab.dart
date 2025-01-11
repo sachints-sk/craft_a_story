@@ -18,7 +18,8 @@ import 'CustompayWall.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:purchases_ui_flutter/purchases_ui_flutter.dart';
-
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:shimmer/shimmer.dart';
 
 
 class CraftAStoryHome extends StatefulWidget {
@@ -84,9 +85,10 @@ class _CraftAStoryHomeState extends State<CraftAStoryHome> {
       }
 
       // Update search mode visibility
+      if(mounted){
       setState(() {
         _isSearching = _searchFocusNode.hasFocus;
-      });
+      });  }
     });
 
 
@@ -109,6 +111,7 @@ class _CraftAStoryHomeState extends State<CraftAStoryHome> {
 
       final user = FirebaseAuth.instance.currentUser;
       if(user == null){
+        if(mounted)
         setState(() {
           _userName = "Guest User";
         });
@@ -119,10 +122,12 @@ class _CraftAStoryHomeState extends State<CraftAStoryHome> {
       final userDoc = await userDocRef.get();
       if(userDoc.exists){
         final userData = userDoc.data() as Map<String,dynamic>;
+        if(mounted)
         setState(() {
           _userName = userData['name'] as String? ?? "User";
         });
       } else {
+        if(mounted)
         setState(() {
           _userName = "User";
         });
@@ -169,6 +174,7 @@ class _CraftAStoryHomeState extends State<CraftAStoryHome> {
             onTap: () {
               // Close the overlay if tapped outside
               if (_isSearching) {
+                if(mounted)
                 setState(() {
                   _isSearching = false;
                 });
@@ -476,7 +482,24 @@ class _CraftAStoryHomeState extends State<CraftAStoryHome> {
       builder: (context, snapshot) {
         if (snapshot.hasError) return Text('Error: ${snapshot.error}');
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return   Column(
+            children: [
+              GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(1),
+                itemCount: 4, // Display 4 shimmer cards while loading
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 16,
+                  crossAxisSpacing: 2,
+                ),
+                itemBuilder: (context, index) {
+                  return _buildShimmerStoryCard(context);
+                },
+              ),
+            ],
+          );
         }
 
         List<StoryData> stories = snapshot.data!.docs.map((doc) {
@@ -514,7 +537,24 @@ class _CraftAStoryHomeState extends State<CraftAStoryHome> {
       builder: (context, snapshot) {
         if (snapshot.hasError) return Text('Error: ${snapshot.error}');
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return   Column(
+            children: [
+              GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(1),
+                itemCount: 4, // Display 4 shimmer cards while loading
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 16,
+                  crossAxisSpacing: 2,
+                ),
+                itemBuilder: (context, index) {
+                  return _buildShimmerStoryCard(context);
+                },
+              ),
+            ],
+          );
         }
 
         List<StoryData> stories = snapshot.data!.docs.map((doc) {
@@ -661,13 +701,24 @@ class _CraftAStoryHomeState extends State<CraftAStoryHome> {
               // Cover Image
               Expanded(
                 child: Hero(
-                  tag: story.coverImageUrl, // Use a unique tag (e.g., coverImageUrl)
+                  tag: story.coverImageUrl,
                   child: Container(
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(12),
-                      image: DecorationImage(
-                        image: NetworkImage(story.coverImageUrl),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: CachedNetworkImage(
+                        imageUrl: story.coverImageUrl,
                         fit: BoxFit.cover,
+                        placeholder: (context, url) => Shimmer.fromColors(
+                          baseColor: Colors.grey[300]!,
+                          highlightColor: Colors.grey[100]!,
+                          child: Container(
+                            color: Colors.grey,
+                          ),
+                        ),
+                        errorWidget: (context, url, error) => const Icon(Icons.error, color: Colors.grey),
                       ),
                     ),
                   ),
@@ -692,7 +743,49 @@ class _CraftAStoryHomeState extends State<CraftAStoryHome> {
       ),
     );
   }
+// Shimmer placeholder for story card while loading
+  Widget _buildShimmerStoryCard(BuildContext context) {
+    return Card(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      elevation: 4,
+      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      child: Container(
+        width: 160,
+        padding: const EdgeInsets.all(8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Shimmer for Cover Image
+            Expanded(
+              child: Shimmer.fromColors(
+                baseColor: Colors.grey[300]!,
+                highlightColor: Colors.grey[100]!,
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    color: Colors.grey,
+                  ),
 
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Shimmer.fromColors(
+              baseColor: Colors.grey[300]!,
+              highlightColor: Colors.grey[100]!,
+              child: Container(
+                height: 20, // Adjust as needed for title
+                width: 140, // Adjust as needed for title
+                color: Colors.grey,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
   // Story Card for home_tab
   Widget _buildStoryCard2(BuildContext context, StoryData story) {
     return GestureDetector(
@@ -717,20 +810,31 @@ class _CraftAStoryHomeState extends State<CraftAStoryHome> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Cover Image
-              Expanded(
-                child: Hero(
-                  tag: story.coverImageUrl, // Use a unique tag (e.g., coverImageUrl)
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      image: DecorationImage(
-                        image: NetworkImage(story.coverImageUrl),
-                        fit: BoxFit.cover,
-                      ),
+          Expanded(
+          child: Hero(
+          tag: story.coverImageUrl,
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: CachedNetworkImage(
+                  imageUrl: story.coverImageUrl,
+                  fit: BoxFit.cover,
+                  placeholder: (context, url) => Shimmer.fromColors(
+                    baseColor: Colors.grey[300]!,
+                    highlightColor: Colors.grey[100]!,
+                    child: Container(
+                      color: Colors.grey,
                     ),
                   ),
+                  errorWidget: (context, url, error) => const Icon(Icons.error, color: Colors.grey),
                 ),
               ),
+            ),
+          ),
+        ),
               const SizedBox(height: 8),
               // Title
               Text(

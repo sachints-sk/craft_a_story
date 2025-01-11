@@ -1,33 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:page_transition/page_transition.dart';
 import 'signinPagenew.dart';
 import 'package:lottie/lottie.dart';
 import 'package:animate_do/animate_do.dart';
 
-
-
-
 class Onboarding extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Onboarding',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        fontFamily: 'Montserrat',
-        textTheme: const TextTheme(
-          titleLarge: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
-          ),
-          bodyMedium: TextStyle(color: Colors.black54),
-          bodySmall: TextStyle(color: Colors.black45),
-        ),
-      ),
-      home: OnboardingPage(),
-    );
+    return OnboardingPage();
   }
 }
 
@@ -56,8 +36,8 @@ class _OnboardingPageState extends State<OnboardingPage> {
     {
       'title': 'Experience Stories in Multiple Languages',
       'description': 'Immerse your kids in stories crafted in your preferred language. We offer a range of premium voices for an authentic and engaging experience.',
-      'image': 'assets/language3.json', // Now referencing the lottie animation
-      'isLottie': true, // Added a field to determine if it's lottie or not
+      'image': 'assets/language3.json',
+      'isLottie': true,
     },
     {
       'title': 'Discover New Stories Daily',
@@ -74,13 +54,10 @@ class _OnboardingPageState extends State<OnboardingPage> {
         curve: Curves.ease,
       );
     } else {
-      // Handle Onboarding complete action
+      // Navigate to SigninPagenew using the app's root navigator
       Navigator.push(
         context,
-        PageTransition(
-          type: PageTransitionType.leftToRight,
-          child:  Signinpagenew(),
-        ),
+        MaterialPageRoute(builder: (context) => Signinpagenew()),
       );
       print('Onboarding Complete!');
     }
@@ -121,30 +98,44 @@ class _OnboardingPageState extends State<OnboardingPage> {
                   ElevatedButton(
                     onPressed: _nextPage,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor:  const Color(0xFF1A2259),
+                      backgroundColor: const Color(0xFF1A2259),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12.0),
                       ),
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 12),
                     ),
-                    child:  _currentPage == _onboardingData.length - 1
-                        ? const  Row(
+                    child: _currentPage == _onboardingData.length - 1
+                        ? const Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
                           'Get Started',
-                          style:  TextStyle(fontSize: 18, color: Colors.white),
+                          style: TextStyle(
+                              fontSize: 18, color: Colors.white),
                         ),
-                        SizedBox(width: 8,),
-                        Icon(Icons.arrow_forward_ios, size: 18,color: Colors.white, )
+                        SizedBox(
+                          width: 8,
+                        ),
+                        Icon(
+                          Icons.arrow_forward_ios,
+                          size: 18,
+                          color: Colors.white,
+                        )
                       ],
                     )
-                        : const Icon(Icons.arrow_forward_ios, size: 20,color: Colors.white,),
+                        : const Icon(
+                      Icons.arrow_forward_ios,
+                      size: 20,
+                      color: Colors.white,
+                    ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 20,),
+            const SizedBox(
+              height: 20,
+            ),
           ],
         ),
       ),
@@ -162,7 +153,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
           height: 8,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: _currentPage == index ? Colors.indigo: Colors.grey,
+            color: _currentPage == index ? Colors.indigo : Colors.grey,
           ),
         ),
       ),
@@ -193,17 +184,16 @@ class OnboardingSlide extends StatelessWidget {
         children: [
           FadeInLeft(
             child: isLottie
-                ?  LottieWidget(animationPath: image)
-                : RoundedImage(
-                imagePath: image
-            ),
+                ? LottieWidget(animationPath: image)
+                : RoundedImage(imagePath: image),
           ),
-          const SizedBox(height: 32.0),
+          const SizedBox(height: 20.0),
           FadeInRight(
             child: Text(
               title,
               style: GoogleFonts.blinker(
-                textStyle: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 26),
+                textStyle: TextStyle(fontWeight: FontWeight.bold,
+                  color: Colors.black87,fontSize: 26),
               ),
               textAlign: TextAlign.center,
             ),
@@ -213,7 +203,8 @@ class OnboardingSlide extends StatelessWidget {
             child: Text(
               description,
               style: GoogleFonts.blinker(
-                textStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 18),
+                textStyle:
+                Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 18),
               ),
               textAlign: TextAlign.center,
             ),
@@ -223,6 +214,7 @@ class OnboardingSlide extends StatelessWidget {
     );
   }
 }
+
 class RoundedImage extends StatelessWidget {
   final String imagePath;
 
@@ -234,7 +226,7 @@ class RoundedImage extends StatelessWidget {
       builder: (BuildContext context, BoxConstraints constraints) {
         return ConstrainedBox(
           constraints: BoxConstraints(
-            maxHeight: constraints.maxHeight * 0.6,
+            maxHeight: constraints.maxHeight * 0.5,
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(20.0),

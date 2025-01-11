@@ -10,6 +10,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:animated_toggle_switch/animated_toggle_switch.dart';
 import 'package:audio_waveforms/audio_waveforms.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 
 
 
@@ -46,6 +47,15 @@ class _ViewSavedStoryPageState extends State<ViewSavedStoryPage> {
     _fetchLikeStatus();
     _audioController = PlayerController();
     _audioController.playerState == PlayerState.playing ? isPlaying = true : isPlaying = false;
+
+    // Log the event that the story was viewed
+    FirebaseAnalytics.instance.logEvent(
+      name: 'story_viewed',
+      parameters: {
+        'story_id': widget.storyData.storyId,
+        'story_title': widget.storyData.title,
+      },
+    );
   }
 
   @override
@@ -160,6 +170,7 @@ class _ViewSavedStoryPageState extends State<ViewSavedStoryPage> {
       autoPlay: true,
       looping: false,
     );
+    if(mounted)
     setState(() {
       _isVideoInitialized = true;
     });

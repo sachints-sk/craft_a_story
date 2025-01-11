@@ -13,6 +13,9 @@ import 'package:share_plus/share_plus.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'home.dart';
 import 'package:page_transition/page_transition.dart';
+import 'auth_state.dart';
+import 'main.dart';
+import 'package:provider/provider.dart';
 
 class FirstStoryPlayer extends StatefulWidget {
   final String videoPath;
@@ -81,11 +84,7 @@ class _FirstStoryPlayerState extends State<FirstStoryPlayer> {
   }
 
   Future<void> goHome() async{
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (context) => CraftAStoryApphome()),
-          (Route<dynamic> route) => false, // Removes all existing routes
-    );
+    Provider.of<AuthState>(context, listen: false).updateLoginState(true);
 
   }
   Future<void> _saveStoryToFirebase() async {

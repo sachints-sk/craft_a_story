@@ -75,6 +75,7 @@ class _LanguageAudioPageUserCreatedStoryState extends State<LanguageAudioPageUse
   Future<void> _setupIsPro() async{
     Purchases.addCustomerInfoUpdateListener((customerInfo) async {
       EntitlementInfo? entitlement = customerInfo.entitlements.all['Premium'];
+      if(mounted)
       setState(() {
         _subscribed= entitlement?.isActive ?? false;
       });
