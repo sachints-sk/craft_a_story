@@ -127,6 +127,7 @@ class _HeroBannerState extends State<HeroBanner> {
         createdAt:(doc.data()?['createdAt'] as Timestamp).toDate().toString() ?? '',
         mode:doc.data()?['mode'] ?? '',
         voice:doc.data()?['voice'] ?? '',
+        audioUrl: data()?['audioUrl'] ?? '',
       )),
       FirebaseFirestore.instance
           .collection('Explore_stories')
@@ -142,6 +143,7 @@ class _HeroBannerState extends State<HeroBanner> {
         createdAt:(doc.data()?['createdAt'] as Timestamp).toDate().toString() ?? '',
         mode:doc.data()?['mode'] ?? '',
         voice:doc.data()?['voice'] ?? '',
+        audioUrl: data()?['audioUrl'] ?? '',
       )),
       FirebaseFirestore.instance
           .collection('Explore_stories')
@@ -157,6 +159,7 @@ class _HeroBannerState extends State<HeroBanner> {
         createdAt:(doc.data()?['createdAt'] as Timestamp).toDate().toString() ?? '',
         mode:doc.data()?['mode'] ?? '',
         voice:doc.data()?['voice'] ?? '',
+        audioUrl: data()?['audioUrl'] ?? '',
       )),
     ]);
   }
@@ -395,6 +398,7 @@ class TrendingStoriesList extends StatelessWidget {
               createdAt:formattedDate ?? '',
               mode:data['mode'] ?? '',
               voice:data['voice'] ?? '',
+              audioUrl: data['audioUrl'] ?? '',
             );
           }).toList();
 
@@ -610,6 +614,7 @@ class _SuggestedStoriesGridState extends State<SuggestedStoriesGrid> {
           createdAt: formattedDate,
           mode: data['mode'] ?? '',
           voice: data['voice'] ?? '',
+          audioUrl: data['audioUrl'] ?? '',
         );
       }).toList();
       if(mounted){
