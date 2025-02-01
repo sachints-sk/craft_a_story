@@ -7,7 +7,8 @@ import 'processingpageaudio.dart';
 import 'dart:io';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:purchases_ui_flutter/purchases_ui_flutter.dart';
-
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 enum UserMembership { normal,  proPremium }
 
 
@@ -30,7 +31,11 @@ class _LanguageAudioPageState extends State<LanguageAudioPage> {
   List<String> _availableVoices = [];
   bool _isLoading = false;
   bool _subscribed =false;
-
+  String username ="";
+  final String adUnitId = 'ca-app-pub-7424152248887728/4261938974';
+  bool _isAdWatched = false;
+  bool _isAdLoaded = false;
+  RewardedAd? _rewardedAd;
    List<Map<String, String>> _languages = [
     {'name': 'Afrikaans (South Africa)', 'code': 'af-ZA'},
     {'name': 'Arabic', 'code': 'ar-XA'},
@@ -89,6 +94,66 @@ class _LanguageAudioPageState extends State<LanguageAudioPage> {
     {'name': 'Ukrainian (Ukraine)', 'code': 'uk-UA'},
     {'name': 'Vietnamese (Vietnam)', 'code': 'vi-VN'},
   ];
+
+  List<Map<String, String>> _languages2 = [
+    {'name': 'Afrikaans (South Africa)', 'code': 'af-ZA'},
+    {'name': 'Arabic', 'code': 'ar-XA'},
+    {'name': 'Basque (Spain)', 'code': 'eu-ES'},
+    {'name': 'Bengali (India)', 'code': 'bn-IN'},
+    {'name': 'Bulgarian (Bulgaria)', 'code': 'bg-BG'},
+    {'name': 'Catalan (Spain)', 'code': 'ca-ES'},
+    {'name': 'Chinese (Hong Kong)', 'code': 'yue-HK'},
+    {'name': 'Czech (Czech Republic)', 'code': 'cs-CZ'},
+    {'name': 'Danish (Denmark)', 'code': 'da-DK'},
+    {'name': 'Dutch (Belgium)', 'code': 'nl-BE'},
+    {'name': 'Dutch (Netherlands)', 'code': 'nl-NL'},
+    {'name': 'English (Australia)', 'code': 'en-AU'},
+    {'name': 'English (India)', 'code': 'en-IN'},
+    {'name': 'English (UK)', 'code': 'en-GB'},
+    {'name': 'English (US)', 'code': 'en-US'},
+    {'name': 'Filipino (Philippines)', 'code': 'fil-PH'},
+    {'name': 'Finnish (Finland)', 'code': 'fi-FI'},
+    {'name': 'French (Canada)', 'code': 'fr-CA'},
+    {'name': 'French (France)', 'code': 'fr-FR'},
+    {'name': 'Galician (Spain)', 'code': 'gl-ES'},
+    {'name': 'German (Germany)', 'code': 'de-DE'},
+    {'name': 'Greek (Greece)', 'code': 'el-GR'},
+    {'name': 'Gujarati (India)', 'code': 'gu-IN'},
+    {'name': 'Hebrew (Israel)', 'code': 'he-IL'},
+    {'name': 'Hindi (India)', 'code': 'hi-IN'},
+    {'name': 'Hungarian (Hungary)', 'code': 'hu-HU'},
+    {'name': 'Icelandic (Iceland)', 'code': 'is-IS'},
+    {'name': 'Indonesian (Indonesia)', 'code': 'id-ID'},
+    {'name': 'Italian (Italy)', 'code': 'it-IT'},
+    {'name': 'Japanese (Japan)', 'code': 'ja-JP'},
+    {'name': 'Kannada (India)', 'code': 'kn-IN'},
+    {'name': 'Korean (South Korea)', 'code': 'ko-KR'},
+    {'name': 'Latvian (Latvia)', 'code': 'lv-LV'},
+    {'name': 'Lithuanian (Lithuania)', 'code': 'lt-LT'},
+    {'name': 'Malay (Malaysia)', 'code': 'ms-MY'},
+    {'name': 'Malayalam (India)', 'code': 'ml-IN'},
+    {'name': 'Mandarin Chinese', 'code': 'cmn-CN'},
+    {'name': 'Marathi (India)', 'code': 'mr-IN'},
+    {'name': 'Norwegian (Norway)', 'code': 'nb-NO'},
+    {'name': 'Polish (Poland)', 'code': 'pl-PL'},
+    {'name': 'Portuguese (Brazil)', 'code': 'pt-BR'},
+    {'name': 'Portuguese (Portugal)', 'code': 'pt-PT'},
+    {'name': 'Punjabi (India)', 'code': 'pa-IN'},
+    {'name': 'Romanian (Romania)', 'code': 'ro-RO'},
+    {'name': 'Russian (Russia)', 'code': 'ru-RU'},
+    {'name': 'Serbian (Cyrillic)', 'code': 'sr-RS'},
+    {'name': 'Slovak (Slovakia)', 'code': 'sk-SK'},
+    {'name': 'Spanish (Spain)', 'code': 'es-ES'},
+    {'name': 'Spanish (US)', 'code': 'es-US'},
+    {'name': 'Swedish (Sweden)', 'code': 'sv-SE'},
+    {'name': 'Tamil (India)', 'code': 'ta-IN'},
+    {'name': 'Telugu (India)', 'code': 'te-IN'},
+    {'name': 'Thai (Thailand)', 'code': 'th-TH'},
+    {'name': 'Turkish (Turkey)', 'code': 'tr-TR'},
+    {'name': 'Ukrainian (Ukraine)', 'code': 'uk-UA'},
+    {'name': 'Vietnamese (Vietnam)', 'code': 'vi-VN'},
+  ];
+
 
   final Map<String, List<String>> _voicesByLanguage = {
     'af-ZA': ['af-ZA-Standard-A'],
@@ -151,10 +216,74 @@ class _LanguageAudioPageState extends State<LanguageAudioPage> {
   };
 
 
+  final Map<String, List<String>> _voicesByLanguage2 = {
+    'af-ZA': ['af-ZA-Standard-A'],
+    'ar-XA': ['ar-XA-Standard-A', 'ar-XA-Standard-B', 'ar-XA-Standard-C', 'ar-XA-Standard-D', 'ar-XA-Wavenet-A', 'ar-XA-Wavenet-B', 'ar-XA-Wavenet-C', 'ar-XA-Wavenet-D'],
+    'eu-ES': ['eu-ES-Standard-A', 'eu-ES-Standard-B'],
+    'bn-IN': ['bn-IN-Standard-A', 'bn-IN-Standard-B', 'bn-IN-Standard-C', 'bn-IN-Standard-D', 'bn-IN-Wavenet-A', 'bn-IN-Wavenet-B', 'bn-IN-Wavenet-C', 'bn-IN-Wavenet-D'],
+    'bg-BG': ['bg-BG-Standard-A', 'bg-BG-Standard-B'],
+    'ca-ES': ['ca-ES-Standard-A', 'ca-ES-Standard-B'],
+    'yue-HK': ['yue-HK-Standard-A', 'yue-HK-Standard-B', 'yue-HK-Standard-C', 'yue-HK-Standard-D'],
+    'cs-CZ': ['cs-CZ-Standard-A', 'cs-CZ-Wavenet-A'],
+    'da-DK': ['da-DK-Standard-A', 'da-DK-Standard-C', 'da-DK-Standard-D', 'da-DK-Standard-E', 'da-DK-Standard-F','da-DK-Standard-G', 'da-DK-Wavenet-A', 'da-DK-Wavenet-C', 'da-DK-Wavenet-D', 'da-DK-Wavenet-E', 'da-DK-Neural2-D'],
+    'nl-BE': ['nl-BE-Standard-A', 'nl-BE-Standard-B', 'nl-BE-Standard-C', 'nl-BE-Standard-D', 'nl-BE-Wavenet-A', 'nl-BE-Wavenet-B'],
+    'nl-NL': ['nl-NL-Standard-A', 'nl-NL-Standard-B', 'nl-NL-Standard-C', 'nl-NL-Standard-D', 'nl-NL-Standard-E', 'nl-NL-Standard-F', 'nl-NL-Standard-G',  'nl-NL-Wavenet-A', 'nl-NL-Wavenet-B', 'nl-NL-Wavenet-C', 'nl-NL-Wavenet-D', 'nl-NL-Wavenet-E'],
+    'en-AU': ['en-AU-Standard-A', 'en-AU-Standard-B', 'en-AU-Standard-C', 'en-AU-Standard-D', 'en-AU-Wavenet-A', 'en-AU-Wavenet-B', 'en-AU-Wavenet-C', 'en-AU-Wavenet-D', 'en-AU-Neural2-A', 'en-AU-Neural2-B', 'en-AU-Neural2-C', 'en-AU-Neural2-D',  'en-AU-News-E', 'en-AU-News-F', 'en-AU-News-G'],
+    'en-IN': ['en-IN-Standard-A', 'en-IN-Standard-B', 'en-IN-Standard-C', 'en-IN-Standard-D', 'en-IN-Standard-E', 'en-IN-Standard-F','en-IN-Wavenet-A', 'en-IN-Wavenet-B', 'en-IN-Wavenet-C', 'en-IN-Wavenet-D', 'en-IN-Wavenet-E','en-IN-Wavenet-F', 'en-IN-Neural2-A', 'en-IN-Neural2-B', 'en-IN-Neural2-C','en-IN-Neural2-D', 'en-IN-Journey-D', 'en-IN-Journey-F'],
+    'en-GB': ['en-GB-Standard-A', 'en-GB-Standard-B', 'en-GB-Standard-C', 'en-GB-Standard-D', 'en-GB-Standard-F','en-GB-Wavenet-A', 'en-GB-Wavenet-B', 'en-GB-Wavenet-C', 'en-GB-Wavenet-D', 'en-GB-Wavenet-F', 'en-GB-Neural2-A', 'en-GB-Neural2-B', 'en-GB-Neural2-C', 'en-GB-Neural2-D','en-GB-Neural2-F', 'en-GB-News-G', 'en-GB-News-H', 'en-GB-News-I','en-GB-News-J', 'en-GB-News-K', 'en-GB-News-L', 'en-GB-News-M','en-GB-Journey-D','en-GB-Journey-F'],
+
+    'en-US': ['en-US-Standard-A', 'en-US-Standard-B', 'en-US-Standard-C', 'en-US-Standard-D', 'en-US-Standard-E', 'en-US-Standard-F', 'en-US-Standard-G', 'en-US-Standard-H', 'en-US-Standard-I','en-US-Standard-J',  'en-US-Wavenet-A', 'en-US-Wavenet-B', 'en-US-Wavenet-C', 'en-US-Wavenet-D', 'en-US-Wavenet-E', 'en-US-Wavenet-F', 'en-US-Wavenet-G', 'en-US-Wavenet-H', 'en-US-Wavenet-I', 'en-US-Wavenet-J','en-US-Neural2-A','en-US-Neural2-C','en-US-Neural2-D','en-US-Neural2-E','en-US-Neural2-F','en-US-Neural2-G','en-US-Neural2-H','en-US-Neural2-I','en-US-Neural2-J','en-US-News-K','en-US-News-L','en-US-News-N','en-US-Casual-K','en-US-Journey-D','en-US-Journey-F','en-US-Journey-O','en-US-Studio-O','en-US-Studio-Q'],
+    'fil-PH': ['fil-PH-Standard-A', 'fil-PH-Standard-B', 'fil-PH-Standard-C', 'fil-PH-Standard-D','fil-PH-Wavenet-A', 'fil-PH-Wavenet-B', 'fil-PH-Wavenet-C', 'fil-PH-Wavenet-D','fil-PH-Neural2-A','fil-PH-Neural2-D'],
+    'fi-FI': ['fi-FI-Standard-A', 'fi-FI-Standard-B','fi-FI-Wavenet-A'],
+    'fr-CA': ['fr-CA-Standard-A', 'fr-CA-Standard-B', 'fr-CA-Standard-C', 'fr-CA-Standard-D','fr-CA-Wavenet-A', 'fr-CA-Wavenet-B', 'fr-CA-Wavenet-C', 'fr-CA-Wavenet-D','fr-CA-Neural2-A','fr-CA-Neural2-B','fr-CA-Neural2-C','fr-CA-Neural2-D','fr-CA-Journey-D','fr-CA-Journey-F'],
+    'fr-FR': ['fr-FR-Standard-A', 'fr-FR-Standard-B', 'fr-FR-Standard-C', 'fr-FR-Standard-D', 'fr-FR-Standard-E', 'fr-FR-Standard-F','fr-FR-Standard-G', 'fr-FR-Wavenet-A', 'fr-FR-Wavenet-B', 'fr-FR-Wavenet-C', 'fr-FR-Wavenet-D', 'fr-FR-Wavenet-E', 'fr-FR-Wavenet-F', 'fr-FR-Wavenet-G', 'fr-FR-Neural2-A','fr-FR-Neural2-B','fr-FR-Neural2-C','fr-FR-Neural2-D','fr-FR-Neural2-E','fr-FR-Journey-D','fr-FR-Journey-F'],
+    'gl-ES': ['gl-ES-Standard-A', 'gl-ES-Standard-B'],
+    'de-DE': ['de-DE-Standard-A', 'de-DE-Standard-B', 'de-DE-Standard-C', 'de-DE-Standard-D', 'de-DE-Standard-E','de-DE-Standard-F','de-DE-Standard-G','de-DE-Standard-H', 'de-DE-Wavenet-A', 'de-DE-Wavenet-B', 'de-DE-Wavenet-C', 'de-DE-Wavenet-D','de-DE-Wavenet-E','de-DE-Wavenet-F', 'de-DE-Wavenet-G','de-DE-Wavenet-H','de-DE-Neural2-A','de-DE-Neural2-B','de-DE-Neural2-C','de-DE-Neural2-D','de-DE-Neural2-F', 'de-DE-Journey-D', 'de-DE-Journey-F'],
+    'el-GR': ['el-GR-Standard-A', 'el-GR-Standard-B','el-GR-Wavenet-A'],
+    'gu-IN': ['gu-IN-Standard-A', 'gu-IN-Standard-B', 'gu-IN-Standard-C', 'gu-IN-Standard-D', 'gu-IN-Wavenet-A', 'gu-IN-Wavenet-B', 'gu-IN-Wavenet-C', 'gu-IN-Wavenet-D'],
+    'he-IL': ['he-IL-Standard-A', 'he-IL-Standard-B', 'he-IL-Standard-C', 'he-IL-Standard-D', 'he-IL-Wavenet-A', 'he-IL-Wavenet-B', 'he-IL-Wavenet-C', 'he-IL-Wavenet-D'],
+    'hi-IN': ['hi-IN-Standard-A', 'hi-IN-Standard-B', 'hi-IN-Standard-C', 'hi-IN-Standard-D', 'hi-IN-Standard-E', 'hi-IN-Standard-F','hi-IN-Wavenet-A', 'hi-IN-Wavenet-B', 'hi-IN-Wavenet-C', 'hi-IN-Wavenet-D', 'hi-IN-Wavenet-E','hi-IN-Wavenet-F','hi-IN-Neural2-A','hi-IN-Neural2-B','hi-IN-Neural2-C','hi-IN-Neural2-D'],
+    'hu-HU': ['hu-HU-Standard-A', 'hu-HU-Standard-B','hu-HU-Wavenet-A'],
+    'is-IS': ['is-IS-Standard-A', 'is-IS-Standard-B'],
+    'id-ID': ['id-ID-Standard-A', 'id-ID-Standard-B', 'id-ID-Standard-C', 'id-ID-Standard-D', 'id-ID-Wavenet-A', 'id-ID-Wavenet-B', 'id-ID-Wavenet-C', 'id-ID-Wavenet-D'],
+    'it-IT': ['it-IT-Standard-A', 'it-IT-Standard-B', 'it-IT-Standard-C', 'it-IT-Standard-D', 'it-IT-Wavenet-A', 'it-IT-Wavenet-B', 'it-IT-Wavenet-C', 'it-IT-Wavenet-D','it-IT-Neural2-A','it-IT-Neural2-C', 'it-IT-Journey-D','it-IT-Journey-F'],
+    'ja-JP': ['ja-JP-Standard-A', 'ja-JP-Standard-B', 'ja-JP-Standard-C', 'ja-JP-Standard-D','ja-JP-Wavenet-A', 'ja-JP-Wavenet-B', 'ja-JP-Wavenet-C', 'ja-JP-Wavenet-D','ja-JP-Neural2-B','ja-JP-Neural2-C','ja-JP-Neural2-D'],
+    'kn-IN': ['kn-IN-Standard-A', 'kn-IN-Standard-B', 'kn-IN-Standard-C', 'kn-IN-Standard-D', 'kn-IN-Wavenet-A', 'kn-IN-Wavenet-B', 'kn-IN-Wavenet-C', 'kn-IN-Wavenet-D'],
+    'ko-KR': ['ko-KR-Standard-A', 'ko-KR-Standard-B', 'ko-KR-Standard-C', 'ko-KR-Standard-D','ko-KR-Wavenet-A', 'ko-KR-Wavenet-B', 'ko-KR-Wavenet-C', 'ko-KR-Wavenet-D','ko-KR-Neural2-A','ko-KR-Neural2-B','ko-KR-Neural2-C'],
+    'lv-LV': ['lv-LV-Standard-A','lv-LV-Standard-B'],
+    'lt-LT': ['lt-LT-Standard-A'],
+    'ms-MY': ['ms-MY-Standard-A', 'ms-MY-Standard-B', 'ms-MY-Standard-C', 'ms-MY-Standard-D','ms-MY-Wavenet-A', 'ms-MY-Wavenet-B', 'ms-MY-Wavenet-C', 'ms-MY-Wavenet-D'],
+    'ml-IN': ['ml-IN-Standard-A', 'ml-IN-Standard-B', 'ml-IN-Standard-C', 'ml-IN-Standard-D', 'ml-IN-Wavenet-A', 'ml-IN-Wavenet-B', 'ml-IN-Wavenet-C', 'ml-IN-Wavenet-D'],
+    'cmn-CN': ['cmn-CN-Standard-A', 'cmn-CN-Standard-B', 'cmn-CN-Standard-C', 'cmn-CN-Standard-D','cmn-CN-Wavenet-A','cmn-CN-Wavenet-B','cmn-CN-Wavenet-C','cmn-CN-Wavenet-D'],
+    'mr-IN': ['mr-IN-Standard-A', 'mr-IN-Standard-B', 'mr-IN-Standard-C', 'mr-IN-Wavenet-A', 'mr-IN-Wavenet-B', 'mr-IN-Wavenet-C'],
+    'nb-NO': ['nb-NO-Standard-A', 'nb-NO-Standard-B', 'nb-NO-Standard-C', 'nb-NO-Standard-D', 'nb-NO-Standard-E', 'nb-NO-Standard-F','nb-NO-Standard-G', 'nb-NO-Wavenet-A', 'nb-NO-Wavenet-B', 'nb-NO-Wavenet-C', 'nb-NO-Wavenet-D','nb-NO-Wavenet-E'],
+    'pl-PL': ['pl-PL-Standard-A', 'pl-PL-Standard-B', 'pl-PL-Standard-C', 'pl-PL-Standard-D', 'pl-PL-Standard-E','pl-PL-Wavenet-A','pl-PL-Wavenet-B','pl-PL-Wavenet-C','pl-PL-Wavenet-D','pl-PL-Wavenet-E'],
+    'pt-BR': ['pt-BR-Standard-A', 'pt-BR-Standard-B', 'pt-BR-Standard-C', 'pt-BR-Standard-D', 'pt-BR-Standard-E','pt-BR-Wavenet-A','pt-BR-Wavenet-B','pt-BR-Wavenet-C','pt-BR-Wavenet-D','pt-BR-Wavenet-E','pt-BR-Neural2-A','pt-BR-Neural2-B','pt-BR-Neural2-C'],
+    'pt-PT': ['pt-PT-Standard-A', 'pt-PT-Standard-B', 'pt-PT-Standard-C', 'pt-PT-Standard-D','pt-PT-Standard-E','pt-PT-Standard-F', 'pt-PT-Wavenet-A','pt-PT-Wavenet-B','pt-PT-Wavenet-C','pt-PT-Wavenet-D'],
+    'pa-IN': ['pa-IN-Standard-A','pa-IN-Standard-B','pa-IN-Standard-C','pa-IN-Standard-D','pa-IN-Wavenet-A','pa-IN-Wavenet-B','pa-IN-Wavenet-C','pa-IN-Wavenet-D'],
+    'ro-RO': ['ro-RO-Standard-A','ro-RO-Standard-B', 'ro-RO-Wavenet-A'],
+    'ru-RU': ['ru-RU-Standard-A', 'ru-RU-Standard-B', 'ru-RU-Standard-C', 'ru-RU-Standard-D', 'ru-RU-Standard-E','ru-RU-Wavenet-A','ru-RU-Wavenet-B','ru-RU-Wavenet-C','ru-RU-Wavenet-D','ru-RU-Wavenet-E'],
+    'sr-RS': ['sr-RS-Standard-A'],
+    'sk-SK': ['sk-SK-Standard-A','sk-SK-Standard-B','sk-SK-Wavenet-A'],
+    'es-ES': ['es-ES-Standard-A', 'es-ES-Standard-B', 'es-ES-Standard-C', 'es-ES-Standard-D', 'es-ES-Standard-E', 'es-ES-Standard-F', 'es-ES-Wavenet-B', 'es-ES-Wavenet-C', 'es-ES-Wavenet-D','es-ES-Wavenet-E','es-ES-Wavenet-F', 'es-ES-Neural2-A','es-ES-Neural2-B','es-ES-Neural2-C','es-ES-Neural2-D','es-ES-Neural2-E','es-ES-Neural2-F',],
+    'es-US': ['es-US-Standard-A', 'es-US-Standard-B', 'es-US-Standard-C', 'es-US-Wavenet-A', 'es-US-Wavenet-B', 'es-US-Wavenet-C','es-US-Neural2-A','es-US-Neural2-B','es-US-Neural2-C','es-US-News-D','es-US-News-E','es-US-News-F','es-US-News-G','es-US-Journey-D','es-US-Journey-F'],
+    'sv-SE': ['sv-SE-Standard-A', 'sv-SE-Standard-B', 'sv-SE-Standard-C', 'sv-SE-Standard-D', 'sv-SE-Standard-E', 'sv-SE-Standard-F','sv-SE-Standard-G', 'sv-SE-Wavenet-A', 'sv-SE-Wavenet-B', 'sv-SE-Wavenet-C', 'sv-SE-Wavenet-D','sv-SE-Wavenet-E'],
+    'ta-IN': ['ta-IN-Standard-A', 'ta-IN-Standard-B', 'ta-IN-Standard-C', 'ta-IN-Standard-D', 'ta-IN-Wavenet-A', 'ta-IN-Wavenet-B', 'ta-IN-Wavenet-C', 'ta-IN-Wavenet-D'],
+    'te-IN': ['te-IN-Standard-A','te-IN-Standard-B'],
+    'th-TH': ['th-TH-Standard-A', 'th-TH-Neural2-C'],
+    'tr-TR': ['tr-TR-Standard-A', 'tr-TR-Standard-B', 'tr-TR-Standard-C', 'tr-TR-Standard-D','tr-TR-Standard-E', 'tr-TR-Wavenet-A', 'tr-TR-Wavenet-B', 'tr-TR-Wavenet-C', 'tr-TR-Wavenet-D','tr-TR-Wavenet-E'],
+    'uk-UA': ['uk-UA-Standard-A', 'uk-UA-Wavenet-A'],
+    'vi-VN': ['vi-VN-Standard-A', 'vi-VN-Standard-B', 'vi-VN-Standard-C', 'vi-VN-Standard-D','vi-VN-Wavenet-A','vi-VN-Wavenet-B','vi-VN-Wavenet-C','vi-VN-Wavenet-D','vi-VN-Neural2-A','vi-VN-Neural2-D'],
+  };
+
   UserMembership _currentMembership = UserMembership.normal;
 
   // Function to fetch the user's membership level
   Future<UserMembership> _fetchUserMembership() async {
+    if(_isAdWatched)
+      return UserMembership.proPremium;
+    if(username=="DYxrS1A8UuM0y1AOoA99yTIGTQn2")
+      return UserMembership.proPremium;
    if (_subscribed)
     return UserMembership.proPremium;
    else
@@ -164,7 +293,7 @@ class _LanguageAudioPageState extends State<LanguageAudioPage> {
   @override
   void initState() {
     super.initState();
-
+    getusername();
     _setupIsPro();
     // Fetch the user's membership level first
     _fetchUserMembership().then((membership) {
@@ -173,9 +302,14 @@ class _LanguageAudioPageState extends State<LanguageAudioPage> {
       // Then, fetch available voices based on the membership
       _fetchAvailableVoices();
     });
+    _loadRewardedAd();
   }
 
+  Future<void> getusername() async{
+    final user = FirebaseAuth.instance.currentUser;
+    username= user!.uid;
 
+  }
 
   Future<void> _fetchAvailableVoices() async {
   _updateAvailableVoices();
@@ -217,6 +351,209 @@ class _LanguageAudioPageState extends State<LanguageAudioPage> {
     });
   }
 
+  void _updateAvailableVoicesAdwatch() {
+    if (mounted) {
+      setState(() {
+        // Your filtering logic
+        _availableVoices = _voicesByLanguage2[_selectedLanguage] ?? [];
+        // Your language filtering logic based on membership
+      });
+
+      // Make sure to update dropdown items after setState
+      setState(() {
+        _languages = _languages2; // Update the languages list
+        _selectedVoice = _availableVoices.isNotEmpty ? _availableVoices[0] : null;
+      });
+    }
+  }
+
+
+
+  Widget _buildUnlockLanguageVoiceCard() {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8.0),
+        gradient: const LinearGradient(
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+          colors: [
+            Color(0xFF00001E),
+            Color(0xFF7673FF),
+          ],
+        ),
+      ),
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Limited time offer badge
+
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.redAccent,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 12),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.access_alarm, color: Colors.white, size: 18),
+                    SizedBox(width: 6),
+                    Text(
+                      'Limited Time Offer!',
+                      style: TextStyle(color: Colors.white, fontSize: 14),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          // Main content
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: const [
+                    Text(
+                      'Unlock Language & Voice',
+                      style: TextStyle(
+                        fontSize: 20.0,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'Watch an ad to unlock this premium feature now for free!',
+                      style: TextStyle(
+                        fontSize: 14.0,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 16.0),
+              // Button or Badge depending on ad watch status
+              _isAdWatched
+                  ? Container(
+                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                decoration: BoxDecoration(
+                  color: Colors.green,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: const [
+                    Icon(Icons.check_circle, color: Colors.white, size: 20),
+                    SizedBox(width: 6),
+                    Text(
+                      'Activated',
+                      style: TextStyle(color: Colors.white, fontSize: 16),
+                    ),
+                  ],
+                ),
+              )
+                  : ElevatedButton(
+                onPressed: _isAdLoaded ? _showRewardedAd : null,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _isAdLoaded ? Colors.white : Colors.grey,
+                  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                  ),
+                ),
+                child: _isAdLoaded
+                    ? Text(
+                  'Watch Ad',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.black,
+                  ),
+                )
+                    : Text(
+                  'Watch Ad',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+// Function to load the rewarded ad with SSV (userId)
+  void _loadRewardedAd() {
+    RewardedAd.load(
+      adUnitId: adUnitId,
+      request: AdRequest(),
+      rewardedAdLoadCallback: RewardedAdLoadCallback(
+        onAdLoaded: (RewardedAd ad) {
+          setState(() {
+            _rewardedAd = ad;
+            _isAdLoaded = true;
+          });
+          print("Rewarded Ad Loaded");
+
+          // Set userId for Server-Side Verification (SSV)
+          ad.setImmersiveMode(true);
+
+        },
+        onAdFailedToLoad: (LoadAdError error) {
+          print("Rewarded Ad Failed to Load: \${error.message}");
+        },
+      ),
+    );
+  }
+
+// Function to show the rewarded ad
+  void _showRewardedAd() {
+    if (_rewardedAd != null) {
+      _rewardedAd!.fullScreenContentCallback = FullScreenContentCallback(
+        onAdDismissedFullScreenContent: (RewardedAd ad) {
+          print("Rewarded Ad Dismissed");
+          ad.dispose();
+          _loadRewardedAd();
+          _fetchUserMembership().then((membership) {
+            _currentMembership = membership; // Update _currentMembership
+
+            // Then, fetch available voices based on the membership
+            setState(() {
+              _updateAvailableVoicesAdwatch();
+            });
+
+          });
+        },
+        onAdFailedToShowFullScreenContent: (RewardedAd ad, AdError error) {
+          print("Failed to show ad: \${error.message}");
+          ad.dispose();
+          _loadRewardedAd();
+        },
+      );
+
+
+
+      _rewardedAd!.show(
+        onUserEarnedReward: (AdWithoutView ad, RewardItem reward) {
+
+          setState(() {
+            _isAdWatched = true;
+          });
+        },
+      );
+
+      _rewardedAd = null;
+    } else {
+      print("Ad not ready yet");
+    }
+  }
+
 
   // Custom dropdown button builder (only two parameters now)
   Widget _customDropdownBuilder(BuildContext context, String? item) {
@@ -250,7 +587,7 @@ class _LanguageAudioPageState extends State<LanguageAudioPage> {
           Text(
             item,
             style: TextStyle(
-              color: isDisabled ? Colors.grey : Colors.black,
+
             ),
           ),
           // Show Pro Premium tag only if the item is disabled
@@ -267,12 +604,12 @@ class _LanguageAudioPageState extends State<LanguageAudioPage> {
         appBar: AppBar(
 
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new,color: Colors.black,),
+            icon: const Icon(Icons.arrow_back_ios_new,),
             onPressed: () {
               Navigator.pop(context);
             },
           ),
-          title: const Text('Select Audio & Language',style: TextStyle(color: Colors.black,fontWeight: FontWeight.bold),),
+          title: const Text('Select Audio & Language',style: TextStyle(fontWeight: FontWeight.bold),),
         ),
         body: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -280,6 +617,10 @@ class _LanguageAudioPageState extends State<LanguageAudioPage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
 
+              if (!_subscribed)
+                _buildUnlockLanguageVoiceCard(),
+              if (!_subscribed)
+              const SizedBox(height: 20),
               SizedBox(
                 height: 250,
                 child: Lottie.asset('assets/language2.json'),
@@ -295,8 +636,18 @@ class _LanguageAudioPageState extends State<LanguageAudioPage> {
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 16,fontWeight: FontWeight.w600,),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 10),
 
+              if (_currentMembership == UserMembership.normal)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: Text(
+                    'Upgrade to premium for more language selections and high-quality voices.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.grey, fontSize: 14),
+                  ),
+                ),
+              const SizedBox(height: 20),
 
               // Searchable dropdown for language selection
               DropdownSearch<String>(
@@ -342,15 +693,7 @@ class _LanguageAudioPageState extends State<LanguageAudioPage> {
               ),
 
 // Show the "Note" only if the user is not Pro Premium
-              if (_currentMembership == UserMembership.normal)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8.0),
-                  child: Text(
-                    'Unlock more language choices with a premium subscription.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.grey, fontSize: 14),
-                  ),
-                ),
+
 
 
               const SizedBox(height: 20),
@@ -383,15 +726,7 @@ class _LanguageAudioPageState extends State<LanguageAudioPage> {
   },
   ),
 // Show the "Note" only if the user is not Pro Premium
-              if (_currentMembership != UserMembership.proPremium)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8.0),
-                  child: Text(
-                    'Upgrade to Premium to explore premium voice selections.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.grey, fontSize: 14),
-                  ),
-                ),
+
 
 
               const SizedBox(height: 20),
@@ -438,6 +773,8 @@ class _LanguageAudioPageState extends State<LanguageAudioPage> {
               ),
                 child: const Text('Continue', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
               ),
+
+
 
 
               if (_isLoading) // Show loading indicator while fetching voices

@@ -63,7 +63,9 @@ class _CraftStoryPageState extends State<CraftStoryPage> {
                 padding: const EdgeInsets.all(16.0),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Colors.white,
+color: Theme.of(context).brightness == Brightness.dark
+    ? Colors.grey[800] // Dark mode text color
+    : Colors.white,
                     borderRadius: BorderRadius.circular(12.0),
                     boxShadow: [
                       BoxShadow(
@@ -75,6 +77,7 @@ class _CraftStoryPageState extends State<CraftStoryPage> {
                   ),
                   child: Padding(
                     padding: const EdgeInsets.all(12.0),
+
                     child: TextField(
                       controller: _textController,
                       maxLines: null,

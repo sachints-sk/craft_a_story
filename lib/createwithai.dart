@@ -181,12 +181,12 @@ class _CreateStoryWithAIState extends State<CreateStoryWithAI> {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black),
+          icon: const Icon(Icons.arrow_back_ios_new, ),
           onPressed: () {
             Navigator.pop(context);
           },
         ),
-        title: const Text('Imagine Your Story', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+        title: const Text('Imagine Your Story', style: TextStyle( fontWeight: FontWeight.bold)),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -216,7 +216,7 @@ class _CreateStoryWithAIState extends State<CreateStoryWithAI> {
               _buildStoryTypeChips(),
 
               const SizedBox(height: 16),
-              const Text('Story Setting', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              const Text('Story Plotm', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               _buildTextFormField(_storySettingController, 'A magical forest', 'Please enter a story setting'),
 
@@ -243,6 +243,7 @@ class _CreateStoryWithAIState extends State<CreateStoryWithAI> {
           ),
         ),
       ),
+
     );
   }
 }

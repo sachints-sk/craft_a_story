@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'home.dart'; // Import your HomePage here
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
+import 'main.dart';
 
 class SignInPage extends StatelessWidget {
   const SignInPage({Key? key}) : super(key: key);

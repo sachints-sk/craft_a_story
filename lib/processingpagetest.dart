@@ -25,6 +25,11 @@ import 'package:firebase_performance/firebase_performance.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:giffy_dialog/giffy_dialog.dart';
 import 'buycredits.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
+import 'Services/ProcessingPage_banner_ad_widget.dart';
+import 'package:purchases_flutter/purchases_flutter.dart';
+import 'package:purchases_ui_flutter/purchases_ui_flutter.dart';
+
 
 
 class ProcessingPage extends StatefulWidget {
@@ -71,21 +76,40 @@ class _ProcessingPageState extends State<ProcessingPage> {
   String _storedAudioPath="";
   final user = FirebaseAuth.instance.currentUser;
 
+  bool _subscribed = false;
+  late final void Function(CustomerInfo) _customerInfoListener;
+
+
 
   @override
   void initState() {
     super.initState();
     _processStory(); // Start processing the story as soon as the page loads
+    _setupIsPro();
+
   }
 
   @override
   void dispose() {
     _timer?.cancel();
     _videoPlayerController?.dispose(); // Dispose of the video player
+    Purchases.removeCustomerInfoUpdateListener(_customerInfoListener);
+
     super.dispose();
   }
 
 
+  Future<void> _setupIsPro() async {
+    _customerInfoListener = (CustomerInfo customerInfo) {
+      EntitlementInfo? entitlement = customerInfo.entitlements.all['Premium'];
+      if (mounted) {
+        setState(() {
+          _subscribed = entitlement?.isActive ?? false;
+        });
+      }
+    };
+    Purchases.addCustomerInfoUpdateListener(_customerInfoListener);
+  }
 
 
 
@@ -132,6 +156,12 @@ class _ProcessingPageState extends State<ProcessingPage> {
   Future<void> _processStory() async {
     Trace customTrace = FirebasePerformance.instance.newTrace('Create-Visual-Story');
     await customTrace.start();
+    await FirebaseAnalytics.instance.logEvent(
+      name: 'Story_Created_Normal',
+      parameters: {
+        'user_email':user!.email.toString(),
+      },
+    );
     try {
       // 1. Clear old images
       await requestStoragePermissions();
@@ -1076,7 +1106,7 @@ print(prompt);
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(20.0),
@@ -1102,7 +1132,7 @@ print(prompt);
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 16,
-                  color: Colors.black,
+
                 ),
               ),
               const SizedBox(height: 10),
@@ -1139,6 +1169,12 @@ print(prompt);
           ),
         ),
       ),
+      bottomNavigationBar: !_subscribed
+          ? Container(
+        child: BannerAdWidget(),
+      )
+          : null,
+
     );
   }
 }

@@ -22,7 +22,7 @@ class ExploreTab extends StatelessWidget {
         centerTitle: true,
         title: const Text(
           'Explore',
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+          style: TextStyle( fontWeight: FontWeight.bold),
         ),
       ),
       body: SingleChildScrollView(
@@ -127,7 +127,7 @@ class _HeroBannerState extends State<HeroBanner> {
         createdAt:(doc.data()?['createdAt'] as Timestamp).toDate().toString() ?? '',
         mode:doc.data()?['mode'] ?? '',
         voice:doc.data()?['voice'] ?? '',
-        audioUrl: data()?['audioUrl'] ?? '',
+        audioUrl: doc.data()?['audioUrl'] ?? '',
       )),
       FirebaseFirestore.instance
           .collection('Explore_stories')
@@ -143,7 +143,7 @@ class _HeroBannerState extends State<HeroBanner> {
         createdAt:(doc.data()?['createdAt'] as Timestamp).toDate().toString() ?? '',
         mode:doc.data()?['mode'] ?? '',
         voice:doc.data()?['voice'] ?? '',
-        audioUrl: data()?['audioUrl'] ?? '',
+        audioUrl: doc.data()?['audioUrl'] ?? '',
       )),
       FirebaseFirestore.instance
           .collection('Explore_stories')
@@ -159,7 +159,7 @@ class _HeroBannerState extends State<HeroBanner> {
         createdAt:(doc.data()?['createdAt'] as Timestamp).toDate().toString() ?? '',
         mode:doc.data()?['mode'] ?? '',
         voice:doc.data()?['voice'] ?? '',
-        audioUrl: data()?['audioUrl'] ?? '',
+        audioUrl: doc.data()?['audioUrl'] ?? '',
       )),
     ]);
   }
@@ -183,7 +183,7 @@ class _HeroBannerState extends State<HeroBanner> {
         if (snapshot.hasData) {
           final List<StoryData> featuredStories = snapshot.data!;
           return SizedBox(
-            height: 200,
+            height: 180,
             child: Stack(
               alignment: Alignment.center,
               children: [
@@ -243,8 +243,11 @@ class PlaceholderBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 200,
-      color: Colors.grey[300],
+      height: 180,
+      color: Theme.of(context).brightness == Brightness.dark
+          ? Colors.grey[400] // Dark mode text color
+          : Colors.grey[300],
+
       child: Center(
         child: Icon(
           Icons.photo,
@@ -356,7 +359,7 @@ class SectionTitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+      padding: const EdgeInsets.symmetric(vertical: 7.0, horizontal: 16.0),
       child: Text(
         title,
         style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
@@ -365,7 +368,6 @@ class SectionTitle extends StatelessWidget {
   }
 }
 
-// Widget for Trending Stories (Horizontal Scroll)
 class TrendingStoriesList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -402,16 +404,22 @@ class TrendingStoriesList extends StatelessWidget {
             );
           }).toList();
 
-          return Container(
+          return SizedBox(
             height: 150,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               itemCount: stories.length,
               itemBuilder: (context, index) {
-                return StoryCard(
-                  image: stories[index].coverImageUrl,
-                  title: stories[index].title,
-                  storyData: stories[index],
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                  child: SizedBox( // Constrain the StoryCard within a fixed-width SizedBox
+                    width: 140, // You can adjust this as needed
+                    child: StoryCard(
+                      image: stories[index].coverImageUrl,
+                      title: stories[index].title,
+                      storyData: stories[index],
+                    ),
+                  ),
                 );
               },
             ),
@@ -423,7 +431,6 @@ class TrendingStoriesList extends StatelessWidget {
     );
   }
 }
-
 // Widget for a single Story Card
 class StoryCard extends StatelessWidget {
   final String image;
@@ -447,44 +454,46 @@ class StoryCard extends StatelessWidget {
           ),
         );
       },
-      child: Container(
-        width: 120,
-        margin: const EdgeInsets.only(left: 16, right: 8),
-        child: Column(
-          children: [
-            Expanded(
-              child: Hero(
-                tag: storyData.coverImageUrl,
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: CachedNetworkImage(
-                      imageUrl: image,
-                      fit: BoxFit.cover,
-                      placeholder: (context, url) => Shimmer.fromColors(
-                        baseColor: Colors.grey[300]!,
-                        highlightColor: Colors.grey[100]!,
-                        child: Container(
-                          color: Colors.grey,
-                        ),
-                      ),
-                      errorWidget: (context, url, error) => const Icon(Icons.error, color: Colors.grey),
-                    ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // Cover Image
+          Expanded(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: CachedNetworkImage(
+                imageUrl: image,
+                fit: BoxFit.cover,
+                width: double.infinity, // Take full width available from parent
+                placeholder: (context, url) => Shimmer.fromColors(
+                  baseColor: Colors.grey[300]!,
+                  highlightColor: Colors.grey[100]!,
+                  child: Container(
+                    color: Colors.grey,
                   ),
                 ),
+                errorWidget: (context, url, error) =>
+                const Icon(Icons.error, color: Colors.grey),
               ),
             ),
-            const SizedBox(height: 8),
-            Text(
+          ),
+          const SizedBox(height: 8),
+          // Title
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            child: Text(
               title,
-              style: const TextStyle(fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -522,7 +531,7 @@ class TopCategoriesList extends StatelessWidget {
               label: Text(
                 category,
                 style: const TextStyle(
-                  color: Colors.black,
+
                 ),
               ),
               elevation: 0,
@@ -631,16 +640,19 @@ class _SuggestedStoriesGridState extends State<SuggestedStoriesGrid> {
   @override
   Widget build(BuildContext context) {
     return Column(
+      
       children: [
-        GridView.builder(
+        Padding(padding:EdgeInsets.fromLTRB(8, 0, 8, 0) ,
+        child: GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           padding: const EdgeInsets.all(1),
           itemCount: _stories.length,
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 2,
-            mainAxisSpacing: 16,
-            crossAxisSpacing: 2,
+            crossAxisSpacing: 8,
+            mainAxisSpacing: 13,
+            childAspectRatio: 1.3,
           ),
           itemBuilder: (context, index) {
             final story = _stories[index];
@@ -650,39 +662,69 @@ class _SuggestedStoriesGridState extends State<SuggestedStoriesGrid> {
               storyData: story,
             );
           },
-        ),
+        ),),
+        
         if (_isLoading)
         Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-        Shimmer.fromColors(
-        baseColor: Colors.grey[300]!,
-        highlightColor: Colors.grey[100]!,
-        child: Container(
-        height: 250, // Match your StoryCard's height
-        width: 170, // Match your StoryCard's width
-        decoration: BoxDecoration(
-        color: Colors.grey,
-        borderRadius: BorderRadius.circular(12)
-        ),
-        ),
-        ),
-        Shimmer.fromColors(
-        baseColor: Colors.grey[300]!,
-    highlightColor: Colors.grey[100]!,
-    child: Container(
-    height: 250, // Match your StoryCard's height
-    width: 170, // Match your StoryCard's width
-    decoration: BoxDecoration(
-    color: Colors.grey,
-    borderRadius: BorderRadius.circular(12)
-    ),
-    ),
-    ),
-    ],
-    ),
+        child: Column(children: [Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Shimmer.fromColors(
+              baseColor: Colors.grey[300]!,
+              highlightColor: Colors.grey[100]!,
+              child: Container(
+                height: 100, // Match your StoryCard's height
+                width: 200, // Match your StoryCard's width
+                decoration: BoxDecoration(
+                    color: Colors.grey,
+                    borderRadius: BorderRadius.circular(12)
+                ),
+              ),
+            ),
+            Shimmer.fromColors(
+              baseColor: Colors.grey[300]!,
+              highlightColor: Colors.grey[100]!,
+              child: Container(
+                height: 100, // Match your StoryCard's height
+                width: 200, // Match your StoryCard's width
+                decoration: BoxDecoration(
+                    color: Colors.grey,
+                    borderRadius: BorderRadius.circular(12)
+                ),
+              ),
+            ),
+          ],
+        ),SizedBox(height: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Shimmer.fromColors(
+                baseColor: Colors.grey[300]!,
+                highlightColor: Colors.grey[100]!,
+                child: Container(
+                  height: 100, // Match your StoryCard's height
+                  width: 200, // Match your StoryCard's width
+                  decoration: BoxDecoration(
+                      color: Colors.grey,
+                      borderRadius: BorderRadius.circular(12)
+                  ),
+                ),
+              ),
+              Shimmer.fromColors(
+                baseColor: Colors.grey[300]!,
+                highlightColor: Colors.grey[100]!,
+                child: Container(
+                  height: 100, // Match your StoryCard's height
+                  width: 200, // Match your StoryCard's width
+                  decoration: BoxDecoration(
+                      color: Colors.grey,
+                      borderRadius: BorderRadius.circular(12)
+                  ),
+                ),
+              ),
+            ],
+          ),],)
     ),
 
         if (!_isLoading && _hasMoreStories)

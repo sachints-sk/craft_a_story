@@ -8,6 +8,10 @@ import 'story_data.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:audio_waveforms/audio_waveforms.dart';
 import 'package:share_plus/share_plus.dart';
+import 'Services/MyStoriesViewer_banner_ad_widget.dart';
+import 'package:purchases_flutter/purchases_flutter.dart';
+import 'package:purchases_ui_flutter/purchases_ui_flutter.dart';
+
 
 
 class Mystoriesviewer extends StatefulWidget {
@@ -30,12 +34,16 @@ class _MystoriesviewerState extends State<Mystoriesviewer> {
   double _currentVolume = 1.0;
   bool isPlaying = false;
   bool _isDownloading2 = false;
+  bool _subscribed = false;
+  late final void Function(CustomerInfo) _customerInfoListener;
 
 
   @override
   void initState() {
     _audioController = PlayerController();
     _audioController.playerState == PlayerState.playing ? isPlaying = true : isPlaying = false;
+    _setupIsPro();
+
     super.initState();
   }
 
@@ -44,8 +52,24 @@ class _MystoriesviewerState extends State<Mystoriesviewer> {
     _videoPlayerController?.dispose();
     _chewieController?.dispose();
     _audioController.dispose();
+    Purchases.removeCustomerInfoUpdateListener(_customerInfoListener);
+
     super.dispose();
   }
+
+  Future<void> _setupIsPro() async {
+    _customerInfoListener = (CustomerInfo customerInfo) {
+      EntitlementInfo? entitlement = customerInfo.entitlements.all['Premium'];
+      if (mounted) {
+        setState(() {
+          _subscribed = entitlement?.isActive ?? false;
+        });
+      }
+    };
+    Purchases.addCustomerInfoUpdateListener(_customerInfoListener);
+  }
+
+
 
   Future<void> _shareStory() async {
     if (widget.storyData.isAudio){
@@ -247,11 +271,11 @@ class _MystoriesviewerState extends State<Mystoriesviewer> {
                       value: 'delete',
                       child: Row(
                         children: [
-                          Icon(Icons.delete, color: Colors.black87),
+                          Icon(Icons.delete, ),
                           SizedBox(width: 8),
                           Text(
                             'Delete Story',
-                            style: TextStyle(color: Colors.black87),
+                            style: TextStyle(),
                           ),
                         ],
                       ),
@@ -267,6 +291,8 @@ class _MystoriesviewerState extends State<Mystoriesviewer> {
           body: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              if(!_subscribed)
+              BannerAdWidget(),
               // Video or Cover Image Section
               if (!widget.storyData.isAudio)
                 Stack(
@@ -278,18 +304,15 @@ class _MystoriesviewerState extends State<Mystoriesviewer> {
                           ? (_isVideoInitialized
                           ? Chewie(controller: _chewieController!)
                           : const Center(child: CircularProgressIndicator()))
-                          : Hero(
-                        tag: widget.storyData.coverImageUrl, // Use the same unique tag
-                        child: Image.network(
-                          widget.storyData.coverImageUrl,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Image.asset(
-                              'assets/testimage.png',
-                              fit: BoxFit.cover,
-                            );
-                          },
-                        ),
+                          : Image.network(
+                        widget.storyData.coverImageUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Image.asset(
+                            'assets/testimage.png',
+                            fit: BoxFit.cover,
+                          );
+                        },
                       ),
                     ),
                     if (!_showVideoPlayer)
@@ -302,7 +325,7 @@ class _MystoriesviewerState extends State<Mystoriesviewer> {
                 )
               else
                 _localAudioPath == null
-                    ? Hero(tag: widget.storyData.coverImageUrl, child: Container(
+                    ? Container(
                   width: double.infinity,
                   height: 300, // or adjust based on your layout needs
                   child: Stack(
@@ -330,7 +353,6 @@ class _MystoriesviewerState extends State<Mystoriesviewer> {
                     ],
                   ),
 
-                )
                 )
 
                     : AudioFileWaveforms(
@@ -372,7 +394,10 @@ class _MystoriesviewerState extends State<Mystoriesviewer> {
                         iconSize: 78,
                         icon: Icon(
                           isPlaying ? Icons.pause_circle : Icons.play_circle,
-                          color: const Color(0xFF1A2259),
+                          color:  Theme.of(context).brightness == Brightness.dark
+                              ? Colors.white // Dark mode text color
+                              : const Color(0xFF1A2259),
+
                         ),
                         onPressed: () async {
                           if (isPlaying) {
@@ -456,14 +481,14 @@ class _MystoriesviewerState extends State<Mystoriesviewer> {
                 style: const TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black,
+
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
             ),
             IconButton(
-              icon: const Icon(Icons.share, color: Colors.black87,  ),
+              icon: const Icon(Icons.share,   ),
               onPressed: _shareStory,
             ),
             // Like Button with Count
@@ -548,7 +573,7 @@ class _MystoriesviewerState extends State<Mystoriesviewer> {
           storyData.description,
           style: const TextStyle(
             fontSize: 16,
-            color: Colors.black,
+
           ),
         ),
         const SizedBox(height: 20),

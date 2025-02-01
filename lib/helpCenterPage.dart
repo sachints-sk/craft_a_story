@@ -33,53 +33,170 @@ class _HelpCenterPageState extends State<HelpCenterPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+
       appBar: AppBar(
         title: Text("Help Center",
           style: GoogleFonts.blinker(
-            textStyle: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: Colors.black87, fontSize: 24),
+            textStyle: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold,color:  Theme.of(context).brightness == Brightness.dark
+                ? Colors.white
+                : Colors.black, fontSize: 24),
           ),),
         leading: Padding(
           padding: const EdgeInsets.only(left: 16.0),
           child: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.black87),
+            icon:  Icon(Icons.arrow_back, color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.white
+                : Colors.black,),
             onPressed: () {
               Navigator.pop(context);
             },
           ),
         ),
-        backgroundColor: Colors.grey[50],
+
         elevation: 0,
       ),
       body: ListView(
         padding: const EdgeInsets.all(16.0),
-        children: [
-          _buildSectionHeader("Customer Support"),
-          const SizedBox(height: 8),
-          _buildSupportTile(context),
+        children: [const SizedBox(height: 8),
+          CustomerSupport(),
           const SizedBox(height: 16),
-          const Divider(height: 1, thickness: 1, color: Colors.black12,),
-          const SizedBox(height: 16),
-          _buildSectionHeader("How to Use"),
-          const SizedBox(height: 8),
-          _buildHowToUseGuide(context),
-          const SizedBox(height: 16),
-          const Divider(height: 1, thickness: 1, color: Colors.black12,),
+          HowToUseCard(
+              items: const ['Create your first story', 'Create a story from scratch','How to share a story?'],
+              onLearnMorePressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => GuideDetailPage(), // Navigate to the guide details page
+                  ),
+                );
+              },
+          ),
+
+
+
           const SizedBox(height: 16),
           _buildSectionHeader("FAQs"),
           const SizedBox(height: 8),
           _buildFaqSection(),
           const SizedBox(height: 16),
-          const Divider(height: 1, thickness: 1, color: Colors.black12,),
-          const SizedBox(height: 16),
-          _buildSectionHeader("Other Resources"),
-          const SizedBox(height: 8),
-          _buildResources(context),
-          const SizedBox(height: 16),
+          Website(),
         ],
       ),
     );
   }
+
+  Widget CustomerSupport(){
+    return Card(
+      child: Container(
+        decoration: BoxDecoration(
+
+          borderRadius: BorderRadius.circular(8.0),
+        ),
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.headset_mic,  size: 28,),
+                const SizedBox(width: 8.0),
+                Text(
+                  'Customer Support',
+                  style: TextStyle(
+                      fontSize: 20.0,
+                      fontWeight: FontWeight.bold,
+                      ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Need help? Our support team is available 24/7 to assist you with any questions or concerns.',
+              style: TextStyle(fontSize: 14.0, ),
+            ),
+            const SizedBox(height: 16.0),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  _showContactOptions(context);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.black,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+                child: const Text(
+                  'Contact Us',
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget Website(){
+    return Card(
+      child: Container(
+        decoration: BoxDecoration(
+
+          borderRadius: BorderRadius.circular(8.0),
+        ),
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.web,  size: 28,),
+                const SizedBox(width: 8.0),
+                Text(
+                  'Visit Website',
+                  style: TextStyle(
+                    fontSize: 20.0,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Explore more resources online.',
+              style: TextStyle(fontSize: 14.0, ),
+            ),
+            const SizedBox(height: 16.0),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+
+                  _launchWebsite(context);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.black,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+                child: const Text(
+                  'Explore',
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+
 
   Widget _buildSectionHeader(String title) {
     return Padding(
@@ -87,7 +204,9 @@ class _HelpCenterPageState extends State<HelpCenterPage> {
       child: Text(
         title,
         style: GoogleFonts.montserrat(
-            textStyle: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87)
+            textStyle: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.white
+                : Colors.black,)
         ),
       ),
     );
@@ -105,15 +224,19 @@ class _HelpCenterPageState extends State<HelpCenterPage> {
           ),),
         subtitle: Text("Contact customer support for assistance.",
           style: GoogleFonts.montserrat(
-            textStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 16, color: Colors.black54),
+            textStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 16, ),
           ),),
         trailing: ElevatedButton(
           onPressed: () {
             _showContactOptions(context);
           },
-          style: ElevatedButton.styleFrom(backgroundColor: Colors.grey.shade200, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0))),
+          style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).brightness == Brightness.dark
+              ? Colors.grey.shade200
+              : Colors.blueAccent, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0))),
           child: Text("Contact Us",  style: GoogleFonts.montserrat(
-            textStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 14, ),
+            textStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 14,fontWeight: FontWeight.bold, color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.black
+                : Colors.white, ),
           ),),
         ),
       ),
@@ -159,7 +282,7 @@ class _HelpCenterPageState extends State<HelpCenterPage> {
               ),
               subtitle: Text("support@craft-a-story.com",
                 style: GoogleFonts.montserrat(
-                    textStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 14, color: Colors.black54)
+                    textStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 14, )
                 ),
               ),
               onTap: () async {
@@ -203,7 +326,7 @@ class _HelpCenterPageState extends State<HelpCenterPage> {
         ),
         subtitle: Text("Learn how to use all the features of the app.",
           style: GoogleFonts.montserrat(
-            textStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 16, color: Colors.black54),
+            textStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 16, ),
           ),),
         onTap: () {
           Navigator.push(
@@ -277,12 +400,89 @@ class _HelpCenterPageState extends State<HelpCenterPage> {
           ),),
         subtitle:  Text("Explore more resources online.",
           style: GoogleFonts.montserrat(
-            textStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 16, color: Colors.black54),
+            textStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 16, ),
           ),),
         onTap: () {
           _launchWebsite(context);
         },
       ),
     );
+  }
+}
+
+class HowToUseCard extends StatelessWidget {
+  final VoidCallback? onLearnMorePressed;
+  final List<String> items;
+  const HowToUseCard({super.key, this.onLearnMorePressed,  this.items = const []});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(child: Container(
+      decoration: BoxDecoration(
+
+        borderRadius: BorderRadius.circular(8.0),
+      ),
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'How to Use',
+                style: TextStyle(
+                    fontSize: 20.0,
+                    fontWeight: FontWeight.bold,
+                    ),
+              ),
+              Icon(Icons.book_outlined,  size: 28)
+            ],
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Quick start guides and tutorials',
+            style: TextStyle(fontSize: 14.0, ),
+          ),
+          const SizedBox(height: 16),
+          ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: items.length,
+              itemBuilder: (context, index){
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.check_circle, color: Colors.green[600], size: 18,),
+                      const SizedBox(width: 8),
+                      Expanded(child: Text(items[index], style: const TextStyle( fontSize: 14), ))
+                    ],
+                  ),
+                );
+              }
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: onLearnMorePressed,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.grey[100],
+                padding: const EdgeInsets.symmetric(vertical: 14),
+              ),
+              child: const Text(
+                'Learn More',
+                style: TextStyle(
+                    color: Colors.black,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold),
+              ),
+            ),
+          ),
+        ],
+      ),
+    ),);
   }
 }

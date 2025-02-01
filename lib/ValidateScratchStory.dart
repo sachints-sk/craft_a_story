@@ -179,7 +179,7 @@ class _ValidateScratchStoryState extends State<ValidateScratchStory> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Safety Assurance",style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+        title: const Text("Safety Assurance",style: TextStyle( fontWeight: FontWeight.bold)),
       ),
       body:
 

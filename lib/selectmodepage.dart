@@ -2,91 +2,143 @@ import 'package:flutter/material.dart';
 import 'SelectStoryType.dart';
 import 'package:page_transition/page_transition.dart';
 import 'userstorydetails.dart';
+import 'Services/banner_ad_widget.dart';
+import 'package:purchases_flutter/purchases_flutter.dart';
+import 'package:purchases_ui_flutter/purchases_ui_flutter.dart';
 
 
-class SelectModePage extends StatelessWidget {
+
+class SelectModePage extends StatefulWidget {
   const SelectModePage({Key? key}) : super(key: key);
+
+  @override
+  _SelectModePageState createState() => _SelectModePageState();
+}
+
+class _SelectModePageState extends State<SelectModePage> {
+  bool _subscribed = false;
+  late final void Function(CustomerInfo) _customerInfoListener;
+
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialization logic here
+    _setupIsPro();
+
+  }
+
+  @override
+  void dispose() {
+    // Cleanup logic here
+    Purchases.removeCustomerInfoUpdateListener(_customerInfoListener);
+
+    super.dispose();
+  }
+
+  Future<void> _setupIsPro() async {
+    _customerInfoListener = (CustomerInfo customerInfo) {
+      EntitlementInfo? entitlement = customerInfo.entitlements.all['Premium'];
+      if (mounted) {
+        setState(() {
+          _subscribed = entitlement?.isActive ?? false;
+        });
+      }
+    };
+    Purchases.addCustomerInfoUpdateListener(_customerInfoListener);
+  }
+
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_rounded, color: Colors.black),
+          icon: const Icon(Icons.arrow_back_ios_rounded),
           onPressed: () {
             Navigator.pop(context);
           },
         ),
         title: const Text("Choose Your Path",
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+            style: TextStyle(fontWeight: FontWeight.bold)),
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 10),
-              Text(
-                "Choose mode for story creation.",
-                style: TextStyle(
-
-                  fontSize: 18,
-                ),
-              ),const SizedBox(height: 30),
-              _buildModeCard(
-                context,
-                imagePath: 'assets/aiwriting.png',
-                title: 'Create with AI',
-                description: 'Generate a story in seconds',
-                buttonText: 'Get Started',
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    PageTransition(
-                      type: PageTransitionType.rightToLeft,
-                      child: const SelectStoryTypePage(),
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 50.0),
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          "Choose mode for story creation.",
+                          style: TextStyle(
+                            fontSize: 18,
+                          ),
+                        ),
+                        const SizedBox(height: 30),
+                        _buildModeCard(
+                          context,
+                          imagePath: 'assets/aiwriting.png',
+                          title: 'Create with AI',
+                          description: 'Generate a story in seconds',
+                          buttonText: 'Get Started',
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              PageTransition(
+                                type: PageTransitionType.rightToLeft,
+                                child: const SelectStoryTypePage(),
+                              ),
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 20),
+                        _buildModeCard(
+                          context,
+                          imagePath: 'assets/personwriting.png',
+                          title: 'Write Your Story',
+                          description: 'Craft a story from scratch',
+                          buttonText: 'Start Writing',
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              PageTransition(
+                                type: PageTransitionType.rightToLeft,
+                                child: CreateStory(),
+                              ),
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 4),
+                        const Center(
+                          child: Text(
+                            'This feature supports English language only.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(fontSize: 13.0, color: Colors.grey),
+                          ),
+                        ),
+                      ],
                     ),
-                  );
-                },
+                  ),
+                ],
               ),
-              const SizedBox(height: 20),
-              _buildModeCard(
-                context,
-                imagePath: 'assets/personwriting.png',
-                title: 'Write Your Story',
-                description: 'Craft a story from scratch',
-                buttonText: 'Start Writing',
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    PageTransition(
-                      type: PageTransitionType.rightToLeft,
-                      child: CreateStory(),
-                    ),
-                  );
-                  // Navigate to the write your own story page
-                },
-              ),
-              const SizedBox(height: 4),
-              Center(
-                child: Text(
-                  'This feature supports English language only.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 13.0, color: Colors.grey),
-                ),
-              ),
-
-
-
-            ],
+            ),
           ),
-        ),
+        ],
       ),
+      bottomNavigationBar: !_subscribed
+          ? Container(
+        child: BannerAdWidget(),
+      )
+          : null,
+
     );
   }
 
@@ -151,7 +203,7 @@ class SelectModePage extends StatelessWidget {
                       borderRadius: BorderRadius.circular(20),
                     ),
                   ),
-                  child: Text(buttonText, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  child:  Text(buttonText, style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                 ),
               ],
             ),

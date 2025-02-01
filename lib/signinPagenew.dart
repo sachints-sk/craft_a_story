@@ -68,6 +68,9 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<UserCredential?> _signInWithGoogle() async {
+    setState(() {
+      _isLoading = true; // Start loading
+    });
     try {
 
       final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
@@ -234,10 +237,11 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
+    return Theme(
+      data: ThemeData.light(), // Force the light theme
+      child: Stack(children: [
         Scaffold(
-          backgroundColor: Colors.grey[50],
+
           body: Center(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(32.0),
@@ -247,7 +251,7 @@ class _LoginPageState extends State<LoginPage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Logo
+// Logo
                     Center(
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(20.0),
@@ -259,21 +263,21 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     const SizedBox(height: 20),
 
-                    // Brand Image Banner (Example using a Container with Background)
+// Brand Image Banner (Example using a Container with Background)
                     Container(
                       height: 40, // Adjust height as needed
                       decoration: BoxDecoration(
                         image: DecorationImage(
                           image: AssetImage(
                               'assets/logo1.png'), // Replace with your banner image asset path
-                          // Adjust fit as needed
+// Adjust fit as needed
                         ),
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
                     const SizedBox(height: 30),
 
-                    // Conditionally show email/password fields
+// Conditionally show email/password fields
 
                     TextFormField(
                       controller: _emailController,
@@ -332,7 +336,7 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     const SizedBox(height: 20),
 
-                    // Sign-in Options at the bottom
+// Sign-in Options at the bottom
                     const SizedBox(height: 20),
                     const Divider(
                       thickness: 1.5,
@@ -354,7 +358,7 @@ class _LoginPageState extends State<LoginPage> {
                           });
 
                           print("_ is new user : $_isNewUser");
-                          // Navigate after ensuring the current frame is complete
+// Navigate after ensuring the current frame is complete
                           if (!_isNewUser)
                             if (context.mounted) {
                               Future.microtask(() {
@@ -398,14 +402,14 @@ class _LoginPageState extends State<LoginPage> {
                           const SizedBox(width: 12),
                           const Text('Continue with Google',
                               style: const TextStyle(
-                                  color: Colors.black,
+
                                   fontWeight: FontWeight.bold,
                                   fontSize: 16)),
                         ],
                       ),
                     ),
                     const SizedBox(height: 20),
-                    // Add space at the very bottom, so that UI looks consistent on multiple devices.
+// Add space at the very bottom, so that UI looks consistent on multiple devices.
                   ],
                 ),
               ),
@@ -419,7 +423,10 @@ class _LoginPageState extends State<LoginPage> {
               child: CircularProgressIndicator(),
             ),
           ),
-      ],
+      ],),
     );
+
   }
 }
+
+

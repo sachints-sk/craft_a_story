@@ -10,6 +10,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:animated_toggle_switch/animated_toggle_switch.dart';
 import 'package:audio_waveforms/audio_waveforms.dart';
 import 'package:share_plus/share_plus.dart';
+import 'Services/StoryExplorer_banner_ad_widget.dart';
+import 'package:purchases_flutter/purchases_flutter.dart';
+import 'package:purchases_ui_flutter/purchases_ui_flutter.dart';
 
 class ViewStoryByIdPage extends StatefulWidget {
   final String storyId;
@@ -36,6 +39,9 @@ class _ViewStoryByIdPageState extends State<ViewStoryByIdPage> {
    int likeCount = 0;
    bool isLiked = false;
    bool isToggled= true;
+   bool _subscribed = false;
+   final user = FirebaseAuth.instance.currentUser;
+   late final void Function(CustomerInfo) _customerInfoListener;
 
   @override
   void initState() {
@@ -44,8 +50,20 @@ class _ViewStoryByIdPageState extends State<ViewStoryByIdPage> {
     _audioController = PlayerController();
     _audioController.playerState == PlayerState.playing ? isPlaying = true : isPlaying = false;
 
+    _setupIsPro();
   }
 
+   Future<void> _setupIsPro() async {
+     _customerInfoListener = (CustomerInfo customerInfo) {
+       EntitlementInfo? entitlement = customerInfo.entitlements.all['Premium'];
+       if (mounted) {
+         setState(() {
+           _subscribed = entitlement?.isActive ?? false;
+         });
+       }
+     };
+     Purchases.addCustomerInfoUpdateListener(_customerInfoListener!);
+   }
   Future<void> _fetchStoryData() async {
     try {
       final doc = await FirebaseFirestore.instance
@@ -76,6 +94,7 @@ class _ViewStoryByIdPageState extends State<ViewStoryByIdPage> {
     _videoPlayerController?.dispose();
     _chewieController?.dispose();
     _audioController.dispose();
+    Purchases.removeCustomerInfoUpdateListener(_customerInfoListener);
     super.dispose();
   }
    Future<String> _getLocalFilePath2(String filename) async {
@@ -289,6 +308,8 @@ class _ViewStoryByIdPageState extends State<ViewStoryByIdPage> {
           : Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if(!_subscribed)
+            BannerAdWidget(),
           // Video Player or Cover Image Section
           if(isToggled)
           Stack(
@@ -392,7 +413,10 @@ class _ViewStoryByIdPageState extends State<ViewStoryByIdPage> {
                       iconSize: 78,
                       icon: Icon(
                         isPlaying ? Icons.pause_circle : Icons.play_circle,
-                        color: const Color(0xFF1A2259),
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.white // Use dark mode logo
+                            : Color(0xFF1A2259),
+
                       ),
                       onPressed: () async {
                         if (isPlaying) {
@@ -497,7 +521,7 @@ Widget _buildStoryHeader(StoryData storyData) {
                 style: const TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black,
+
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
@@ -510,7 +534,9 @@ Widget _buildStoryHeader(StoryData storyData) {
                   onPressed: _toggleLike,
                   icon: Icon(
                     isLiked ? Icons.thumb_up : Icons.thumb_up_alt_outlined,
-                    color: isLiked ? Colors.blue : Colors.black87,
+                    color: isLiked ? Colors.blue : Theme.of(context).brightness == Brightness.dark
+                        ? Colors.white // Use dark mode logo
+                        : Colors.black,
                     size: 28,
                   ),
                 ),
@@ -522,7 +548,7 @@ Widget _buildStoryHeader(StoryData storyData) {
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.share, color: Colors.black87,  ),
+                  icon: const Icon(Icons.share,   ),
                   onPressed: _shareStory,
                 ),
               ],
@@ -606,7 +632,7 @@ Widget _buildStoryHeader(StoryData storyData) {
           storyData.description,
           style: const TextStyle(
             fontSize: 16,
-            color: Colors.black,
+
           ),
         ),
         const SizedBox(height: 20),
@@ -618,40 +644,7 @@ Widget _buildStoryHeader(StoryData storyData) {
         ),
         const SizedBox(height: 10),
 
-        // Additional Info
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            // Length of Story
-            Row(
-              children: [
-                const Icon(Icons.timer, color: Colors.grey, size: 20),
-                const SizedBox(width: 8),
-                Text(
-                  '10 min read', // Placeholder for story length
-                  style: const TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey,
-                  ),
-                ),
-              ],
-            ),
-            // Other info, like genre or reading age
-            Row(
-              children: [
-                const Icon(Icons.category, color: Colors.grey, size: 20),
-                const SizedBox(width: 8),
-                Text(
-                  'Genre: Fantasy', // Placeholder for genre
-                  style: const TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
+
         const SizedBox(height: 10),
       ],
     );

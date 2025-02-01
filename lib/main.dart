@@ -18,13 +18,17 @@ import 'dart:ui';
 import 'signinPagenew.dart';
 import 'onboarding_page.dart';
 import 'UserNameInputScreen.dart';
-
+import 'Services/theme_provider.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:purchases_ui_flutter/purchases_ui_flutter.dart';
+import 'package:provider/provider.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'video_splash_screen.dart';
+import 'Services/initialize_screen.dart';
 
 void main() async {
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
-  FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
+
 
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
@@ -36,11 +40,18 @@ void main() async {
 
   await initializeRevenueCat();
 
+  MobileAds.instance.initialize();
+
   FlutterNativeSplash.remove();
 
 
 
-  runApp(const CraftAStoryApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => ThemeProvider(),
+      child: const CraftAStoryApp(),
+    ),
+  );
 }
 
 Future<void> _initializeFirebaseServices() async {
@@ -71,6 +82,7 @@ class CraftAStoryApp extends StatefulWidget {
 class _CraftAStoryAppState extends State<CraftAStoryApp> {
 
   late Future<bool> _userCheckFuture;
+  bool _showSplashScreen = true;
 
   @override
   void initState(){
@@ -87,19 +99,43 @@ class _CraftAStoryAppState extends State<CraftAStoryApp> {
     }
     return false;
   }
-
+  void _onSplashScreenFinished(){
+    setState(() {
+      _showSplashScreen = false;
+    });
+    // No need to call FlutterNativeSplash.remove() here now, as it was already removed
+  }
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Craft-a-Story',
       theme: ThemeData(
         useMaterial3: true,
-        primaryColor: Colors.blue, // Set your primary color
-        scaffoldBackgroundColor: Colors.white, // Set the background color
+        primaryColor: Colors.blue,
+        scaffoldBackgroundColor: Colors.white,
+        colorScheme: ThemeData.light().colorScheme.copyWith(
+          surface: Colors.white, // Background color for NavigationBar
+        ),
       ),
-      home: FutureBuilder<bool>(
+      darkTheme: ThemeData(
+        useMaterial3: true,
+        brightness: Brightness.dark,
+        primaryColor: Colors.blueGrey,
+        scaffoldBackgroundColor: Colors.grey[900],
+        colorScheme: ThemeData.dark().colorScheme.copyWith(
+          surface: Colors.grey[900], // Background color for NavigationBar
+        ),
+      ),
+      themeMode: themeProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
+      home: _showSplashScreen
+          ? VideoSplashScreen(
+        videoPath: 'assets/splash_video.mp4', // Path to your video
+        onVideoFinished: _onSplashScreenFinished, // Callback
+      )
+          : FutureBuilder<bool>(
         future: _userCheckFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -107,7 +143,8 @@ class _CraftAStoryAppState extends State<CraftAStoryApp> {
           } else if (snapshot.hasError) {
             return Center(child: Text('Error: ${snapshot.error}'));
           } else if (snapshot.data == true) {
-            return const CraftAStoryApphome(); // Navigate to your home page
+            return CraftAStoryApphome();
+           // Navigate to your home page
           }else{
             return Onboarding(); // Navigate to your onboarding page
           }

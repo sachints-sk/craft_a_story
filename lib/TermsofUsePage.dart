@@ -5,22 +5,22 @@ class TermsOfUsePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+
       appBar: AppBar(
         title: Text("Terms of Use",
           style: GoogleFonts.blinker(
-            textStyle: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: Colors.black87, fontSize: 24),
+            textStyle: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold,  fontSize: 24),
           ),),
         leading: Padding(
           padding: const EdgeInsets.only(left: 16.0),
           child: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.black87),
+            icon: const Icon(Icons.arrow_back, ),
             onPressed: () {
               Navigator.pop(context);
             },
           ),
         ),
-        backgroundColor: Colors.grey[50],
+
         elevation: 0,
       ),
       body: Padding(
@@ -155,7 +155,7 @@ class TermsOfUsePage extends StatelessWidget {
           style: GoogleFonts.montserrat(
             textStyle: Theme.of(context).textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w500,
-              color: Colors.black87,
+
             ),
           ),
         ),
@@ -163,11 +163,11 @@ class TermsOfUsePage extends StatelessWidget {
         Text(
           content,
           style: GoogleFonts.montserrat(
-            textStyle:  const TextStyle(fontSize: 14, height: 1.5, color: Colors.black87),
+            textStyle:  const TextStyle(fontSize: 14, height: 1.5, ),
           ),
         ),
         const SizedBox(height: 10),
-        const Divider(height: 1, thickness: 1, color: Colors.black12,),
+        const Divider(height: 1, thickness: 1, ),
       ],
     );
   }

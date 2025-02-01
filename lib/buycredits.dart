@@ -6,6 +6,9 @@ import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'CreditsBalanceCard.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 
 class PurchaseCreditsPage extends StatefulWidget {
@@ -22,6 +25,9 @@ class _PurchaseCreditsPageState extends State<PurchaseCreditsPage> {
   bool _isPurchasing = false; // Track purchase process
   bool _isLoading = true; // Track initial product loading
   late StreamSubscription<List<PurchaseDetails>> _subscription;
+  RewardedAd? _rewardedAd;
+  final String adUnitId = 'ca-app-pub-7424152248887728/9532778651';
+
 
   @override
   void initState() {
@@ -42,7 +48,69 @@ class _PurchaseCreditsPageState extends State<PurchaseCreditsPage> {
 
     // Initialize and load products
     _initIAP();
+    _loadRewardedAd();
   }
+
+  // Function to load the rewarded ad with SSV (userId)
+  void _loadRewardedAd() {
+    RewardedAd.load(
+      adUnitId: adUnitId,
+      request: AdRequest(),
+      rewardedAdLoadCallback: RewardedAdLoadCallback(
+        onAdLoaded: (RewardedAd ad) {
+          setState(() {
+            _rewardedAd = ad;
+          });
+          print("Rewarded Ad Loaded");
+
+          // Set userId for Server-Side Verification (SSV)
+          ad.setImmersiveMode(true); // Optional: Enables full-screen immersive mode
+          ad.setServerSideOptions(ServerSideVerificationOptions(userId: _getFirebaseUID()));
+
+        },
+        onAdFailedToLoad: (LoadAdError error) {
+          print("Rewarded Ad Failed to Load: ${error.message}");
+        },
+      ),
+    );
+  }
+
+  // Function to show the rewarded ad
+  void _showRewardedAd() {
+    if (_rewardedAd != null) {
+      _rewardedAd!.fullScreenContentCallback = FullScreenContentCallback(
+        onAdDismissedFullScreenContent: (RewardedAd ad) {
+          print("Rewarded Ad Dismissed");
+
+          ad.dispose();
+          _loadRewardedAd(); // Load a new ad after the previous one is dismissed
+        },
+        onAdFailedToShowFullScreenContent: (RewardedAd ad, AdError error) {
+          print("Failed to show ad: ${error.message}");
+          ad.dispose();
+          _loadRewardedAd();
+        },
+      );
+
+      _rewardedAd!.setServerSideOptions(
+        ServerSideVerificationOptions(userId: _getFirebaseUID()),
+      );
+
+
+      _rewardedAd!.show(
+        onUserEarnedReward: (AdWithoutView ad, RewardItem reward) {
+          print("User earned reward: ${reward.amount} ${reward.type}");
+          // You can give the user their reward here, e.g., unlocking content
+        },
+      );
+
+      _rewardedAd = null; // Set ad to null to prevent re-use
+    } else {
+      print("Ad not ready yet");
+    }
+  }
+
+
 
   Future<void> _initIAP() async {
     // Check for availability
@@ -60,7 +128,7 @@ class _PurchaseCreditsPageState extends State<PurchaseCreditsPage> {
   Future<void> _loadProducts() async {
     Set<String> productIds = {
       '40_credits',
-      "100_credits",
+      '100_credits',
       '200_credit',
 
     };
@@ -90,6 +158,12 @@ class _PurchaseCreditsPageState extends State<PurchaseCreditsPage> {
     setState(() {
       _isPurchasing = true; // Set purchasing state
     });
+  }
+
+  // Function to get the Firebase UID
+  String _getFirebaseUID() {
+    User? user = FirebaseAuth.instance.currentUser;
+    return user?.uid ?? "default_uid"; // Use "default_uid" if user is not signed in
   }
 
   // Handle purchase updates
@@ -212,6 +286,7 @@ class _PurchaseCreditsPageState extends State<PurchaseCreditsPage> {
   @override
   void dispose() {
     _subscription.cancel(); // Cancel the listener
+    _rewardedAd?.dispose();
     super.dispose();
   }
 
@@ -223,14 +298,18 @@ class _PurchaseCreditsPageState extends State<PurchaseCreditsPage> {
       appBar: AppBar(centerTitle: true,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_rounded, color: Colors.black),
+          icon:  Icon(Icons.arrow_back_ios_rounded, color: Theme.of(context).brightness == Brightness.dark
+        ? Colors.white
+        : Colors.black, ),
           onPressed: () {
             Navigator.pop(context);
           },
         ),
-        title: const Text("Purchase Credits",
+        title:  Text("Shop Credits",
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+            style: TextStyle(color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.white
+                : Colors.black, fontWeight: FontWeight.bold)),
       ),
       body:  _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -241,10 +320,13 @@ class _PurchaseCreditsPageState extends State<PurchaseCreditsPage> {
           children: [
             // Current Balance Card
           //  _buildBalanceCard(balance: 25), // Replace with actual balance
-            const SizedBox(height: 2),
 
+            _buildBalanceCard(),
+            const SizedBox(height: 10),
+            watchad(),
+            const SizedBox(height: 18),
              Text(
-              'Select a package to create more stories!',
+              'Buy More Credits!',
                style: GoogleFonts.poppins(
                  fontWeight: FontWeight.w700, // Use Bold 700
                  fontSize: 24,                // Font size example
@@ -301,41 +383,147 @@ class _PurchaseCreditsPageState extends State<PurchaseCreditsPage> {
       ),
     );
   }
-
-  Widget _buildBalanceCard({required int balance}) {
-    return Card(
-      elevation: 3,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10),
+Widget watchad(){
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(10.0),
+          border: Border.all(color: const Color(0xFFFFD700), width: 2.0)
       ),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Icon(Icons.star, color: Colors.yellow, size: 30),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Your Balance',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
+      child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                const SizedBox(width: 10),
+                Image.asset('assets/coin.png',
+                    height: 65,
+                    width: 65),
+                const SizedBox(width: 20),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        'Get Free Credits',
+                        style: TextStyle(
+                            fontSize: 20.0,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black),
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                          'Watch a short video ad to earn 2 free Credits instantly!',
+                          style: TextStyle(
+                              fontSize: 14.0,
+                              color: Colors.black54)),
+                      const SizedBox(height: 10),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: _rewardedAd != null ? _showRewardedAd : null,
+                          style: ElevatedButton.styleFrom(
+                              backgroundColor: Color(0xFF010137),
+                              padding: const EdgeInsets.symmetric(vertical: 12)
+                          ),
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.play_arrow, color: Colors.white, size: 20,),
+                              SizedBox(width: 8,),
+                              Text(
+                                'Watch Ad',
+                                style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold),
+                              )
+                            ],),
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '$balance Credits', // Display the balance
-                    style: const TextStyle(fontSize: 18),
-                  ),
-                ],
+                ),
+              ])
+      ),
+    );
+}
+  Widget _buildBalanceCard() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 18.0),
+      decoration: BoxDecoration(
+          gradient: const LinearGradient(
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+              colors: [
+                Color(0xFF00001E),
+                Color(0xFF17148E),
+              ]),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.monetization_on, // You can change to your specific coin icon
+                color: Colors.yellow,
+                size: 30.0,
               ),
-            ),
-          ],
-        ),
+              const SizedBox(width: 10.0),
+              const Text(
+                'Your Balance',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          StreamBuilder<DocumentSnapshot>(
+            stream: FirebaseFirestore.instance
+                .collection('users')
+                .doc(FirebaseAuth.instance.currentUser?.uid)
+                .snapshots(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Text(
+                  '...',
+                  style: TextStyle(color: Colors.white, fontSize: 22 ,  fontWeight: FontWeight.bold),
+                );
+              }
+
+              if (snapshot.hasError) {
+                return const Text(
+                  'Error',
+                  style: TextStyle(color: Colors.red, fontSize: 16),
+                );
+              }
+              if (snapshot.hasData && snapshot.data != null) {
+                final userData = snapshot.data!.data() as Map<String, dynamic>?;
+                final userCredits = userData?['credits'] ?? 0;
+
+                return Text(
+                  '$userCredits',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
+                );
+              }
+
+              return const Text(
+                '0',
+                style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+              );
+            },
+          ),
+        ],
       ),
     );
   }
@@ -355,7 +543,9 @@ class _PurchaseCreditsPageState extends State<PurchaseCreditsPage> {
     final currencySymbol = NumberFormat.simpleCurrency(name: product.currencyCode).currencySymbol;
     return Card(
       elevation: 3,
-      color: Colors.white,
+      color: Theme.of(context).brightness == Brightness.dark
+          ? Colors.white
+          : Colors.white,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10),
       ),
@@ -385,6 +575,7 @@ class _PurchaseCreditsPageState extends State<PurchaseCreditsPage> {
                         style: GoogleFonts.poppins( // Apply GoogleFonts here
                           fontWeight: FontWeight.w700,
                           fontSize: 18,
+                          color: Colors.black
                         ),
                       ),
                       const SizedBox(height: 4),

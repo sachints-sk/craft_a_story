@@ -6,22 +6,22 @@ class PremiumPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+
       appBar: AppBar(
         title: Text("Premium Member",
           style: GoogleFonts.blinker(
-            textStyle: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: Colors.black87, fontSize: 24),
+            textStyle: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold,  fontSize: 24),
           ),),
         leading: Padding(
           padding: const EdgeInsets.only(left: 16.0),
           child: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.black87),
+            icon: const Icon(Icons.arrow_back, ),
             onPressed: () {
               Navigator.pop(context);
             },
           ),
         ),
-        backgroundColor: Colors.grey[50],
+
         elevation: 0,
       ),
       body: Center(
@@ -49,7 +49,7 @@ class PremiumPage extends StatelessWidget {
               Text(
                 "Welcome to Premium!",
                 style: GoogleFonts.montserrat(
-                  textStyle: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, fontSize: 28, color: Colors.black87),
+                  textStyle: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, fontSize: 28, ),
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -57,7 +57,7 @@ class PremiumPage extends StatelessWidget {
               Text(
                 "Thank you for supporting us! You are now enjoying a truly unlimited creative experience.",
                 style: GoogleFonts.montserrat(
-                  textStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 16, color: Colors.black54),
+                  textStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 16, ),
                 ),
                 textAlign: TextAlign.center,
               ),

@@ -7,9 +7,7 @@ import 'package:page_transition/page_transition.dart';
 class CharacterDetailsInputScreen extends StatefulWidget {
   final String title;
 
-
   const CharacterDetailsInputScreen({Key? key, required this.title}) : super(key: key);
-
 
   @override
   _CharacterDetailsInputScreenState createState() => _CharacterDetailsInputScreenState();
@@ -21,9 +19,6 @@ class _CharacterDetailsInputScreenState extends State<CharacterDetailsInputScree
   final _formKey = GlobalKey<FormState>();
   String _selectedGender = 'Boy';
   bool _submitted = false;
-
-
-
 
   @override
   void dispose() {
@@ -60,7 +55,7 @@ class _CharacterDetailsInputScreenState extends State<CharacterDetailsInputScree
                 icon: Icon(Icons.female),
               ),
             ],
-            selected: {_selectedGender },
+            selected: {_selectedGender},
             onSelectionChanged: (Set<String> newSelection) {
               setState(() {
                 _selectedGender = newSelection.first;
@@ -89,138 +84,147 @@ class _CharacterDetailsInputScreenState extends State<CharacterDetailsInputScree
       ],
     );
   }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFF0F4F7),
-              Color(0xFFFFFFFF),
-            ],
-          ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 30.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(height: 10),
-                Center(
-                  child: RoundedImage(imagePath: 'assets/image04.png'),
-                ),
-                SizedBox(height: 20),
-                Text(
-                  "Craft Your Main Character",
-                  style: GoogleFonts.poppins(
-                    textStyle: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w600,
-                      color: const Color(0xFF1A2259),
+    return Theme(
+      data: ThemeData.light(), // Override theme to light
+      child: Scaffold(
+        body: SingleChildScrollView( // Wrap the body in SingleChildScrollView to handle keyboard overlay
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Color(0xFFF0F4F7),
+                  Color(0xFFFFFFFF),
+                ],
+              ),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 30.0),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(height: 10),
+                    Center(
+                      child: RoundedImage(imagePath: 'assets/image04.png'),
                     ),
-                  ),
-                ),
-                SizedBox(height: 10),
-                Text(
-                  "Let's bring your character to life!",
-                  style: GoogleFonts.poppins(
-                    textStyle: TextStyle(fontSize: 18, color: Colors.grey[600]),
-                  ),
-                ),
-                SizedBox(height: 20),
-                TextFormField(
-                    controller: _nameController,
-                    decoration: InputDecoration(
-                      labelText: 'Character Name',
-                      labelStyle: GoogleFonts.poppins(),
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(15),
-                          borderSide: BorderSide(color: Color(0xFF1A2259).withOpacity(0.4))
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(15),
-                          borderSide: BorderSide(color: Color(0xFF1A2259))
+                    SizedBox(height: 20),
+                    Text(
+                      "Craft Your Main Character",
+                      style: GoogleFonts.poppins(
+                        textStyle: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF1A2259),
+                        ),
                       ),
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return "Please enter the character name";
-                      }
-                      return null;
-                    }
-                ),
-                SizedBox(height: 10),
-                TextFormField(
-                    controller: _ageController,
-                    decoration: InputDecoration(
+                    SizedBox(height: 10),
+                    Text(
+                      "Let's bring your character to life!",
+                      style: GoogleFonts.poppins(
+                        textStyle: TextStyle(fontSize: 18, color: Colors.grey[600]),
+                      ),
+                    ),
+                    SizedBox(height: 20),
+                    TextFormField(
+                      controller: _nameController,
+                      decoration: InputDecoration(
+                        labelText: 'Character Name',
+                        labelStyle: GoogleFonts.poppins(),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(15),
+                          borderSide: BorderSide(color: Color(0xFF1A2259).withOpacity(0.4)),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(15),
+                          borderSide: BorderSide(color: Color(0xFF1A2259)),
+                        ),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return "Please enter the character name";
+                        }
+                        return null;
+                      },
+                    ),
+                    SizedBox(height: 10),
+                    TextFormField(
+                      controller: _ageController,
+                      decoration: InputDecoration(
                         labelText: 'Character Age',
                         labelStyle: GoogleFonts.poppins(),
                         border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(15),
-                            borderSide: BorderSide(color: Color(0xFF1A2259).withOpacity(0.4))
+                          borderRadius: BorderRadius.circular(15),
+                          borderSide: BorderSide(color: Color(0xFF1A2259).withOpacity(0.4)),
                         ),
                         focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(15),
-                            borderSide: BorderSide(color: Color(0xFF1A2259))
-                        )
+                          borderRadius: BorderRadius.circular(15),
+                          borderSide: BorderSide(color: Color(0xFF1A2259)),
+                        ),
+                      ),
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return "Please enter the character age";
+                        }
+                        if (int.tryParse(value) == null) {
+                          return 'Please enter a valid age';
+                        }
+                        return null;
+                      },
                     ),
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return "Please enter the character age";
-                      }
-                      if (int.tryParse(value) == null) {
-                        return 'Please enter a valid age';
-                      }
-                      return null;
-                    }
-                ),
-                SizedBox(height: 10),
-                _buildGenderSegmentedButton(),
-                SizedBox(height: 20),
-
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: (){
-                      setState(() {
-                        _submitted = true;
-                      });
-                      if(_formKey.currentState!.validate() && _selectedGender != null){
-                      //  Navigator.pushNamed(context, '/story-settings');
-                        Navigator.push(
-                          context,
-                          PageTransition(
-                            type: PageTransitionType.rightToLeft,
-                            child:  StorySettingsScreen(title: widget.title,name: _nameController.text,Age: _ageController.text,gender: _selectedGender),
+                    SizedBox(height: 10),
+                    _buildGenderSegmentedButton(),
+                    SizedBox(height: 20),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          setState(() {
+                            _submitted = true;
+                          });
+                          if (_formKey.currentState!.validate() && _selectedGender != null) {
+                            Navigator.push(
+                              context,
+                              PageTransition(
+                                type: PageTransitionType.rightToLeft,
+                                child: StorySettingsScreen(
+                                  title: widget.title,
+                                  name: _nameController.text,
+                                  Age: _ageController.text,
+                                  gender: _selectedGender,
+                                ),
+                              ),
+                            );
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF1A2259),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          textStyle: const TextStyle(fontSize: 18),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                        ),
+                        child: Text(
+                          "Next",
+                          style: GoogleFonts.poppins(
+                            textStyle: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
-                        );
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor:  const Color(0xFF1A2259),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      textStyle: const TextStyle(fontSize: 18),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(25)),
-                    ),
-                    child: Text(
-                      "Next",
-                      style: GoogleFonts.poppins(
-                        textStyle: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600),
+                        ),
                       ),
                     ),
-                  ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ),
@@ -228,7 +232,6 @@ class _CharacterDetailsInputScreenState extends State<CharacterDetailsInputScree
     );
   }
 }
-
 
 class RoundedImage extends StatelessWidget {
   final String imagePath;

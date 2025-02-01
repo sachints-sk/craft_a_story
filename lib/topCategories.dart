@@ -25,7 +25,7 @@ class _TopcategoriesState extends State<Topcategories> {
         centerTitle: true,
         title: Text(
           widget.selectedCategory, // Display the selected category
-          style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+          style: const TextStyle( fontWeight: FontWeight.bold),
         ),
       ),
       body: Padding(
@@ -118,21 +118,21 @@ class _TopcategoriesState extends State<Topcategories> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: Hero(tag: story.coverImageUrl, child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Stack(
-                    children: [
-                      Positioned.fill(
-                        child: Image.network(
-                          story.coverImageUrl,
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),)
+                child:  Container(
+          decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: Image.network(
+                story.coverImageUrl,
+                fit: BoxFit.cover,
+              ),
+            ),
+          ],
+        ),
+      ),
               ),
               const SizedBox(height: 8),
               Text(
@@ -140,7 +140,7 @@ class _TopcategoriesState extends State<Topcategories> {
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 14,
-                  color: Colors.black,
+
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,

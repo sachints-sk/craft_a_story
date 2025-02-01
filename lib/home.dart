@@ -11,6 +11,7 @@ import 'dart:io';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:purchases_ui_flutter/purchases_ui_flutter.dart';
 import 'CustompayWall.dart';
+import 'Services/initialization_helper.dart';
 
 void main() {
   runApp(const CraftAStoryApphome());
@@ -27,6 +28,7 @@ class _CraftAStoryApphomeState extends State<CraftAStoryApphome> {
   int _selectedIndex = 0; // Index of the currently selected tab
   bool _subscribed = false;
   void Function(CustomerInfo)? _customerInfoListener;
+  final _initializationHelper = InitializationHelper();
 
 
   // Callback function to change the selected tab index
@@ -43,6 +45,7 @@ class _CraftAStoryApphomeState extends State<CraftAStoryApphome> {
   void initState() {
     super.initState();
     _setupIsPro();
+    _initializeUMP_SDK();
 
   }
 
@@ -53,6 +56,16 @@ class _CraftAStoryApphomeState extends State<CraftAStoryApphome> {
     }
 
     super.dispose();
+  }
+
+
+  Future<void> _initializeUMP_SDK() async {
+    final navigator = Navigator.of(context);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _initializationHelper.initialize();
+
+    });
   }
 
   Future<void> _setupIsPro() async {
@@ -93,15 +106,16 @@ class _CraftAStoryApphomeState extends State<CraftAStoryApphome> {
     ];
 
     return Scaffold(
-      backgroundColor: Colors.white, // Set the background color
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor, // Dynamically set the background color
       body: _pages[_selectedIndex], // Display the selected tab's content
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
         onDestinationSelected: (index) {
-          if(mounted)
-          setState(() {
-            _selectedIndex = index;
-          });
+          if (mounted) {
+            setState(() {
+              _selectedIndex = index;
+            });
+          }
         },
         destinations: const [
           NavigationDestination(
@@ -121,9 +135,10 @@ class _CraftAStoryApphomeState extends State<CraftAStoryApphome> {
             label: 'Settings',
           ),
         ],
-        backgroundColor: Colors.white, // Material 3 background color
+        backgroundColor: Theme.of(context).colorScheme.surface, // Dynamically set the navigation bar's background color
         elevation: 3, // Optional: controls the elevation (shadow)
       ),
     );
+
   }
 }

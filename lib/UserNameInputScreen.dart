@@ -66,119 +66,124 @@ class _UserNameInputScreenState extends State<UserNameInputScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFF0F4F7),
-              Color(0xFFFFFFFF),
-            ],
-          ),
-        ),
-        child: Column(
-          children: [
-            SizedBox(height: 40),
-            Expanded(
-              flex: 2,
-              child: Center(
-                child: Stack(
-                    alignment: Alignment.center,
-                    children:[
-                      Lottie.asset(
-                        'assets/welcome.json',
-                        width: 300,
-                        height: 300,
-                        fit: BoxFit.contain,
-                        repeat: false,
-                      ),
-
-                    ]
-                ),
-              ),
+    return Theme(
+      data: ThemeData.light(), // Force the light theme
+      child: Scaffold(
+        body: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Color(0xFFF0F4F7),
+                Color(0xFFFFFFFF),
+              ],
             ),
+          ),
+          child: Column(
+            children: [
+              SizedBox(height: 40),
+              Expanded(
+                flex: 2,
+                child: Center(
+                  child: Stack(
+                      alignment: Alignment.center,
+                      children:[
+                        Lottie.asset(
+                          'assets/welcome.json',
+                          width: 300,
+                          height: 300,
+                          fit: BoxFit.contain,
+                          repeat: false,
+                        ),
 
-            Expanded(
-              flex: 3,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 30.0),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "What's Your Name?",
-                        style: GoogleFonts.poppins(
-                          textStyle: TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF1A2259),
-                          ),
-                        ),
-                      ),
-                      SizedBox(height: 10),
-                      Text(
-                        "Please enter your name to personalize your story creation experience.",
-                        style: GoogleFonts.poppins(
-                          textStyle: TextStyle(fontSize: 16, color: Colors.grey[600]),
-                        ),
-                      ),
-                      SizedBox(height: 20),
-                      TextFormField(
-                        controller: _nameController,
-                        decoration: InputDecoration(
-                          labelText: 'Your Name',
-                          labelStyle: GoogleFonts.poppins(),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(15),
-                              borderSide: BorderSide(color: Color(0xFF1A2259).withOpacity(0.4))
-                          ),
-                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15),
-                              borderSide: BorderSide(color: Color(0xFF1A2259))
-                          ),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return "Please enter your name.";
-                          }
-                          return null;
-                        },
-                      ),
-                      SizedBox(height: 30),
-                      SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: _isLoading ? null : () {
-                              if (_formKey.currentState!.validate()) {
-                                _saveNameToFirestore();
-                              }
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor:  const Color(0xFF1A2259),
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              textStyle: const TextStyle(fontSize: 18),
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(25)),
-                            ),
-                            child: _isLoading ?  CircularProgressIndicator()
-                                : Text("Continue",
-                                style: GoogleFonts.poppins(
-                                  textStyle: TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w600),
-                                )),
-                          ))
-                    ],
+                      ]
                   ),
                 ),
               ),
-            ),
-          ],
+
+              Expanded(
+                flex: 3,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 30.0),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "What's Your Name?",
+                          style: GoogleFonts.poppins(
+                            textStyle: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF1A2259),
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: 10),
+                        Text(
+                          "Please enter your name to personalize your story creation experience.",
+                          style: GoogleFonts.poppins(
+                            textStyle: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                          ),
+                        ),
+                        SizedBox(height: 20),
+                        TextFormField(
+                          controller: _nameController,
+                          decoration: InputDecoration(
+                            labelText: 'Your Name',
+                            labelStyle: GoogleFonts.poppins(),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(15),
+                                borderSide: BorderSide(color: Color(0xFF1A2259).withOpacity(0.4))
+                            ),
+                            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15),
+                                borderSide: BorderSide(color: Color(0xFF1A2259))
+                            ),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return "Please enter your name.";
+                            }
+                            return null;
+                          },
+                        ),
+                        SizedBox(height: 30),
+                        SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: _isLoading ? null : () {
+                                if (_formKey.currentState!.validate()) {
+                                  _saveNameToFirestore();
+                                }
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor:  const Color(0xFF1A2259),
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                textStyle: const TextStyle(fontSize: 18),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(25)),
+                              ),
+                              child: _isLoading ?  CircularProgressIndicator()
+                                  : Text("Continue",
+                                  style: GoogleFonts.poppins(
+                                    textStyle: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w600),
+                                  )),
+                            ))
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
+
+

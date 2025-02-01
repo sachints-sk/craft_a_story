@@ -26,6 +26,11 @@ import 'newaudioplayer.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:giffy_dialog/giffy_dialog.dart';
 import 'buycredits.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
+import 'Services/ProcessingPage_banner_ad_widget.dart';
+import 'package:purchases_flutter/purchases_flutter.dart';
+import 'package:purchases_ui_flutter/purchases_ui_flutter.dart';
+
 
 class ProcessingPageAudioUserCreatedStory extends StatefulWidget {
   final String story; // Receive the prompt
@@ -68,21 +73,37 @@ class _ProcessingPageAudioUserCreatedStoryState extends State<ProcessingPageAudi
   bool _isStoredAudioAvailable = false;
   String _storedAudioPath="";
   final user = FirebaseAuth.instance.currentUser;
+  bool _subscribed = false;
+  late final void Function(CustomerInfo) _customerInfoListener;
 
 
   @override
   void initState() {
     super.initState();
     _processStory(); // Start processing the story as soon as the page loads
+    _setupIsPro();
+
   }
 
   @override
   void dispose() {
     _timer?.cancel();
+    Purchases.removeCustomerInfoUpdateListener(_customerInfoListener);
 
     super.dispose();
   }
 
+  Future<void> _setupIsPro() async {
+    _customerInfoListener = (CustomerInfo customerInfo) {
+      EntitlementInfo? entitlement = customerInfo.entitlements.all['Premium'];
+      if (mounted) {
+        setState(() {
+          _subscribed = entitlement?.isActive ?? false;
+        });
+      }
+    };
+    Purchases.addCustomerInfoUpdateListener(_customerInfoListener);
+  }
 
   Future<bool> canCreateStory(String userId, int requiredCredits) async {
     try {
@@ -116,6 +137,12 @@ class _ProcessingPageAudioUserCreatedStoryState extends State<ProcessingPageAudi
   Future<void> _processStory() async {
     Trace customTrace = FirebasePerformance.instance.newTrace('Create-audio-Story');
     await customTrace.start();
+    await FirebaseAnalytics.instance.logEvent(
+      name: 'Story_Created_UserCreatedAudio',
+      parameters: {
+        'user_email':user!.email.toString(),
+      },
+    );
     try {
       setState(() {
         _statusText = "Creating Audio...";
@@ -678,7 +705,7 @@ class _ProcessingPageAudioUserCreatedStoryState extends State<ProcessingPageAudi
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(20.0),
@@ -704,7 +731,7 @@ class _ProcessingPageAudioUserCreatedStoryState extends State<ProcessingPageAudi
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 16,
-                  color: Colors.black,
+
                 ),
               ),
               const SizedBox(height: 10),
@@ -741,6 +768,11 @@ class _ProcessingPageAudioUserCreatedStoryState extends State<ProcessingPageAudi
           ),
         ),
       ),
+      bottomNavigationBar: !_subscribed
+          ? Container(
+        child: BannerAdWidget(),
+      )
+          : null,
     );
   }
 }

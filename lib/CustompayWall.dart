@@ -75,7 +75,7 @@ class _PaywallPageState extends State<PaywallPage> {
                   height: MediaQuery.of(context).size.height * 0.30,
                   decoration: BoxDecoration(
                     image: DecorationImage(
-                      image: AssetImage('assets/img001.png'),
+                      image: AssetImage('assets/paywallimage.png'),
                       fit: BoxFit.cover,
                     ),
                   ),
@@ -92,15 +92,15 @@ class _PaywallPageState extends State<PaywallPage> {
                           Text(
                             "Experience Storytelling Like Never Before with Premium!",
                             style: TextStyle(
-                              fontSize: 24,
+                              fontSize: 26,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                           const SizedBox(height: 10),
-                          featureRow("Extra Credits for Crafting Stories."),
-                          featureRow("Multi-language story generation."),
-                          featureRow("High-quality premium voices."),
-                          featureRow("Full access to our entire story collection."),
+                          featureRow("💎   Extra Credits for Crafting Stories."),
+                          featureRow("🌍   Multi-language story generation."),
+                          featureRow("🎙️   High-quality premium voices."),
+                          featureRow("✨   Enjoy an ad-free experience"),
                           const SizedBox(height: 20),
                           // Subscription Options
                           if (monthlyPackage != null)
@@ -145,7 +145,7 @@ class _PaywallPageState extends State<PaywallPage> {
                             child: Center(
                               child: Text(
                                 "Continue",
-                                style: TextStyle(fontSize: 18, color: Colors.white),
+                                style: TextStyle(fontSize: 20,fontWeight: FontWeight.bold, color: Colors.white),
                               ),
                             ),
                           ),
@@ -220,8 +220,7 @@ class _PaywallPageState extends State<PaywallPage> {
   Widget featureRow(String text) {
     return Row(
       children: [
-        Icon(Icons.check, color: const Color(0xFF1A2259)),
-        const SizedBox(width: 10),
+
         Expanded(
           child: Text(
             text,
@@ -274,6 +273,7 @@ class _PaywallPageState extends State<PaywallPage> {
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
+                        color: Colors.black
                       ),
                     ),
                   ],

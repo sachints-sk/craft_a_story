@@ -11,6 +11,13 @@ import 'package:animated_toggle_switch/animated_toggle_switch.dart';
 import 'package:audio_waveforms/audio_waveforms.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'Services/Review_services.dart';
+import 'Services/StoryExplorer_banner_ad_widget.dart';
+import 'package:purchases_flutter/purchases_flutter.dart';
+import 'package:purchases_ui_flutter/purchases_ui_flutter.dart';
+
+
 
 
 
@@ -32,13 +39,15 @@ class _ViewSavedStoryPageState extends State<ViewSavedStoryPage> {
   bool isToggled= true;
   bool _isDownloading = false;
   bool _isDownloading2 = false;
-
+  bool _subscribed = false;
+  late final void Function(CustomerInfo) _customerInfoListener;
   String _localAudioPath="";
   double _currentVolume = 1.0;
   bool isPlaying = false;
-
+  String username ="";
   int likeCount = 0;
   bool isLiked = false;
+  final user = FirebaseAuth.instance.currentUser;
 
   @override
   void initState() {
@@ -47,15 +56,20 @@ class _ViewSavedStoryPageState extends State<ViewSavedStoryPage> {
     _fetchLikeStatus();
     _audioController = PlayerController();
     _audioController.playerState == PlayerState.playing ? isPlaying = true : isPlaying = false;
-
+    getusername();
     // Log the event that the story was viewed
     FirebaseAnalytics.instance.logEvent(
       name: 'story_viewed',
       parameters: {
         'story_id': widget.storyData.storyId,
         'story_title': widget.storyData.title,
+        'user_id':username,
+        'user_email':user!.email.toString(),
       },
     );
+    _setupIsPro();
+
+    _onStoryViewed();
   }
 
   @override
@@ -63,14 +77,31 @@ class _ViewSavedStoryPageState extends State<ViewSavedStoryPage> {
     _videoPlayerController?.dispose();
     _audioController.dispose();
     _chewieController?.dispose();
+    Purchases.removeCustomerInfoUpdateListener(_customerInfoListener);
     super.dispose();
+  }
+  Future<void> getusername() async{
+    final user = FirebaseAuth.instance.currentUser;
+    username= user!.uid;
+
+  }
+  Future<void> _setupIsPro() async {
+    _customerInfoListener = (CustomerInfo customerInfo) {
+      EntitlementInfo? entitlement = customerInfo.entitlements.all['Premium'];
+      if (mounted) {
+        setState(() {
+          _subscribed = entitlement?.isActive ?? false;
+        });
+      }
+    };
+    Purchases.addCustomerInfoUpdateListener(_customerInfoListener!);
   }
 
   Future<void> _downloadAndPlayAudio() async {
     setState(() {
       _isDownloading = true;
     });
-
+    _onStoryViewed();
     try {
       final localAudioPath =
       await _getLocalFilePath2('audio_${widget.storyData.storyId}.mp3');
@@ -253,6 +284,14 @@ class _ViewSavedStoryPageState extends State<ViewSavedStoryPage> {
 
   }
 
+  void _onStoryViewed() async {
+    print("onStoryViewed");
+    // This should be called when the user creates their first story
+    await AppPreferences.setFirstStoryCreated(true);
+
+
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -313,6 +352,8 @@ class _ViewSavedStoryPageState extends State<ViewSavedStoryPage> {
           body: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              if(!_subscribed)
+              BannerAdWidget(),
               // Video Player or Cover Image Section
               if(isToggled)
                 Stack(
@@ -324,18 +365,15 @@ class _ViewSavedStoryPageState extends State<ViewSavedStoryPage> {
                           ? (_isVideoInitialized
                           ? Chewie(controller: _chewieController!)
                           : const Center(child: CircularProgressIndicator()))
-                          : Hero(
-                        tag: widget.storyData.coverImageUrl, // Use the same unique tag
-                        child: Image.network(
-                          widget.storyData.coverImageUrl,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Image.asset(
-                              'assets/testimage.png',
-                              fit: BoxFit.cover,
-                            );
-                          },
-                        ),
+                          : Image.network(
+                        widget.storyData.coverImageUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Image.asset(
+                            'assets/testimage.png',
+                            fit: BoxFit.cover,
+                          );
+                        },
                       ),
 
                     ),
@@ -422,7 +460,10 @@ class _ViewSavedStoryPageState extends State<ViewSavedStoryPage> {
                           iconSize: 78,
                           icon: Icon(
                             isPlaying ? Icons.pause_circle : Icons.play_circle,
-                            color: const Color(0xFF1A2259),
+                            color: Theme.of(context).brightness == Brightness.dark
+                                ? Colors.white // Dark mode text color
+                                : const Color(0xFF1A2259),
+
                           ),
                           onPressed: () async {
                             if (isPlaying) {
@@ -511,7 +552,7 @@ class _ViewSavedStoryPageState extends State<ViewSavedStoryPage> {
                 style: const TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black,
+
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
@@ -524,7 +565,10 @@ class _ViewSavedStoryPageState extends State<ViewSavedStoryPage> {
             onPressed: _toggleLike,
             icon: Icon(
             isLiked ? Icons.thumb_up : Icons.thumb_up_alt_outlined,
-            color: isLiked ? Colors.blue : Colors.black87,
+            color: isLiked ? Colors.blue : Theme.of(context).brightness == Brightness.dark
+                ? Colors.white // Dark mode text color
+                : Colors.black87,
+
             size: 28,
             ),
             ),
@@ -536,7 +580,9 @@ class _ViewSavedStoryPageState extends State<ViewSavedStoryPage> {
             ),
             ),
               IconButton(
-                icon: const Icon(Icons.share, color: Colors.black87,  ),
+                icon: Icon(Icons.share, color: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.white // Dark mode text color
+                    : Colors.black87,  ),
                 onPressed: _shareStory,
               ),
             ],
@@ -620,7 +666,7 @@ class _ViewSavedStoryPageState extends State<ViewSavedStoryPage> {
           storyData.description,
           style: const TextStyle(
             fontSize: 16,
-            color: Colors.black,
+
           ),
         ),
         const SizedBox(height: 20),

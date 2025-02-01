@@ -8,6 +8,10 @@ import 'package:path_provider/path_provider.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:audio_waveforms/audio_waveforms.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:purchases_flutter/purchases_flutter.dart';
+import 'package:purchases_ui_flutter/purchases_ui_flutter.dart';
+import 'Services/banner_ad_widget.dart';
+
 
 class NewAudioPlayer extends StatefulWidget {
   final String title;
@@ -42,6 +46,9 @@ class _NewAudioPlayerState extends State<NewAudioPlayer> {
   String _saveText = "Save your story to access it later.";
   final firestore = FirebaseFirestore.instance;
   String username ="";
+  bool _subscribed = false;
+  late final void Function(CustomerInfo) _customerInfoListener;
+
 
   @override
   void initState() {
@@ -49,12 +56,14 @@ class _NewAudioPlayerState extends State<NewAudioPlayer> {
 
     _initializePlayer();
     getusername();
+    _setupIsPro();
   }
 
   @override
   void dispose() {
 
     controller.dispose();
+    Purchases.removeCustomerInfoUpdateListener(_customerInfoListener);
 
     super.dispose();
   }
@@ -64,6 +73,20 @@ class _NewAudioPlayerState extends State<NewAudioPlayer> {
     username= user!.uid;
 
   }
+
+
+  Future<void> _setupIsPro() async {
+    _customerInfoListener = (CustomerInfo customerInfo) {
+      EntitlementInfo? entitlement = customerInfo.entitlements.all['Premium'];
+      if (mounted) {
+        setState(() {
+          _subscribed = entitlement?.isActive ?? false;
+        });
+      }
+    };
+    Purchases.addCustomerInfoUpdateListener(_customerInfoListener);
+  }
+
 
   void _playandPause() async {
     controller.playerState == PlayerState.playing
@@ -202,18 +225,22 @@ class _NewAudioPlayerState extends State<NewAudioPlayer> {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.close, color: Colors.black),
+          icon: const Icon(Icons.close, ),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text(
           'Crafted Story',
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+          style: TextStyle( fontWeight: FontWeight.bold),
         ),
       ),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if(!_subscribed)
+              BannerAdWidget(),
+
+
         AudioFileWaveforms(
         size: Size(MediaQuery.of(context).size.width, 200.0),
         playerController: controller,
@@ -299,7 +326,7 @@ class _NewAudioPlayerState extends State<NewAudioPlayer> {
                   Center( // Wrap in Center widget
                     child:  Text(
                       _saveText,
-                      style: const TextStyle(color: const Color(0xFF373636)),
+                      style: const TextStyle(color: Colors.grey),
                     ),
                   ),
                   if (_isUploading) const LinearProgressIndicator(),
@@ -314,14 +341,14 @@ class _NewAudioPlayerState extends State<NewAudioPlayer> {
                           style: const TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
-                            color: Colors.black,
+
                           ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.share, color: Colors.black87,  ),
+                        icon: const Icon(Icons.share,   ),
                         onPressed: _shareStory,
                       ),
                       // Like Button with Count
@@ -383,7 +410,7 @@ class _NewAudioPlayerState extends State<NewAudioPlayer> {
                     widget.description,
                     style: const TextStyle(
                       fontSize: 16,
-                      color: Colors.black,
+
                     ),
                   ),
                   const SizedBox(height: 20),

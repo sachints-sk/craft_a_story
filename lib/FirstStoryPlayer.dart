@@ -84,7 +84,11 @@ class _FirstStoryPlayerState extends State<FirstStoryPlayer> {
   }
 
   Future<void> goHome() async{
-    Provider.of<AuthState>(context, listen: false).updateLoginState(true);
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (context) => CraftAStoryApphome()),
+          (Route<dynamic> route) => false, // Removes all existing routes
+    );
 
   }
   Future<void> _saveStoryToFirebase() async {
@@ -322,71 +326,102 @@ class _FirstStoryPlayerState extends State<FirstStoryPlayer> {
   }
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.close, color: Colors.black,),
-          onPressed: () {
-            goHome();
-          },
+    return Theme(
+      data: ThemeData.light(), // Force the light theme
+      child: Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.close, color: Colors.black,),
+            onPressed: () {
+              goHome();
+            },
+          ),
+          title: Text('Your Crafted Story',
+            style: GoogleFonts.poppins(
+              textStyle: const TextStyle(
+                  color: Colors.black, fontWeight: FontWeight.w600),
+            ),),
+          centerTitle: true,
+          backgroundColor: Colors.transparent,
+          elevation: 0,
         ),
-        title: Text('Your Crafted Story',
-          style: GoogleFonts.poppins(
-            textStyle: const TextStyle(
-                color: Colors.black, fontWeight: FontWeight.w600),
-          ),),
-        centerTitle: true,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _chewieController != null &&
-                _videoPlayerController.value.isInitialized
-                ? AspectRatio(
-              aspectRatio: 1,
-              child: Chewie(
-                controller: _chewieController!,
+        body: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _chewieController != null &&
+                  _videoPlayerController.value.isInitialized
+                  ? AspectRatio(
+                aspectRatio: 1,
+                child: Chewie(
+                  controller: _chewieController!,
+                ),
+              )
+                  : const Center(
+                child: CircularProgressIndicator(),
               ),
-            )
-                : const Center(
-              child: CircularProgressIndicator(),
-            ),
-            const SizedBox(height: 10),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: _isUploading ? null : () {
-                        _saveStoryToFirebase();
-                      },
-                      icon: const Icon(Icons.save, color: Colors.black,),
-                      label: Text('Save Story', style: GoogleFonts.poppins(
-                        textStyle: const TextStyle(color: Colors.black),
-                      )),
-                      style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          backgroundColor: Colors.grey.shade200,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25))
-                      ),
-                    ),
-                  ),
-
-                  if(username=="DYxrS1A8UuM0y1AOoA99yTIGTQn2")
+              const SizedBox(height: 10),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(
-                        onPressed: () {
-                          _saveStoryToExplore();
+                        onPressed: _isUploading ? null : () {
+                          _saveStoryToFirebase();
                         },
-                        icon: const Icon(Icons.save, color: Colors.white,),
-                        label: Text('Save to Explore', style: GoogleFonts.poppins(
+                        icon: const Icon(Icons.save, color: Colors.black,),
+                        label: Text('Save Story', style: GoogleFonts.poppins(
+                          textStyle: const TextStyle(color: Colors.black),
+                        )),
+                        style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            backgroundColor: Colors.grey.shade200,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25))
+                        ),
+                      ),
+                    ),
+
+                    if(username=="DYxrS1A8UuM0y1AOoA99yTIGTQn2")
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            _saveStoryToExplore();
+                          },
+                          icon: const Icon(Icons.save, color: Colors.white,),
+                          label: Text('Save to Explore', style: GoogleFonts.poppins(
+                            textStyle: const TextStyle(color: Colors.white),
+                          )),
+                          style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              backgroundColor: const Color(0xFF1A2259),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25))
+                          ),
+                        ),
+                      ),
+                    const SizedBox(height: 4),
+                    Center(
+                      child: Text(
+                        _saveText,
+                        style: GoogleFonts.poppins(
+                          textStyle: const TextStyle(color: Color(0xFF373636)),
+                        ),
+                      ),
+                    ),
+                    if (_isUploading)
+                      const LinearProgressIndicator(),
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: _isUploading ? null : () {
+                          goHome();
+                        },
+                        icon: const Icon(Icons.home, color: Colors.white,),
+                        label: Text('Let\'s Go Home!', style: GoogleFonts.poppins(
                           textStyle: const TextStyle(color: Colors.white),
                         )),
                         style: ElevatedButton.styleFrom(
@@ -396,144 +431,118 @@ class _FirstStoryPlayerState extends State<FirstStoryPlayer> {
                         ),
                       ),
                     ),
-                  const SizedBox(height: 4),
-                  Center(
-                    child: Text(
-                      _saveText,
-                      style: GoogleFonts.poppins(
-                        textStyle: const TextStyle(color: Color(0xFF373636)),
-                      ),
+                    const SizedBox(height: 15),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            widget.title,
+                            style: GoogleFonts.poppins(
+                              textStyle: const TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.black
+                              ),
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        InkWell(
+                          onTap: _shareStory,
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.5),
+                            ),
+                            child: Icon(Icons.share, color: Theme.of(context).colorScheme.onPrimaryContainer,size: 28,),
+                          ),
+                        ),
+
+                      ],
                     ),
-                  ),
-                  if (_isUploading)
-                    const LinearProgressIndicator(),
-                  const SizedBox(height: 10),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: _isUploading ? null : () {
-                        goHome();
-                      },
-                      icon: const Icon(Icons.home, color: Colors.white,),
-                      label: Text('Let\'s Go Home!', style: GoogleFonts.poppins(
-                        textStyle: const TextStyle(color: Colors.white),
-                      )),
-                      style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          backgroundColor: const Color(0xFF1A2259),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25))
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 15),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          widget.title,
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Icon(Icons.category, color: Colors.grey[500], size: 20),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Genre: ',
                           style: GoogleFonts.poppins(
-                            textStyle: const TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.black
+                            textStyle: TextStyle(
+                                fontSize: 16,
+                                color: Colors.grey[500]
                             ),
                           ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                      InkWell(
-                        onTap: _shareStory,
-                        child: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.5),
-                          ),
-                          child: Icon(Icons.share, color: Theme.of(context).colorScheme.onPrimaryContainer,size: 28,),
-                        ),
-                      ),
-
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Icon(Icons.category, color: Colors.grey[500], size: 20),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Genre: ',
-                        style: GoogleFonts.poppins(
-                          textStyle: TextStyle(
+                        Text(
+                          widget.mode,
+                          style: GoogleFonts.poppins(
+                            textStyle: TextStyle(
                               fontSize: 16,
-                              color: Colors.grey[500]
+                              color: Colors.grey[500],
+                            ),
                           ),
                         ),
-                      ),
-                      Text(
-                        widget.mode,
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        Icon(Icons.record_voice_over, color: Colors.grey[500], size: 20),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Voice: ',
+                          style:  GoogleFonts.poppins(
+                            textStyle: TextStyle(
+                              fontSize: 16,
+                              color: Colors.grey[500],
+                            ),
+                          ),
+                        ),
+                        Text(
+                          widget.voice,
+                          style:  GoogleFonts.poppins(
+                            textStyle: TextStyle(
+                              fontSize: 16,
+                              color: Colors.grey[500],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    const Divider(
+                      color: Colors.grey,
+                      thickness: 0.5,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                        widget.description,
                         style: GoogleFonts.poppins(
-                          textStyle: TextStyle(
-                            fontSize: 16,
-                            color: Colors.grey[500],
+                          textStyle: const TextStyle(
+                              fontSize: 16,
+                              color: Colors.black
                           ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      Icon(Icons.record_voice_over, color: Colors.grey[500], size: 20),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Voice: ',
-                        style:  GoogleFonts.poppins(
-                          textStyle: TextStyle(
-                            fontSize: 16,
-                            color: Colors.grey[500],
-                          ),
-                        ),
-                      ),
-                      Text(
-                        widget.voice,
-                        style:  GoogleFonts.poppins(
-                          textStyle: TextStyle(
-                            fontSize: 16,
-                            color: Colors.grey[500],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  const Divider(
-                    color: Colors.grey,
-                    thickness: 0.5,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                      widget.description,
-                      style: GoogleFonts.poppins(
-                        textStyle: const TextStyle(
-                            fontSize: 16,
-                            color: Colors.black
-                        ),
-                      )
-                  ),
+                        )
+                    ),
 
-                  const SizedBox(height: 20),
-                  const Divider(
-                    color: Colors.grey,
-                    thickness: 0.5,
-                  ),
+                    const SizedBox(height: 20),
+                    const Divider(
+                      color: Colors.grey,
+                      thickness: 0.5,
+                    ),
 
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 }
+
+

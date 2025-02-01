@@ -98,6 +98,112 @@ class _StorageSettingsPageState extends State<StorageSettingsPage> {
     );
   }
 
+  Widget _StorageCard(){
+    return Container(
+      padding: const EdgeInsets.all(5.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Downloaded Data',
+                    style: TextStyle(
+                      fontSize: 16.0,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    'Files saved for offline use',
+                    style: TextStyle(fontSize: 14.0, color: Colors.grey),
+                  ),
+                ],
+              ),
+              Text(
+                  "${_downloadsSize.toStringAsFixed(2)} MB",
+                style: const TextStyle(fontSize: 16.0, color: Colors.black),
+              )
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Cache',
+                    style: TextStyle(
+                      fontSize: 16.0,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    'Temporary files and app data',
+                    style: TextStyle(fontSize: 14.0, color: Colors.grey),
+                  ),
+                ],
+              ),
+              Text(
+    "${_cacheSize.toStringAsFixed(2)} MB",
+                style: const TextStyle(fontSize: 16.0, color: Colors.black),
+              )
+            ],
+          ),
+          const SizedBox(height: 16.0),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: _clearCache,
+                  icon: const Icon(Icons.cleaning_services, color: Colors.black54, size: 18),
+                  label: const Text(
+                    'Clear Cache',
+                    style: TextStyle(color: Colors.black54),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.grey[100],
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(6)
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12)
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8.0),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: _clearAllData,
+                  icon: const Icon(Icons.warning, color: Colors.red, size: 18,),
+                  label: const Text(
+                    'Clear All Data',
+                    style: TextStyle(color: Colors.red),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red[100],
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(6)
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12)
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showSnackBar(String message) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
@@ -118,38 +224,13 @@ class _StorageSettingsPageState extends State<StorageSettingsPage> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            const SizedBox(height: 20),
+
             _buildSectionHeader("Storage Overview"),
             const SizedBox(height: 10),
-            _buildStorageTile(
-              title: "Downloaded Data",
-              description: "${_downloadsSize.toStringAsFixed(2)} MB",
-              icon: Icons.file_download_outlined,
-              iconColor: Colors.blue,
-            ),
-            const SizedBox(height: 10),
-            _buildStorageTile(
-              title: "Cache",
-              description: "${_cacheSize.toStringAsFixed(2)} MB",
-              icon: Icons.cached_outlined,
-              iconColor: Colors.orange,
-              actionIcon: Icons.delete,
-              actionColor: Colors.grey,
-              onActionTap: _clearCache,
-            ),
-            const Divider(height: 40, thickness: 1),
-            _buildSectionHeader("Manage Storage"),
-            const SizedBox(height: 10),
-            ElevatedButton.icon(
-              onPressed: _clearAllData,
-              icon: const Icon(Icons.delete_forever),
-              label: const Text("Clear All Data"),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.grey.shade200,
-                foregroundColor: Colors.black87,
-                textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-            ),
+
+
+
+            _StorageCard(),
           ],
         ),
       ),
@@ -197,7 +278,7 @@ class _StorageSettingsPageState extends State<StorageSettingsPage> {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black),
                 ),
                 const SizedBox(height: 4),
                 Text(

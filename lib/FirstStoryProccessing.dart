@@ -1076,70 +1076,75 @@ class _ProcessingPageState extends State<ProcessingPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Blue circle with icons (replace with your actual icons)
-              Container(
-                width: 220,
-                height: 220,
+    return Theme(
+      data: ThemeData.light(), // Force the light theme
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+// Blue circle with icons (replace with your actual icons)
+                Container(
+                  width: 220,
+                  height: 220,
 
-                child: Center( // Center the icon
-                  child:  Lottie.asset(
-                    'assets/Animation001.json',  // AI animation
-                    width: 220,
-                    height: 220,
+                  child: Center( // Center the icon
+                    child:  Lottie.asset(
+                      'assets/Animation001.json',  // AI animation
+                      width: 220,
+                      height: 220,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 10),
-              const Text(
-                'Generating Your Story',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.black,
+                const SizedBox(height: 10),
+                const Text(
+                  'Generating Your Story',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.black,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 10),
-              const Text(
-                'Please wait while we craft a perfect tale for you.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey,
+                const SizedBox(height: 10),
+                const Text(
+                  'Please wait while we craft a perfect tale for you.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 30),
-              // Linear Progress Indicator
-              LinearProgressIndicator(
-                value: _loadingProgress, // Use the loading progress variable
-                backgroundColor: Colors.grey[300],
-                valueColor: const AlwaysStoppedAnimation<Color>(Colors.blueGrey), // Customize color
-                minHeight: 8, // Set the height of the progress bar
-              ),
-              const SizedBox(height: 20),
+                const SizedBox(height: 30),
+// Linear Progress Indicator
+                LinearProgressIndicator(
+                  value: _loadingProgress, // Use the loading progress variable
+                  backgroundColor: Colors.grey[300],
+                  valueColor: const AlwaysStoppedAnimation<Color>(Colors.blueGrey), // Customize color
+                  minHeight: 8, // Set the height of the progress bar
+                ),
+                const SizedBox(height: 20),
 
-              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [Text(
-                  _statusText,
-                  style: const TextStyle(color: Colors.grey),
-                ),Text(
-                  '${(_loadingProgress * 100).toInt()}%', // Display percentage
-                  style: const TextStyle(color: Colors.grey,),
-                ),
-                ],
-              )
+                Row(mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [Text(
+                    _statusText,
+                    style: const TextStyle(color: Colors.grey),
+                  ),Text(
+                    '${(_loadingProgress * 100).toInt()}%', // Display percentage
+                    style: const TextStyle(color: Colors.grey,),
+                  ),
+                  ],
+                )
 
-            ],
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 }
+
+

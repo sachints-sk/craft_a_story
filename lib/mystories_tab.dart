@@ -8,6 +8,13 @@ import 'package:intl/intl.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shimmer/shimmer.dart';
 
+enum SortOption {
+  dateNewest,
+  dateOldest,
+  titleAtoZ,
+  titleZtoA,
+}
+
 class MyStoriesPage extends StatefulWidget {
   const MyStoriesPage({Key? key}) : super(key: key);
 
@@ -16,6 +23,8 @@ class MyStoriesPage extends StatefulWidget {
 }
 
 class _MyStoriesPageState extends State<MyStoriesPage> {
+  SortOption _currentSortOption = SortOption.dateNewest;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -23,14 +32,41 @@ class _MyStoriesPageState extends State<MyStoriesPage> {
         centerTitle: true,
         title: const Text(
           'My Stories',
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+          style: TextStyle( fontWeight: FontWeight.bold),
         ),
+        actions: [
+          PopupMenuButton<SortOption>(
+            icon: const Icon(Icons.sort, ),
+            onSelected: (SortOption result) {
+              setState(() {
+                _currentSortOption = result;
+              });
+            },
+            itemBuilder: (BuildContext context) => <PopupMenuEntry<SortOption>>[
+              const PopupMenuItem<SortOption>(
+                value: SortOption.dateNewest,
+                child: Text('Date (Newest)'),
+              ),
+              const PopupMenuItem<SortOption>(
+                value: SortOption.dateOldest,
+                child: Text('Date (Oldest)'),
+              ),
+              const PopupMenuItem<SortOption>(
+                value: SortOption.titleAtoZ,
+                child: Text('Title (A to Z)'),
+              ),
+              const PopupMenuItem<SortOption>(
+                value: SortOption.titleZtoA,
+                child: Text('Title (Z to A)'),
+              ),
+            ],
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0),
         child: Column(
           children: [
-
             Expanded(child: _buildStoryGrid()),
           ],
         ),
@@ -60,7 +96,8 @@ class _MyStoriesPageState extends State<MyStoriesPage> {
           filled: true,
           fillColor: Colors.white,
           prefixIcon: Icon(Icons.search, color: Colors.grey[700]),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          contentPadding:
+          const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(30),
             borderSide: BorderSide.none,
@@ -78,7 +115,6 @@ class _MyStoriesPageState extends State<MyStoriesPage> {
     );
   }
 
-
   Widget _buildStoryGrid() {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
@@ -86,10 +122,7 @@ class _MyStoriesPageState extends State<MyStoriesPage> {
     }
 
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('stories')
-          .where('userId', isEqualTo: user.uid)
-          .snapshots(),
+      stream: _getStoryStream(user.uid),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           return Center(child: Text('Error: ${snapshot.error}'));
@@ -97,12 +130,13 @@ class _MyStoriesPageState extends State<MyStoriesPage> {
 
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Center(
-            child: Lottie.asset('assets/loadingplaceholder.json', width: 150, height: 150),
+            child: Lottie.asset('assets/loadingplaceholder.json',
+                width: 150, height: 150),
           );
         }
 
         if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
-          final stories = snapshot.data!.docs.map((doc) {
+          List<StoryData> stories = snapshot.data!.docs.map((doc) {
             final data = doc.data() as Map<String, dynamic>;
             DateTime createdAtDate = (data['createdAt'] as Timestamp).toDate();
             String formattedDate = DateFormat('dd-MM-yyyy').format(createdAtDate);
@@ -113,7 +147,7 @@ class _MyStoriesPageState extends State<MyStoriesPage> {
               description: data['description'] ?? '',
               coverImageUrl: data['coverImageUrl'],
               videoUrl: data['videoUrl'] ?? '',
-              createdAt:formattedDate ?? '',
+              createdAt:formattedDate ,
               mode:data['mode'] ?? '',
               voice:data['voice'] ?? '',
               isAudio: data['isAudio'] ?? false,
@@ -121,12 +155,18 @@ class _MyStoriesPageState extends State<MyStoriesPage> {
             );
           }).toList();
 
+          if (_currentSortOption == SortOption.titleAtoZ) {
+            stories.sort((a, b) => a.title.compareTo(b.title));
+          } else if (_currentSortOption == SortOption.titleZtoA) {
+            stories.sort((a, b) => b.title.compareTo(a.title));
+          }
           return GridView.builder(
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
               crossAxisSpacing: 0,
               mainAxisSpacing: 3,
               childAspectRatio: 0.8,
+
             ),
             itemCount: stories.length,
             itemBuilder: (context, index) {
@@ -134,10 +174,49 @@ class _MyStoriesPageState extends State<MyStoriesPage> {
             },
           );
         } else {
-          return const Center(child: Text('No stories found.'));
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SizedBox(
+                  width: 200,
+                  height: 200,
+                  child: Lottie.asset('assets/nostory.json'),
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  'You haven’t created any stories yet,',
+                  style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
+                ),
+                Text(
+                  'Your Saved Stories Will Show Up Here.',
+                  style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
+                ),
+              ],
+            ),
+          );
         }
       },
     );
+  }
+
+  Stream<QuerySnapshot> _getStoryStream(String userId) {
+    Query query = FirebaseFirestore.instance
+        .collection('stories')
+        .where('userId', isEqualTo: userId);
+
+    switch (_currentSortOption) {
+      case SortOption.dateNewest:
+        query = query.orderBy('createdAt', descending: true);
+        break;
+      case SortOption.dateOldest:
+        query = query.orderBy('createdAt', descending: false);
+        break;
+
+      default:
+        query = query.orderBy('createdAt', descending: true); //default sort
+    }
+    return query.snapshots();
   }
 
   Widget _buildStoryCard(StoryData story) {
@@ -162,65 +241,52 @@ class _MyStoriesPageState extends State<MyStoriesPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Cover Image
               Expanded(
-                child: Hero(
-                  tag: story.coverImageUrl,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: CachedNetworkImage(
-                        imageUrl: story.coverImageUrl,
-                        fit: BoxFit.cover,
-                        placeholder: (context, url) => Shimmer.fromColors(
-                          baseColor: Colors.grey[300]!,
-                          highlightColor: Colors.grey[100]!,
-                          child: Container(
-                            color: Colors.grey,
-                          ),
+                child:  Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Stack(
+                    children: [
+                      Positioned.fill(
+                        child: Image.network(
+                          story.coverImageUrl,
+                          fit: BoxFit.cover,
                         ),
-                        errorWidget: (context, url, error) => const Icon(Icons.error, color: Colors.grey),
                       ),
-                    ),
+                    ],
                   ),
                 ),
               ),
               const SizedBox(height: 8),
-              // Title
               Text(
                 story.title,
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 14,
-                  color: Colors.black,
+
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: 4),
-              // Genre
               Row(
                 children: [
                   const Icon(Icons.category, size: 14, color: Colors.grey),
                   const SizedBox(width: 4),
                   Text(
-                   story.mode, // Assuming `genre` is a field in StoryData
+                    story.mode,
                     style: const TextStyle(fontSize: 12, color: Colors.grey),
                   ),
-
                 ],
               ),
               const SizedBox(height: 4),
-              // Voice
               Row(
                 children: [
                   const Icon(Icons.graphic_eq, size: 14, color: Colors.grey),
                   const SizedBox(width: 4),
                   Text(
-                    story.voice, // Assuming `voice` is a field in StoryData
+                    story.voice,
                     style: const TextStyle(fontSize: 12, color: Colors.grey),
                   ),
                 ],
@@ -229,10 +295,13 @@ class _MyStoriesPageState extends State<MyStoriesPage> {
           ),
         ),
       ),
+
+
+
+
+
     );
   }
-
-
 
   Widget _buildCoverImage(String? imageUrl) {
     if (imageUrl != null && imageUrl.isNotEmpty) {
@@ -251,7 +320,9 @@ class _MyStoriesPageState extends State<MyStoriesPage> {
             }
             return SizedBox(
               height: 140,
-              child: Lottie.asset('assets/loadingplaceholder.json', ),
+              child: Lottie.asset(
+                'assets/loadingplaceholder.json',
+              ),
             );
           },
         ),

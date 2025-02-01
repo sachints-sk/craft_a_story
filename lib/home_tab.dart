@@ -20,6 +20,11 @@ import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:purchases_ui_flutter/purchases_ui_flutter.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shimmer/shimmer.dart';
+import 'ReviewUsPage.dart';
+import 'package:store_redirect/store_redirect.dart';
+import 'Services/Review_services.dart';
+import 'topCategories.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 
 class CraftAStoryHome extends StatefulWidget {
@@ -44,7 +49,7 @@ class _CraftAStoryHomeState extends State<CraftAStoryHome> {
 
   Stream<SearchMetadata>? get _searchMetadata => _productsSearcher?.responses.map(SearchMetadata.fromResponse);
   Stream<HitsPage>? get _searchPage => _productsSearcher?.responses.map(HitsPage.fromResponse);
- bool _subscribed = false;
+  bool _subscribed = false;
 
   void initState() {
     super.initState();
@@ -94,6 +99,7 @@ class _CraftAStoryHomeState extends State<CraftAStoryHome> {
 
     _setupIsPro();
     _fetchUserName();
+    _checkAndShowReviewDialog(context);
 
   }
   @override
@@ -166,8 +172,108 @@ class _CraftAStoryHomeState extends State<CraftAStoryHome> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Image.asset('assets/logo1.png', height: 30, fit: BoxFit.contain),
+        title: Image.asset(Theme.of(context).brightness == Brightness.dark
+            ? 'assets/logo2.png' // Use dark mode logo
+            : 'assets/logo1.png',
+
+            height: 30, fit: BoxFit.contain),
+        actions: [
+          Row(
+            children: [
+              GestureDetector(
+                onTap: () => _showCreditsDialog(context),
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF24A17F),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    children: [
+                      Image.asset(
+                        'assets/coin.png',
+                        height: 19,
+                        width: 19,
+                      ),
+                      const SizedBox(width: 4),
+                      StreamBuilder<DocumentSnapshot>(
+                        stream: FirebaseFirestore.instance
+                            .collection('users')
+                            .doc(FirebaseAuth.instance.currentUser?.uid)
+                            .snapshots(),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState == ConnectionState.waiting) {
+                            return const Text(
+                              '',
+                              style: TextStyle(color: Colors.white, fontSize: 16),
+                            );
+                          }
+
+                          if (snapshot.hasError) {
+                            return const Text(
+                              'Error',
+                              style: TextStyle(color: Colors.red, fontSize: 16),
+                            );
+                          }
+
+                          if (snapshot.hasData && snapshot.data != null) {
+                            final userData = snapshot.data!.data() as Map<String, dynamic>?;
+                            final userCredits = userData?['credits'] ?? 0;
+                            Credits=userCredits;
+
+                            return Text(
+                              '$userCredits',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            );
+                          }
+
+                          return const Text(
+                            '0',
+                            style: TextStyle(color: Colors.white, fontSize: 16),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              if (_subscribed) ...[
+                const SizedBox(width: 1),
+                Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: SizedBox(
+                    height: 75,
+                    child: Lottie.asset('assets/premiumbadge.json'),
+                  ),
+                ),
+              ],
+              if (!_subscribed) ...[
+                const SizedBox(width: 4),
+                GestureDetector(
+                  onTap: () => _showPaywall(),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: SizedBox(
+                      width: 80,
+                      child: Lottie.asset('assets/getpremium2.json'),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(width: 8), // Add some padding to the right
+        ],
       ),
+
       body: Stack(
         children: [
           GestureDetector(
@@ -184,32 +290,39 @@ class _CraftAStoryHomeState extends State<CraftAStoryHome> {
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+                children: [_buildSearchBar(),
+                  const SizedBox(height: 14),
                   buildGreetingRow(context),
-                  _buildSearchBar(),
+                  const SizedBox(height: 14),
                   buildCreateSection(context),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 10),
                   buildSectionHeader('Recommended Stories', 2),
                   buildRecommendedStories(context),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 8),
                   buildSectionHeader('My Stories', 1),
                   buildUserStories(context),
+                  const SizedBox(height: 8),
+                  buildSectionHeader('Adventure Stories', 3),
+                  buildAdventureStories(context),
+                  const SizedBox(height: 8),
+                  buildSectionHeader('Educational Stories', 4),
+                  buildEducationalStories(context),
                 ],
               ),
             ),
           ),
           if (_isSearching)
             Positioned(
-              top: 135, // Position it below the search bar
+              top: 75, // Position it below the search bar
               left: 16,
               right: 16,
               child: Container(
-                color: Colors.white,
+
                 child: Column(
                   children: [
 
                     SizedBox(
-                      height: 300, // Define a specific height for search results
+                      height: 450, // Define a specific height for search results
                       child: _hits(context),
                     ),
                   ],
@@ -239,7 +352,9 @@ class _CraftAStoryHomeState extends State<CraftAStoryHome> {
             );
           },
           child: Container(
-            color: Colors.white,
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.grey // Use dark mode logo
+                : Colors.white,
             height: 80,
             padding: const EdgeInsets.all(8),
             child: Row(
@@ -260,7 +375,7 @@ class _CraftAStoryHomeState extends State<CraftAStoryHome> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(item.title, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                      Text('Mode: ${item.mode}', style: TextStyle(fontSize: 14, color: Colors.grey)),
+                      Text('Mode: ${item.mode}', style: TextStyle(fontSize: 14, )),
                     ],
                   ),
                 ),
@@ -282,123 +397,21 @@ class _CraftAStoryHomeState extends State<CraftAStoryHome> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Hello👋',
+          'Hello, Storyteller!👋',
           style: GoogleFonts.poppins(
-            textStyle: const TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.w500),
+            textStyle: const TextStyle( fontSize: 18, fontWeight: FontWeight.bold),
           ),
 
         ),
         Text(
-          _userName,
-          style: GoogleFonts.poppins(
-            textStyle: const TextStyle(
-              color: Colors.black,
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-            ),
+          'Where will your imagination take you today?',
+          style: GoogleFonts.delius(
+            textStyle: const TextStyle(fontSize: 16, ),
           ),
         ),
       ],
     ),
-        Row(
-          children: [
-            GestureDetector(
-              onTap: () => _showCreditsDialog(context),
-              child: Container(
-                padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF24A17F),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Row(
-                  children: [
-                    Image.asset(
-                      'assets/coin.png',
-                      height: 19,
-                      width: 19,
-                    ),
-                    const SizedBox(width: 4),
-                    StreamBuilder<DocumentSnapshot>(
-                      stream: FirebaseFirestore.instance
-                          .collection('users')
-                          .doc(FirebaseAuth.instance.currentUser?.uid)
-                          .snapshots(),
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState == ConnectionState.waiting) {
-                          // Show a loading indicator while data is being fetched
-                          return const Text(
-                            '',
-                            style: TextStyle(color: Colors.white, fontSize: 16),
-                          );
-                        }
 
-                        if (snapshot.hasError) {
-                          // Handle errors
-                          return const Text(
-                            'Error',
-                            style: TextStyle(color: Colors.red, fontSize: 16),
-                          );
-                        }
-
-                        if (snapshot.hasData && snapshot.data != null) {
-                          final userData = snapshot.data!.data() as Map<String, dynamic>?;
-                          final userCredits = userData?['credits'] ?? 0; // Fallback to 0 if credits are null
-                          Credits= userCredits;
-
-                          return Text(
-                            '$userCredits',
-                            style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-                          );
-                        }
-
-                        // Fallback UI if no data is found
-                        return const Text(
-                          '0',
-                          style: TextStyle(color: Colors.white, fontSize: 16),
-                        );
-                      },
-                    ),
-                  ],
-                ),
-
-              ),
-            ),
-            if (_subscribed) ...[
-            const SizedBox(width: 1),
-              Container(
-
-
-                decoration: BoxDecoration(
-
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: SizedBox(
-
-                  height: 75,
-                  child: Lottie.asset('assets/premiumbadge.json'),
-                ),
-              )],
-            if (!_subscribed) ...[
-              const SizedBox(width: 4),
-              GestureDetector(onTap:() => _showPaywall(),
-              child:Container(
-
-
-                decoration: BoxDecoration(
-
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: SizedBox(
-
-
-                  width: 80,
-                  child: Lottie.asset('assets/getpremium2.json'),
-                ),
-              ) ,)
-              ],
-
-          ],
-        ),
       ],
     );
   }
@@ -413,19 +426,22 @@ class _CraftAStoryHomeState extends State<CraftAStoryHome> {
       ),
     );
   }
-  // Create Section
   Widget buildCreateSection(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF161825),
+        gradient: LinearGradient(
+          colors: [Color(0xFF200843), Color(0xFF121212)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         borderRadius: BorderRadius.circular(12),
       ),
       padding: const EdgeInsets.all(16),
       child: Row(
         children: [
           SizedBox(
-            width: 150,
-            height: 150,
+            width: 140,
+            height: 140,
             child: Lottie.asset('assets/book2.json'),
           ),
           const SizedBox(width: 16),
@@ -435,16 +451,23 @@ class _CraftAStoryHomeState extends State<CraftAStoryHome> {
               children: [
                 const Text(
                   "Unleash Your Imaginations!",
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20,
+                    color: Colors.white,
+                  ),
                 ),
                 const Text(
-                  'Create your own adventures',
-                  style: TextStyle(color: Colors.grey, fontSize: 14),
+                  'Bring Your Unique Story to Life!',
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 14,
+                  ),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF066AB2),
+                    backgroundColor: const Color(0xFF6028E1),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30),
                     ),
@@ -459,8 +482,11 @@ class _CraftAStoryHomeState extends State<CraftAStoryHome> {
                     );
                   },
                   child: const Text(
-                    'Create',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                    'Create Now',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ],
@@ -470,6 +496,7 @@ class _CraftAStoryHomeState extends State<CraftAStoryHome> {
       ),
     );
   }
+
 
   // Fetch and display recommended stories
   Widget buildRecommendedStories(BuildContext context) {
@@ -525,12 +552,12 @@ class _CraftAStoryHomeState extends State<CraftAStoryHome> {
     );
   }
 
-  // Fetch and display user stories
-  Widget buildUserStories(BuildContext context) {
+  // Fetch and display recommended stories
+  Widget buildAdventureStories(BuildContext context) {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
-          .collection('stories')
-          .where('userId', isEqualTo: FirebaseAuth.instance.currentUser?.uid)
+          .collection('Explore_stories')
+          .where('mode', isEqualTo: 'Adventure')
           .orderBy('createdAt', descending: true)
           .limit(3)
           .snapshots(),
@@ -559,13 +586,7 @@ class _CraftAStoryHomeState extends State<CraftAStoryHome> {
 
         List<StoryData> stories = snapshot.data!.docs.map((doc) {
           final data = doc.data() as Map<String, dynamic>;
-          // Safely handle 'createdAt' field
-          DateTime createdAtDate;
-          if (data['createdAt'] != null) {
-            createdAtDate = (data['createdAt'] as Timestamp).toDate();
-          } else {
-            createdAtDate = DateTime.now(); // Temporary fallback for missing timestamps
-          }
+          DateTime createdAtDate = (data['createdAt'] as Timestamp).toDate();
           String formattedDate = DateFormat('dd-MM-yyyy').format(createdAtDate);
           return StoryData(
             coverImageUrl: data['coverImageUrl'] ?? 'assets/testimage.png',
@@ -581,10 +602,149 @@ class _CraftAStoryHomeState extends State<CraftAStoryHome> {
           );
         }).toList();
 
+        return buildHorizontalList(context, stories);
+      },
+    );
+  }
+  // Fetch and display recommended stories
+  Widget buildEducationalStories(BuildContext context) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('Explore_stories')
+          .where('mode', isEqualTo: 'Educational')
+          .orderBy('createdAt', descending: true)
+          .limit(3)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.hasError) return Text('Error: ${snapshot.error}');
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return   Column(
+            children: [
+              GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(1),
+                itemCount: 4, // Display 4 shimmer cards while loading
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 16,
+                  crossAxisSpacing: 2,
+                ),
+                itemBuilder: (context, index) {
+                  return _buildShimmerStoryCard(context);
+                },
+              ),
+            ],
+          );
+        }
+
+        List<StoryData> stories = snapshot.data!.docs.map((doc) {
+          final data = doc.data() as Map<String, dynamic>;
+          DateTime createdAtDate = (data['createdAt'] as Timestamp).toDate();
+          String formattedDate = DateFormat('dd-MM-yyyy').format(createdAtDate);
+          return StoryData(
+            coverImageUrl: data['coverImageUrl'] ?? 'assets/testimage.png',
+            title: data['title'] ?? '',
+            storyId: doc.id,
+            description: data['description'] ?? '',
+            videoUrl: data['videoUrl'] ?? '',
+            createdAt:formattedDate ?? '',
+            mode:data['mode'] ?? '',
+            voice:data['voice'] ?? '',
+            isAudio: data['isAudio'] ?? false,
+            audioUrl: data['audioUrl'] ?? '',
+          );
+        }).toList();
+
+        return buildHorizontalList(context, stories);
+      },
+    );
+  }
+
+// Fetch and display user stories
+  Widget buildUserStories(BuildContext context) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('stories')
+          .where('userId', isEqualTo: FirebaseAuth.instance.currentUser?.uid)
+          .orderBy('createdAt', descending: true)
+          .limit(3)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.hasError) return Text('Error: ${snapshot.error}');
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Column(
+            children: [
+              GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(1),
+                itemCount: 4, // Display 4 shimmer cards while loading
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 16,
+                  crossAxisSpacing: 2,
+                ),
+                itemBuilder: (context, index) {
+                  return _buildShimmerStoryCard(context);
+                },
+              ),
+            ],
+          );
+        }
+
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          // No stories found
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SizedBox(
+                  width: 130,
+                  height: 130,
+                  child: Lottie.asset('assets/nostory.json'),
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  'You haven’t created any stories yet.',
+                  style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
+                ),
+
+              ],
+            ),
+          );
+        }
+
+        // Process and display stories
+        List<StoryData> stories = snapshot.data!.docs.map((doc) {
+          final data = doc.data() as Map<String, dynamic>;
+          // Safely handle 'createdAt' field
+          DateTime createdAtDate;
+          if (data['createdAt'] != null) {
+            createdAtDate = (data['createdAt'] as Timestamp).toDate();
+          } else {
+            createdAtDate = DateTime.now(); // Temporary fallback for missing timestamps
+          }
+          String formattedDate = DateFormat('dd-MM-yyyy').format(createdAtDate);
+          return StoryData(
+            coverImageUrl: data['coverImageUrl'] ?? 'assets/testimage.png',
+            title: data['title'] ?? '',
+            storyId: doc.id,
+            description: data['description'] ?? '',
+            videoUrl: data['videoUrl'] ?? '',
+            createdAt: formattedDate,
+            mode: data['mode'] ?? '',
+            voice: data['voice'] ?? '',
+            isAudio: data['isAudio'] ?? false,
+            audioUrl: data['audioUrl'] ?? '',
+          );
+        }).toList();
+
         return buildHorizontalList2(context, stories);
       },
     );
   }
+
 
   // Section Header
   Widget buildSectionHeader(String title, int page) {
@@ -597,11 +757,34 @@ class _CraftAStoryHomeState extends State<CraftAStoryHome> {
         ),
         GestureDetector(
           onTap: () {
-            widget.onTabSelected(page);
+            if(page==3){
+              Navigator.push(
+                context,
+                PageTransition(
+                  type: PageTransitionType.rightToLeft,
+                  child: Topcategories(selectedCategory: "Adventure"),
+                ),
+              );
+            }else if(page==4){
+              Navigator.push(
+                context,
+                PageTransition(
+                  type: PageTransitionType.rightToLeft,
+                  child: Topcategories(selectedCategory: "Educational"),
+                ),
+              );
+            }else { widget.onTabSelected(page);}
+
+
+
           },
-          child: const Text(
+          child:  Text(
             'View All',
-            style: TextStyle(color: Color(0xFF161825)),
+            style: TextStyle(color:  Theme.of(context).brightness == Brightness.dark
+                ? Colors.white // Use dark mode logo
+                : Color(0xFF161825),
+
+            ),
           ),
         ),
       ],
@@ -639,7 +822,7 @@ class _CraftAStoryHomeState extends State<CraftAStoryHome> {
 
     },
     child:Container(
-      margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 1),
+      margin: const EdgeInsets.symmetric(vertical: 1, horizontal: 1),
       padding: const EdgeInsets.symmetric(horizontal: 4),
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -691,48 +874,42 @@ class _CraftAStoryHomeState extends State<CraftAStoryHome> {
           borderRadius: BorderRadius.circular(12),
         ),
         elevation: 4,
-        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
         child: Container(
           width: 160,
-          padding: const EdgeInsets.all(8),
+          padding: const EdgeInsets.all(6),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               // Cover Image
               Expanded(
-                child: Hero(
-                  tag: story.coverImageUrl,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: CachedNetworkImage(
-                        imageUrl: story.coverImageUrl,
-                        fit: BoxFit.cover,
-                        placeholder: (context, url) => Shimmer.fromColors(
-                          baseColor: Colors.grey[300]!,
-                          highlightColor: Colors.grey[100]!,
-                          child: Container(
-                            color: Colors.grey,
-                          ),
-                        ),
-                        errorWidget: (context, url, error) => const Icon(Icons.error, color: Colors.grey),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: CachedNetworkImage(
+                    imageUrl: story.coverImageUrl,
+                    fit: BoxFit.cover,
+                    width: double.infinity, // Take full width available from parent
+                    placeholder: (context, url) => Shimmer.fromColors(
+                      baseColor: Colors.grey[300]!,
+                      highlightColor: Colors.grey[100]!,
+                      child: Container(
+                        color: Colors.grey,
                       ),
                     ),
+                    errorWidget: (context, url, error) =>
+                    const Icon(Icons.error, color: Colors.grey),
                   ),
                 ),
               ),
-
               const SizedBox(height: 8),
               // Title
               Text(
                 story.title,
+                textAlign: TextAlign.center,
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 14,
-                  color: Colors.black,
+
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
@@ -802,47 +979,42 @@ class _CraftAStoryHomeState extends State<CraftAStoryHome> {
           borderRadius: BorderRadius.circular(12),
         ),
         elevation: 4,
-        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
         child: Container(
           width: 160,
-          padding: const EdgeInsets.all(8),
+          padding: const EdgeInsets.all(6),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               // Cover Image
-          Expanded(
-          child: Hero(
-          tag: story.coverImageUrl,
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: CachedNetworkImage(
-                  imageUrl: story.coverImageUrl,
-                  fit: BoxFit.cover,
-                  placeholder: (context, url) => Shimmer.fromColors(
-                    baseColor: Colors.grey[300]!,
-                    highlightColor: Colors.grey[100]!,
-                    child: Container(
-                      color: Colors.grey,
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: CachedNetworkImage(
+                    imageUrl: story.coverImageUrl,
+                    fit: BoxFit.cover,
+                    width: double.infinity, // Take full width available from parent
+                    placeholder: (context, url) => Shimmer.fromColors(
+                      baseColor: Colors.grey[300]!,
+                      highlightColor: Colors.grey[100]!,
+                      child: Container(
+                        color: Colors.grey,
+                      ),
                     ),
+                    errorWidget: (context, url, error) =>
+                    const Icon(Icons.error, color: Colors.grey),
                   ),
-                  errorWidget: (context, url, error) => const Icon(Icons.error, color: Colors.grey),
                 ),
               ),
-            ),
-          ),
-        ),
               const SizedBox(height: 8),
               // Title
               Text(
                 story.title,
+                textAlign: TextAlign.center,
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 14,
-                  color: Colors.black,
+
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
@@ -950,7 +1122,7 @@ class _CraftAStoryHomeState extends State<CraftAStoryHome> {
                   );
                 },
                 child: Text(
-                  "Buy Credits",
+                  "Get Free Credits",
                   textAlign: TextAlign.center,
                   style: const TextStyle(fontSize: 14.0,fontWeight: FontWeight.w600, color: Colors.indigo),
                 ),
@@ -963,6 +1135,123 @@ class _CraftAStoryHomeState extends State<CraftAStoryHome> {
       },
     );
   }
+  void _checkAndShowReviewDialog(BuildContext context) async {
+    bool firstStoryCreated = await AppPreferences.getFirstStoryCreated();
+    DateTime? lastReviewDate = await AppPreferences.getLastReviewPromptDate();
+    DateTime today = DateTime.now();
+    bool hasReviewed = await AppPreferences.getHasReviewed();  // Check if the user has already reviewed the app
+print(firstStoryCreated);
+print(lastReviewDate);
+print(hasReviewed);
+
+    // Check if the first story is created, 24 hours have passed since last prompt, and the user hasn't reviewed
+    if (firstStoryCreated && !hasReviewed && _shouldShowReviewDialog(lastReviewDate, today)) {
+      _showReviewDialog(context);
+
+      // After showing the dialog, update the last review date
+      AppPreferences.setLastReviewPromptDate(today);
+    }
+  }
+
+  bool _shouldShowReviewDialog(DateTime? lastReviewDate, DateTime today) {
+    if (lastReviewDate == null) {
+      // If no date exists, we should show the dialog
+      return true;
+    }
+
+    // Calculate the difference between today and the last review prompt
+    Duration difference = today.difference(lastReviewDate);
+    return difference.inDays >= 1; // Check if it's been 1 day or more
+  }
+
+
+  void _reviewApp(BuildContext context) async {
+    await AppPreferences.setHasReviewed(true);
+    try{
+      StoreRedirect.redirect(
+        androidAppId: 'com.craftastory.craft_a_story', // Replace with your Android app ID
+        iOSAppId: 'com.craftastory.craft_a_story', // Replace with your iOS app ID
+      );
+
+    }catch(e){
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error redirecting to the App store')));
+    }
+
+  }
+
+  void _showReviewDialog(BuildContext context) async {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return GiffyDialog.lottie( // Use GiffyDialog.lottie() constructor
+          Lottie.asset(
+            'assets/reviewus4.json',
+            width: 200,
+            height: 200,
+          ), // Your Lottie animation
+          title: Text(
+            'Enjoying the app? We\'d love to hear your thoughts!',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 22.0,
+              fontWeight: FontWeight.w600,
+              color: Colors.black,
+            ),
+          ),
+          content: Column( // Use a Column for the description
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Your feedback helps us improve the app and provide a better experience. Please take a moment to leave a review.',
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 18.0),
+              ),
+
+              const SizedBox(height: 16),
+              // Row for horizontally aligned buttons
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center, // Center the buttons horizontally
+                children: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pop(context); // Close the dialog
+                    },
+                    child: Text(
+                      "Maybe Later",
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  // Rate Our App Button
+                  ElevatedButton(
+                    onPressed: () {
+                      _reviewApp(context); // Call the review function when the button is pressed
+                    },
+                    style: ElevatedButton.styleFrom(
+                      padding: EdgeInsets.symmetric(horizontal: 30, vertical: 16),
+                      textStyle: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      backgroundColor: Color(0xFF1A2259), // Customize button color
+                    ),
+                    child: Text("Rate Our App",style: TextStyle(color: Colors.white),),
+                  ),
+                   // Add space between the buttons
+
+                  // Maybe Later Button
+
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
 }
 
 

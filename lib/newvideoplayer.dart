@@ -11,6 +11,10 @@ import 'package:path_provider/path_provider.dart'; // For temporary file
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:firebase_performance/firebase_performance.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:purchases_flutter/purchases_flutter.dart';
+import 'package:purchases_ui_flutter/purchases_ui_flutter.dart';
+import 'Services/banner_ad_widget.dart';
+
 
 class NewVideoPlayer extends StatefulWidget {
   final String videoPath; // Pass the video path as a parameter
@@ -44,6 +48,8 @@ class _NewVideoPlayerState extends State<NewVideoPlayer> {
   String _saveText = "Save your story to access it later.";
   final firestore = FirebaseFirestore.instance;
   String username ="";
+  bool _subscribed = false;
+  late final void Function(CustomerInfo) _customerInfoListener;
 
 
 
@@ -52,13 +58,29 @@ class _NewVideoPlayerState extends State<NewVideoPlayer> {
     super.initState();
     _initializePlayer();
     getusername();
+    _setupIsPro();
+
   }
 
   @override
   void dispose() {
     _videoPlayerController.dispose();
-    _chewieController?.dispose(); // Dispose Chewie controller
+    _chewieController?.dispose();
+    Purchases.removeCustomerInfoUpdateListener(_customerInfoListener);// Dispose Chewie controller
     super.dispose();
+  }
+
+
+  Future<void> _setupIsPro() async {
+    _customerInfoListener = (CustomerInfo customerInfo) {
+      EntitlementInfo? entitlement = customerInfo.entitlements.all['Premium'];
+      if (mounted) {
+        setState(() {
+          _subscribed = entitlement?.isActive ?? false;
+        });
+      }
+    };
+    Purchases.addCustomerInfoUpdateListener(_customerInfoListener);
   }
 
   Future<void> _initializePlayer() async {
@@ -367,7 +389,7 @@ Future<void> _shareStory() async{
       appBar: AppBar(
 
         leading: IconButton(
-          icon: const Icon(Icons.close,color: Colors.black,),
+          icon: const Icon(Icons.close,),
           onPressed: () {
             Navigator.pop(context);
             Navigator.pop(context);
@@ -376,12 +398,14 @@ Future<void> _shareStory() async{
             Navigator.pop(context);
           },
         ),
-        title: const Text('Crafted Story',style: TextStyle(color: Colors.black,fontWeight: FontWeight.bold),),
+        title: const Text('Crafted Story',style: TextStyle(fontWeight: FontWeight.bold),),
       ),
       body: SingleChildScrollView( // Make the Column scrollable
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if(!_subscribed)
+              BannerAdWidget(),
             // Video Player using Chewie
             _chewieController != null &&
                 _videoPlayerController.value.isInitialized
@@ -442,7 +466,7 @@ Future<void> _shareStory() async{
                   Center( // Wrap in Center widget
                     child:  Text(
                       _saveText,
-                      style: const TextStyle(color: const Color(0xFF373636)),
+                      style: const TextStyle(color: Colors.grey),
                     ),
                   ),
                   if (_isUploading)
@@ -458,14 +482,14 @@ Future<void> _shareStory() async{
                           style: const TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
-                            color: Colors.black,
+
                           ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.share, color: Colors.black87,  ),
+                        icon: const Icon(Icons.share,   ),
                         onPressed: _shareStory,
                       ),
                       // Like Button with Count
@@ -527,7 +551,7 @@ Future<void> _shareStory() async{
                     widget.description,
                     style: const TextStyle(
                       fontSize: 16,
-                      color: Colors.black,
+
                     ),
                   ),
                   const SizedBox(height: 20),
