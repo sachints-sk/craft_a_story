@@ -10,9 +10,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:animated_toggle_switch/animated_toggle_switch.dart';
 import 'package:audio_waveforms/audio_waveforms.dart';
 import 'package:share_plus/share_plus.dart';
-import 'Services/StoryExplorer_banner_ad_widget.dart';
-import 'package:purchases_flutter/purchases_flutter.dart';
-import 'package:purchases_ui_flutter/purchases_ui_flutter.dart';
 
 class ViewStoryByIdPage extends StatefulWidget {
   final String storyId;
@@ -39,9 +36,9 @@ class _ViewStoryByIdPageState extends State<ViewStoryByIdPage> {
    int likeCount = 0;
    bool isLiked = false;
    bool isToggled= true;
-   bool _subscribed = false;
+
    final user = FirebaseAuth.instance.currentUser;
-   late final void Function(CustomerInfo) _customerInfoListener;
+
 
   @override
   void initState() {
@@ -50,20 +47,10 @@ class _ViewStoryByIdPageState extends State<ViewStoryByIdPage> {
     _audioController = PlayerController();
     _audioController.playerState == PlayerState.playing ? isPlaying = true : isPlaying = false;
 
-    _setupIsPro();
+
   }
 
-   Future<void> _setupIsPro() async {
-     _customerInfoListener = (CustomerInfo customerInfo) {
-       EntitlementInfo? entitlement = customerInfo.entitlements.all['Premium'];
-       if (mounted) {
-         setState(() {
-           _subscribed = entitlement?.isActive ?? false;
-         });
-       }
-     };
-     Purchases.addCustomerInfoUpdateListener(_customerInfoListener!);
-   }
+
   Future<void> _fetchStoryData() async {
     try {
       final doc = await FirebaseFirestore.instance
@@ -94,7 +81,7 @@ class _ViewStoryByIdPageState extends State<ViewStoryByIdPage> {
     _videoPlayerController?.dispose();
     _chewieController?.dispose();
     _audioController.dispose();
-    Purchases.removeCustomerInfoUpdateListener(_customerInfoListener);
+
     super.dispose();
   }
    Future<String> _getLocalFilePath2(String filename) async {
@@ -308,8 +295,7 @@ class _ViewStoryByIdPageState extends State<ViewStoryByIdPage> {
           : Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if(!_subscribed)
-            BannerAdWidget(),
+
           // Video Player or Cover Image Section
           if(isToggled)
           Stack(

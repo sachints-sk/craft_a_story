@@ -8,7 +8,7 @@ import 'dart:convert';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'CreditsBalanceCard.dart';
-import 'package:google_mobile_ads/google_mobile_ads.dart';
+
 
 
 class PurchaseCreditsPage extends StatefulWidget {
@@ -25,8 +25,7 @@ class _PurchaseCreditsPageState extends State<PurchaseCreditsPage> {
   bool _isPurchasing = false; // Track purchase process
   bool _isLoading = true; // Track initial product loading
   late StreamSubscription<List<PurchaseDetails>> _subscription;
-  RewardedAd? _rewardedAd;
-  final String adUnitId = 'ca-app-pub-7424152248887728/9532778651';
+
 
 
   @override
@@ -48,67 +47,11 @@ class _PurchaseCreditsPageState extends State<PurchaseCreditsPage> {
 
     // Initialize and load products
     _initIAP();
-    _loadRewardedAd();
+
   }
 
-  // Function to load the rewarded ad with SSV (userId)
-  void _loadRewardedAd() {
-    RewardedAd.load(
-      adUnitId: adUnitId,
-      request: AdRequest(),
-      rewardedAdLoadCallback: RewardedAdLoadCallback(
-        onAdLoaded: (RewardedAd ad) {
-          setState(() {
-            _rewardedAd = ad;
-          });
-          print("Rewarded Ad Loaded");
-
-          // Set userId for Server-Side Verification (SSV)
-          ad.setImmersiveMode(true); // Optional: Enables full-screen immersive mode
-          ad.setServerSideOptions(ServerSideVerificationOptions(userId: _getFirebaseUID()));
-
-        },
-        onAdFailedToLoad: (LoadAdError error) {
-          print("Rewarded Ad Failed to Load: ${error.message}");
-        },
-      ),
-    );
-  }
-
-  // Function to show the rewarded ad
-  void _showRewardedAd() {
-    if (_rewardedAd != null) {
-      _rewardedAd!.fullScreenContentCallback = FullScreenContentCallback(
-        onAdDismissedFullScreenContent: (RewardedAd ad) {
-          print("Rewarded Ad Dismissed");
-
-          ad.dispose();
-          _loadRewardedAd(); // Load a new ad after the previous one is dismissed
-        },
-        onAdFailedToShowFullScreenContent: (RewardedAd ad, AdError error) {
-          print("Failed to show ad: ${error.message}");
-          ad.dispose();
-          _loadRewardedAd();
-        },
-      );
-
-      _rewardedAd!.setServerSideOptions(
-        ServerSideVerificationOptions(userId: _getFirebaseUID()),
-      );
 
 
-      _rewardedAd!.show(
-        onUserEarnedReward: (AdWithoutView ad, RewardItem reward) {
-          print("User earned reward: ${reward.amount} ${reward.type}");
-          // You can give the user their reward here, e.g., unlocking content
-        },
-      );
-
-      _rewardedAd = null; // Set ad to null to prevent re-use
-    } else {
-      print("Ad not ready yet");
-    }
-  }
 
 
 
@@ -286,7 +229,7 @@ class _PurchaseCreditsPageState extends State<PurchaseCreditsPage> {
   @override
   void dispose() {
     _subscription.cancel(); // Cancel the listener
-    _rewardedAd?.dispose();
+
     super.dispose();
   }
 
@@ -322,8 +265,7 @@ class _PurchaseCreditsPageState extends State<PurchaseCreditsPage> {
           //  _buildBalanceCard(balance: 25), // Replace with actual balance
 
             _buildBalanceCard(),
-            const SizedBox(height: 10),
-            watchad(),
+
             const SizedBox(height: 18),
              Text(
               'Buy More Credits!',
@@ -383,73 +325,7 @@ class _PurchaseCreditsPageState extends State<PurchaseCreditsPage> {
       ),
     );
   }
-Widget watchad(){
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(10.0),
-          border: Border.all(color: const Color(0xFFFFD700), width: 2.0)
-      ),
-      child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Row(
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: [
-                const SizedBox(width: 10),
-                Image.asset('assets/coin.png',
-                    height: 65,
-                    width: 65),
-                const SizedBox(width: 20),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text(
-                        'Get Free Credits',
-                        style: TextStyle(
-                            fontSize: 20.0,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black),
-                      ),
-                      const SizedBox(height: 4),
-                      const Text(
-                          'Watch a short video ad to earn 2 free Credits instantly!',
-                          style: TextStyle(
-                              fontSize: 14.0,
-                              color: Colors.black54)),
-                      const SizedBox(height: 10),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: _rewardedAd != null ? _showRewardedAd : null,
-                          style: ElevatedButton.styleFrom(
-                              backgroundColor: Color(0xFF010137),
-                              padding: const EdgeInsets.symmetric(vertical: 12)
-                          ),
-                          child: const Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.play_arrow, color: Colors.white, size: 20,),
-                              SizedBox(width: 8,),
-                              Text(
-                                'Watch Ad',
-                                style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold),
-                              )
-                            ],),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ])
-      ),
-    );
-}
+
   Widget _buildBalanceCard() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 18.0),

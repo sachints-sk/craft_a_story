@@ -7,9 +7,7 @@ import 'package:permission_handler/permission_handler.dart'; // For storage perm
 import 'processingpagetest.dart';
 import 'package:page_transition/page_transition.dart';
 import 'craftStoryFromScratch.dart';
-import 'Services/banner_ad_widget.dart';
-import 'package:purchases_flutter/purchases_flutter.dart';
-import 'package:purchases_ui_flutter/purchases_ui_flutter.dart';
+
 
 
 class CreateStory extends StatefulWidget {
@@ -30,8 +28,7 @@ class _CreateStoryState extends State<CreateStory> {
   String? _selectedStoryType;
 
   bool _submitted = false; // Flag to track form submission attempt
-  bool _subscribed = false;
-  late final void Function(CustomerInfo) _customerInfoListener;
+
 
 
   final List<String> _storyTypes = [
@@ -44,30 +41,19 @@ class _CreateStoryState extends State<CreateStory> {
   @override
   void initState() {
     super.initState();
-    // Initialization logic here
-    _setupIsPro();
+
 
   }
 
   @override
   void dispose() {
     // Cleanup logic here
-    Purchases.removeCustomerInfoUpdateListener(_customerInfoListener);
+
 
     super.dispose();
   }
 
-  Future<void> _setupIsPro() async {
-    _customerInfoListener = (CustomerInfo customerInfo) {
-      EntitlementInfo? entitlement = customerInfo.entitlements.all['Premium'];
-      if (mounted) {
-        setState(() {
-          _subscribed = entitlement?.isActive ?? false;
-        });
-      }
-    };
-    Purchases.addCustomerInfoUpdateListener(_customerInfoListener);
-  }
+
 
 
 
@@ -213,11 +199,7 @@ class _CreateStoryState extends State<CreateStory> {
           ),
         ),
       ),
-      bottomNavigationBar: !_subscribed
-          ? Container(
-        child: BannerAdWidget(),
-      )
-          : null,
+
 
     );
   }

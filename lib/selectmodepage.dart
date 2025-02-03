@@ -2,9 +2,6 @@ import 'package:flutter/material.dart';
 import 'SelectStoryType.dart';
 import 'package:page_transition/page_transition.dart';
 import 'userstorydetails.dart';
-import 'Services/banner_ad_widget.dart';
-import 'package:purchases_flutter/purchases_flutter.dart';
-import 'package:purchases_ui_flutter/purchases_ui_flutter.dart';
 
 
 
@@ -16,37 +13,26 @@ class SelectModePage extends StatefulWidget {
 }
 
 class _SelectModePageState extends State<SelectModePage> {
-  bool _subscribed = false;
-  late final void Function(CustomerInfo) _customerInfoListener;
+
 
 
   @override
   void initState() {
     super.initState();
     // Initialization logic here
-    _setupIsPro();
+
 
   }
 
   @override
   void dispose() {
     // Cleanup logic here
-    Purchases.removeCustomerInfoUpdateListener(_customerInfoListener);
+
 
     super.dispose();
   }
 
-  Future<void> _setupIsPro() async {
-    _customerInfoListener = (CustomerInfo customerInfo) {
-      EntitlementInfo? entitlement = customerInfo.entitlements.all['Premium'];
-      if (mounted) {
-        setState(() {
-          _subscribed = entitlement?.isActive ?? false;
-        });
-      }
-    };
-    Purchases.addCustomerInfoUpdateListener(_customerInfoListener);
-  }
+
 
 
   @override
@@ -133,11 +119,7 @@ class _SelectModePageState extends State<SelectModePage> {
           ),
         ],
       ),
-      bottomNavigationBar: !_subscribed
-          ? Container(
-        child: BannerAdWidget(),
-      )
-          : null,
+
 
     );
   }

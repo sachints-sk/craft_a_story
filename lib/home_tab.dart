@@ -1122,7 +1122,7 @@ class _CraftAStoryHomeState extends State<CraftAStoryHome> {
                   );
                 },
                 child: Text(
-                  "Get Free Credits",
+                  "Buy Credits",
                   textAlign: TextAlign.center,
                   style: const TextStyle(fontSize: 14.0,fontWeight: FontWeight.w600, color: Colors.indigo),
                 ),

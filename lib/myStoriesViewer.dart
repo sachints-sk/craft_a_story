@@ -8,9 +8,7 @@ import 'story_data.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:audio_waveforms/audio_waveforms.dart';
 import 'package:share_plus/share_plus.dart';
-import 'Services/MyStoriesViewer_banner_ad_widget.dart';
-import 'package:purchases_flutter/purchases_flutter.dart';
-import 'package:purchases_ui_flutter/purchases_ui_flutter.dart';
+
 
 
 
@@ -34,15 +32,15 @@ class _MystoriesviewerState extends State<Mystoriesviewer> {
   double _currentVolume = 1.0;
   bool isPlaying = false;
   bool _isDownloading2 = false;
-  bool _subscribed = false;
-  late final void Function(CustomerInfo) _customerInfoListener;
+
+
 
 
   @override
   void initState() {
     _audioController = PlayerController();
     _audioController.playerState == PlayerState.playing ? isPlaying = true : isPlaying = false;
-    _setupIsPro();
+
 
     super.initState();
   }
@@ -52,22 +50,11 @@ class _MystoriesviewerState extends State<Mystoriesviewer> {
     _videoPlayerController?.dispose();
     _chewieController?.dispose();
     _audioController.dispose();
-    Purchases.removeCustomerInfoUpdateListener(_customerInfoListener);
+
 
     super.dispose();
   }
 
-  Future<void> _setupIsPro() async {
-    _customerInfoListener = (CustomerInfo customerInfo) {
-      EntitlementInfo? entitlement = customerInfo.entitlements.all['Premium'];
-      if (mounted) {
-        setState(() {
-          _subscribed = entitlement?.isActive ?? false;
-        });
-      }
-    };
-    Purchases.addCustomerInfoUpdateListener(_customerInfoListener);
-  }
 
 
 
@@ -291,8 +278,7 @@ class _MystoriesviewerState extends State<Mystoriesviewer> {
           body: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if(!_subscribed)
-              BannerAdWidget(),
+
               // Video or Cover Image Section
               if (!widget.storyData.isAudio)
                 Stack(

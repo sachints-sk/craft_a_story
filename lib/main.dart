@@ -22,13 +22,13 @@ import 'Services/theme_provider.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:purchases_ui_flutter/purchases_ui_flutter.dart';
 import 'package:provider/provider.dart';
-import 'package:google_mobile_ads/google_mobile_ads.dart';
+
 import 'video_splash_screen.dart';
-import 'Services/initialize_screen.dart';
+
 
 void main() async {
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
-
+  FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
@@ -40,7 +40,7 @@ void main() async {
 
   await initializeRevenueCat();
 
-  MobileAds.instance.initialize();
+
 
   FlutterNativeSplash.remove();
 

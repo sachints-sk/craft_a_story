@@ -11,9 +11,6 @@ import 'package:path_provider/path_provider.dart'; // For temporary file
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:firebase_performance/firebase_performance.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:purchases_flutter/purchases_flutter.dart';
-import 'package:purchases_ui_flutter/purchases_ui_flutter.dart';
-import 'Services/banner_ad_widget.dart';
 
 
 class NewVideoPlayer extends StatefulWidget {
@@ -48,8 +45,7 @@ class _NewVideoPlayerState extends State<NewVideoPlayer> {
   String _saveText = "Save your story to access it later.";
   final firestore = FirebaseFirestore.instance;
   String username ="";
-  bool _subscribed = false;
-  late final void Function(CustomerInfo) _customerInfoListener;
+
 
 
 
@@ -58,7 +54,7 @@ class _NewVideoPlayerState extends State<NewVideoPlayer> {
     super.initState();
     _initializePlayer();
     getusername();
-    _setupIsPro();
+
 
   }
 
@@ -66,22 +62,12 @@ class _NewVideoPlayerState extends State<NewVideoPlayer> {
   void dispose() {
     _videoPlayerController.dispose();
     _chewieController?.dispose();
-    Purchases.removeCustomerInfoUpdateListener(_customerInfoListener);// Dispose Chewie controller
+
     super.dispose();
   }
 
 
-  Future<void> _setupIsPro() async {
-    _customerInfoListener = (CustomerInfo customerInfo) {
-      EntitlementInfo? entitlement = customerInfo.entitlements.all['Premium'];
-      if (mounted) {
-        setState(() {
-          _subscribed = entitlement?.isActive ?? false;
-        });
-      }
-    };
-    Purchases.addCustomerInfoUpdateListener(_customerInfoListener);
-  }
+
 
   Future<void> _initializePlayer() async {
     // Initialize the video player
@@ -404,8 +390,7 @@ Future<void> _shareStory() async{
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if(!_subscribed)
-              BannerAdWidget(),
+
             // Video Player using Chewie
             _chewieController != null &&
                 _videoPlayerController.value.isInitialized

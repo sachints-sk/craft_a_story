@@ -13,9 +13,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'Services/Review_services.dart';
-import 'Services/StoryExplorer_banner_ad_widget.dart';
-import 'package:purchases_flutter/purchases_flutter.dart';
-import 'package:purchases_ui_flutter/purchases_ui_flutter.dart';
+
 
 
 
@@ -39,8 +37,7 @@ class _ViewSavedStoryPageState extends State<ViewSavedStoryPage> {
   bool isToggled= true;
   bool _isDownloading = false;
   bool _isDownloading2 = false;
-  bool _subscribed = false;
-  late final void Function(CustomerInfo) _customerInfoListener;
+
   String _localAudioPath="";
   double _currentVolume = 1.0;
   bool isPlaying = false;
@@ -67,7 +64,7 @@ class _ViewSavedStoryPageState extends State<ViewSavedStoryPage> {
         'user_email':user!.email.toString(),
       },
     );
-    _setupIsPro();
+
 
     _onStoryViewed();
   }
@@ -77,7 +74,7 @@ class _ViewSavedStoryPageState extends State<ViewSavedStoryPage> {
     _videoPlayerController?.dispose();
     _audioController.dispose();
     _chewieController?.dispose();
-    Purchases.removeCustomerInfoUpdateListener(_customerInfoListener);
+
     super.dispose();
   }
   Future<void> getusername() async{
@@ -85,17 +82,7 @@ class _ViewSavedStoryPageState extends State<ViewSavedStoryPage> {
     username= user!.uid;
 
   }
-  Future<void> _setupIsPro() async {
-    _customerInfoListener = (CustomerInfo customerInfo) {
-      EntitlementInfo? entitlement = customerInfo.entitlements.all['Premium'];
-      if (mounted) {
-        setState(() {
-          _subscribed = entitlement?.isActive ?? false;
-        });
-      }
-    };
-    Purchases.addCustomerInfoUpdateListener(_customerInfoListener!);
-  }
+
 
   Future<void> _downloadAndPlayAudio() async {
     setState(() {
@@ -352,8 +339,7 @@ class _ViewSavedStoryPageState extends State<ViewSavedStoryPage> {
           body: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if(!_subscribed)
-              BannerAdWidget(),
+
               // Video Player or Cover Image Section
               if(isToggled)
                 Stack(

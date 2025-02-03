@@ -100,7 +100,7 @@ class _PaywallPageState extends State<PaywallPage> {
                           featureRow("💎   Extra Credits for Crafting Stories."),
                           featureRow("🌍   Multi-language story generation."),
                           featureRow("🎙️   High-quality premium voices."),
-                          featureRow("✨   Enjoy an ad-free experience"),
+                          featureRow("✨   Full access to our entire story collection."),
                           const SizedBox(height: 20),
                           // Subscription Options
                           if (monthlyPackage != null)

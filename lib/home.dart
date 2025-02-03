@@ -11,7 +11,7 @@ import 'dart:io';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:purchases_ui_flutter/purchases_ui_flutter.dart';
 import 'CustompayWall.dart';
-import 'Services/initialization_helper.dart';
+
 
 void main() {
   runApp(const CraftAStoryApphome());
@@ -28,7 +28,7 @@ class _CraftAStoryApphomeState extends State<CraftAStoryApphome> {
   int _selectedIndex = 0; // Index of the currently selected tab
   bool _subscribed = false;
   void Function(CustomerInfo)? _customerInfoListener;
-  final _initializationHelper = InitializationHelper();
+
 
 
   // Callback function to change the selected tab index
@@ -45,7 +45,7 @@ class _CraftAStoryApphomeState extends State<CraftAStoryApphome> {
   void initState() {
     super.initState();
     _setupIsPro();
-    _initializeUMP_SDK();
+
 
   }
 
@@ -59,14 +59,7 @@ class _CraftAStoryApphomeState extends State<CraftAStoryApphome> {
   }
 
 
-  Future<void> _initializeUMP_SDK() async {
-    final navigator = Navigator.of(context);
 
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await _initializationHelper.initialize();
-
-    });
-  }
 
   Future<void> _setupIsPro() async {
     await Future.delayed(const Duration(seconds: 7));
