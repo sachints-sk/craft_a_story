@@ -22,13 +22,20 @@ import 'Services/theme_provider.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:purchases_ui_flutter/purchases_ui_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter/services.dart';
 
 import 'video_splash_screen.dart';
+
+
+import 'V2/Home.dart';
 
 
 void main() async {
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
+
+  // Hide only bottom system navigation bar
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: [SystemUiOverlay.top]);
 
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
@@ -99,12 +106,7 @@ class _CraftAStoryAppState extends State<CraftAStoryApp> {
     }
     return false;
   }
-  void _onSplashScreenFinished(){
-    setState(() {
-      _showSplashScreen = false;
-    });
-    // No need to call FlutterNativeSplash.remove() here now, as it was already removed
-  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -115,7 +117,7 @@ class _CraftAStoryAppState extends State<CraftAStoryApp> {
       theme: ThemeData(
         useMaterial3: true,
         primaryColor: Colors.blue,
-        scaffoldBackgroundColor: Colors.white,
+        scaffoldBackgroundColor: Color(0xFFF4E9E3),
         colorScheme: ThemeData.light().colorScheme.copyWith(
           surface: Colors.white, // Background color for NavigationBar
         ),
@@ -130,12 +132,7 @@ class _CraftAStoryAppState extends State<CraftAStoryApp> {
         ),
       ),
       themeMode: themeProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
-      home: _showSplashScreen
-          ? VideoSplashScreen(
-        videoPath: 'assets/splash_video.mp4', // Path to your video
-        onVideoFinished: _onSplashScreenFinished, // Callback
-      )
-          : FutureBuilder<bool>(
+      home: FutureBuilder<bool>(
         future: _userCheckFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -146,7 +143,7 @@ class _CraftAStoryAppState extends State<CraftAStoryApp> {
             return CraftAStoryApphome();
            // Navigate to your home page
           }else{
-            return Onboarding(); // Navigate to your onboarding page
+            return HomePage(); // Navigate to your onboarding page
           }
         },
       ),
