@@ -57,7 +57,7 @@ class _CombineAudioVideoState extends State<CombineAudioVideo> {
 
     // Load the service account key from the JSON file
     final String jsonKey = await rootBundle.loadString(
-        'assets/adept-ethos-432515-v9-1fa3e34d0b3e.json'); // Ensure the key is stored in assets
+        ''); // Ensure the key is stored in assets
 
     // Parse the service account key JSON
     final accountCredentials = ServiceAccountCredentials.fromJson(jsonKey);
